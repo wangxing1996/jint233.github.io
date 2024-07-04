@@ -1,0 +1,120 @@
+site_name: 技术文章摘抄
+site_url: https://learn.lianglianglee.com/
+site_author: jin
+site_description: 技术文章摘抄
+docs_dir: ./build/docs
+site_dir: site
+# Repository
+repo_name: jint233/Notes
+repo_url: https://github.com/jint233/Notes.git
+edit_uri: ""
+
+# # Copyright
+copyright: Copyright &copy; 2016 - 2024 jint233
+
+# Configuration
+theme:
+  name: material
+  custom_dir: ./build/overrides
+  icon:
+    logo: material/library
+  language: zh
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - content.tooltips
+    - navigation.tabs
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+  palette:
+    - scheme: default
+      primary: white
+      accent: teal
+      toggle:
+        icon: material/theme-light-dark
+        name: 深色模式
+    - scheme: slate
+      primary: black
+      accent: teal
+      toggle:
+        icon: material/theme-light-dark
+        name: 浅色模式
+  font:
+    text: Noto Sans SC
+    code: Fira Code
+  favicon: assets/images/favicon.png
+  logo: assets/images/logo.svg
+  icon:
+    logo: logo
+    repo: fontawesome/brands/github
+
+extra:
+  alternate:
+    - name: 简体中文
+      link: /
+      lang: zh
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jint233/Notes
+  generator: false
+  status:
+    new: 最近添加
+
+# Plugins
+plugins:
+  - search
+  - glightbox:
+      touchNavigation: true
+      loop: false
+      effect: zoom
+      slide_effect: none
+      width: 100%
+      height: auto
+      zoomable: true
+      draggable: false
+      auto_caption: false
+      caption_position: bottom
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra_javascript:
+  - javascripts/mathjax.js
+extra_css:
+  - stylesheets/extra.css

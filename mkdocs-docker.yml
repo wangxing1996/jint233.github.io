@@ -1,16 +1,16 @@
 site_name: 技术文章摘抄
-site_url: https://learn.lianglianglee.com/
+site_url: https://jint233.github.io/
 site_author: jin
 site_description: 技术文章摘抄
-docs_dir: ./build/docs
+docs_dir: ./docs
 site_dir: site
 # Repository
 repo_name: jint233/Notes
-repo_url: https://github.com/jint233/Notes.git
+repo_url: https://github.com/jint233/jint233.github.io.git
 edit_uri: ""
 
 # # Copyright
-copyright: Copyright &copy; 2016 - 2024 jint233
+copyright: Copyright &copy; 2016 - 2024 jint233 
 
 # Configuration
 theme:

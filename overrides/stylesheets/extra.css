@@ -550,6 +550,10 @@ a:hover .text-button span {
   max-width: 80%; 
 }
 
+.md-tabs {
+  background-color: transparent;
+}
+
 .md-tabs__item {
   font-weight: 600;
 }

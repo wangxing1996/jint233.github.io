@@ -1,12 +1,12 @@
 site_name: 技术文章摘抄
-site_url: https://github.com/jint233/jint233.github.io
+site_url: https://jint233.github.io/
 site_author: jin
 site_description: 技术文章摘抄
 docs_dir: ./docs
 site_dir: site
 # Repository
-repo_name: jint233/Notes
-repo_url: https://github.com/jint233/Notes.git
+repo_name: jint233/jint233.github.io
+repo_url: https://github.com/jint233/jint233.github.io
 edit_uri: ""
 
 # # Copyright

@@ -10,17 +10,12 @@
         height: 100%;
     }
 
-
     input::placeholder {
         color: white !important;
     }
 
-    .md-search__icon {
+    .md-search__input:not(:focus-visible)+.md-search__icon:not(.md-search__options) {
         color: white !important;
-    }
-
-    .md-search__input:focus-visible+.md-search__icon {
-        color: initial !important;
     }
 
     .mdx-hero__content {

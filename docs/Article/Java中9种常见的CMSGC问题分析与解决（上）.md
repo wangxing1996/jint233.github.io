@@ -408,7 +408,7 @@ JVM_END
 
 GenCollectedHeap::collect()
 
-````text
+```text
 void GenCollectedHeap::collect(GCCause::Cause cause) {
   if (cause == GCCause::_wb_young_gc) {
     // Young collection for the WhiteBox API.
@@ -433,7 +433,6 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
 为 DirectByteBuffer 分配空间过程中会显式调用 System.gc ，希望通过 Full GC 来强迫已经无用的 DirectByteBuffer 对象释放掉它们关联的 Native Memory，下面为代码实现：
 
 reserveMemory
-
 ```text
 // These methods should be called whenever direct memory is allocated or
 // freed.  They allow the user to control the amount of direct memory
@@ -462,7 +461,7 @@ static void reserveMemory(long size) {
         reservedMemory += size;
     }
 }
-````
+```
 
 HotSpot VM 只会在 Old GC 的时候才会对 Old 中的对象做 Reference Processing，而在 Young GC 时只会对 Young 里的对象做 Reference Processing。Young 中的 DirectByteBuffer 对象会在 Young GC 时被处理，也就是说，做 CMS GC 的话会对 Old 做 Reference Processing，进而能触发 Cleaner 对已死的 DirectByteBuffer 对象做清理工作。但如果很长一段时间里没做过 GC 或者只做了 Young GC 的话则不会在 Old 触发 Cleaner 的工作，那么就可能让本来已经死亡，但已经晋升到 Old 的 DirectByteBuffer 关联的 Native Memory 得不到及时释放。这几个实现特征使得依赖于 System.gc 触发 GC 来保证 DirectByteMemory 的清理工作能及时完成。如果打开了 `-XX:+DisableExplicitGC`，清理工作就可能得不到及时完成，于是就有发生 Direct Memory 的 OOM。**4.2.3 策略 **通过上面的分析看到，无论是保留还是去掉都会有一定的风险点，不过目前互联网中的 RPC 通信会大量使用 NIO，所以笔者在这里建议保留。此外 JVM 还提供了 `-XX:+ExplicitGCInvokesConcurrent` 和 `-XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses` 参数来将 System.gc 的触发类型从 Foreground 改为 Background，同时 Background 也会做 Reference Processing，这样的话就能大幅降低了 STW 开销，同时也不会发生 NIO Direct Memory OOM。** 4.2.4 小结**不止 CMS，在 G1 或 ZGC中开启 `ExplicitGCInvokesConcurrent` 模式，都会采用高性能的并发收集方式进行收集，不过还是建议在代码规范方面也要做好约束，规范好 System.gc 的使用。
 
@@ -1259,7 +1258,7 @@ gperftools 是 Google 开发的一款非常实用的工具集，它的原理是�
 
 ![img](../%E6%96%87%E7%AB%A0/assets/v2-cacb2478ec2ca17cbf30a38582f14568_1440w.jpg)**4.9 场景九：JNI 引发的 GC 问题 **-------------------------** 4.9.1 现象**在 GC 日志中，出现 GC Cause 为 GCLocker Initiated GC。
 
-````text
+```text
 2020-09-23T16:49:09.727+0800: 504426.742: [GC (GCLocker Initiated GC) 504426.742: [ParNew (promotion failed): 209716K->6042K(1887488K), 0.0843330 secs] 1449487K->1347626K(3984640K), 0.0848963 secs] [Times: user=0.19 sys=0.00, real=0.09 secs]
 2020-09-23T16:49:09.812+0800: 504426.827: [Full GC (GCLocker Initiated GC) 504426.827: [CMS: 1341583K->419699K(2097152K), 1.8482275 secs] 1347626K->419699K(3984640K), [Metaspace: 297780K->297780K(1329152K)], 1.8490564 secs] [Times: user=1.62 sys=0.20, real=1.85 secs]
 ```** 4.9.2 原因**
@@ -1274,7 +1273,6 @@ JNI 如果需要获取 JVM 中的 String 或者数组，有两种方式：
 由于 Native 代码直接使用了 JVM 堆区的指针，如果这时发生 GC，就会导致数据错误。因此，在发生此类 JNI 调用时，禁止 GC 的发生，同时阻止其他线程进入 JNI 临界区，直到最后一个线程退出临界区时触发一次 GC。
 
 GC Locker 实验：
-
 ```text
 public class GCLockerTest {
   static final int ITERS = 100;
@@ -1302,7 +1300,7 @@ public class GCLockerTest {
     }
   }
 }
-````
+```
 
 ______________________________________________________________________
 

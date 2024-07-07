@@ -1,14 +1,14 @@
 # 分布式唯一 ID 解析
 
-# 业界常见解决方案
+## 业界常见解决方案
 
-## UUID
+### UUID
 
-\[uuid\](<https://en.wikipedia.org/wiki/Universally%5C_unique%5C_identifier#:~:text=A> universally unique identifier (UUID,are for practical purposes unique.))
+\[uuid\](<https://en.wikipedia.org/wiki/Universally%5C_unique%5C_identifier##:~:text=A> universally unique identifier (UUID,are for practical purposes unique.))
 
 1 个 UUID 是 1 个 16 字节（128 位）的数字； 为了方便阅读，通常将 UUID 表示成如下的方式：
 
-```
+```log
 123e4567-e89b-12d3-a456-426614174000
 ```
 
@@ -18,7 +18,7 @@
 - 索引效率低
 - 不能保证趋势递增，不适合做 DB 主键（MySQL 聚簇索引下插入不是顺序的，会导致随机 IO 增多，性能下降）
 
-## Snowflake
+### Snowflake
 
 ![img](assets/7da3ae4242abfa72a421c42c203f60fc.png)
 
@@ -28,7 +28,7 @@
 - 不是严格的趋势递增，极端情况在机器时间不同步的情况下后生成的 Id 可能会小于先生成的 Id，即只能在 worker 级别保证递增
 - 服务需要保证 workerId 唯一（如果需要保证严格唯一的话会比较麻烦，简单可以基于服务 IP 跟 Port 来生成，但由于 workerId 只有 10 位，因此 workerId 可能会重复）
 
-## Redis 生成 Id
+### Redis 生成 Id
 
 可以使用 Redis 的原子操作 `INCR` 或者 `INCRBY` 来实现
 
@@ -42,11 +42,11 @@
 - 如果 Redis 需要迁移的话，需要保证迁移过程中的数据一致性，难度较大
 - Redis 持久化如果使用 RDB，因此 Redis 重启会丢数据，导致 ID 重复
 
-## 美团 Leaf
+### 美团 Leaf
 
 原文：[https://tech.meituan.com/2017/04/21/mt-leaf.html](https://tech.meituan.com/2017/04/21/mt-leaf.html)
 
-### Leaf Segment
+#### Leaf Segment
 
 ![img](assets/e580a878ec16acc8f844511714b13ef3.png)
 
@@ -58,7 +58,7 @@
 - ID 不够随机，能够泄露发号数量的信息，不太安全
 - DB 宕机会造成整个系统不可用
 
-### Leaf Snowflake
+##### Leaf Snowflake
 
 ![img](assets/e8d26bd2d44edc4fceb04946d2aa2fa6.png)
 
@@ -68,7 +68,7 @@ workerId 使用 Zookeeper 顺序结点的特性来实现，保证 workerId 唯�
 
 周期性上报时间给 Zookeeper，启动时做时间检验，时间回拨则告警。
 
-## 微信序列号生成器
+### 微信序列号生成器
 
 原文：[https://mp.weixin.qq.com/s/JqIJupVKUNuQYIDDxRtfqA](https://mp.weixin.qq.com/s/JqIJupVKUNuQYIDDxRtfqA)
 
@@ -87,7 +87,7 @@ workerId 使用 Zookeeper 顺序结点的特性来实现，保证 workerId 唯�
 
 - 重客户端，架构复杂，开发维护成本大
 
-## 百度 UidGenerator
+### 百度 UidGenerator
 
 原文：[https://github.com/baidu/uid-generator/blob/master/README.zh_cn.md.html](https://github.com/baidu/uid-generator/blob/master/README.zh_cn.md.html)
 
@@ -112,7 +112,7 @@ workerId 由 MySQL 自增 Id 分配。
 - timeBits & workerBits 规则固定，如果不同业务需要不同生成规则需要重新搭建一套
 - 以库的形式提供，使用配置复杂
 
-## [MongoDB ObjectID](https://docs.mongodb.com/v3.2/reference/method/ObjectId/)
+### [MongoDB ObjectID](https://docs.mongodb.com/v3.2/reference/method/ObjectId/)
 
 原文：[https://docs.mongodb.com/v3.2/reference/method/ObjectId/](https://docs.mongodb.com/v3.2/reference/method/ObjectId/)
 
@@ -128,7 +128,7 @@ workerId 由 MySQL 自增 Id 分配。
 - 占用存储空间多
 - 不能保证趋势递增
 
-# 解决分布式唯一 ID 的一个想法
+## 解决分布式唯一 ID 的一个想法
 
 本方案参考百度 UidGenerator，解决了 workerId 无法复用的问题
 
@@ -169,9 +169,9 @@ CREATE TABLE IF NOT EXISTS `worker_node_tab`
 
 duration_step 可以设置为两天（或更长），每隔一天异步到 DB 申请一个时间号段（即设置 DB last_timestamp += duration_step）；可以做到弱依赖 DB
 
-# 参考
+## 参考
 
-\[Universally unique identifier\](<https://en.wikipedia.org/wiki/Universally%5C_unique%5C_identifier#:~:text=A> universally unique identifier (UUID,are for practical purposes unique.))
+\[Universally unique identifier\](<https://en.wikipedia.org/wiki/Universally%5C_unique%5C_identifier##:~:text=A> universally unique identifier (UUID,are for practical purposes unique.))
 
 [Twitter IDs (snowflake)](https://developer.twitter.com/en/docs/basics/twitter-ids)
 

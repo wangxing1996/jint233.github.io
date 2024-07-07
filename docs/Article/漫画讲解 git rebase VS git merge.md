@@ -33,7 +33,7 @@ Chat 内容：
 
 ![在这里插入图片描述](assets/0f5537c0-e256-11eb-9839-c199edf90ba6)
 
-```
+```bash
 git clone https://gitee.com/chandler2code/git-conflict-demo.git
 cd git-conflict-demo
 echo "apple">today-food-menu.txt
@@ -113,7 +113,7 @@ git push origin master
 
 于是第二天在修改食物清单时，他选择自己先在本地创建分支，然后在自己的分支上修改，这样就可以时不时的切换到 master 分支拉取最新的代码。
 
-```
+```bash
 #创建并切换到本地food分支
 git checkout -b food
 #今天他想吃苹果了
@@ -127,7 +127,7 @@ git commit -m 'update today-food-menu.txt: eat apple'
 
 ![在这里插入图片描述](assets/46f97330-e256-11eb-8735-4b8052bf93fe)
 
-```
+```bash
 git pull
 sed -i 's/banana/honey/g' -i today-food-menu.txt
 git add .
@@ -139,7 +139,7 @@ git push origin master
 
 熊大切换到master分支拉取，查看代码变化。
 
-```
+```bash
 git checkout master
 git pull
 ```
@@ -150,7 +150,7 @@ git pull
 
 熊大考虑到仓库的蜂蜜快坏了，所以他这下坚持要吃苹果，于是他将自己的 food 分支的更改合并到 master 分支。有两种方式可以做到，分别是`git merge`和`git rabase`，后面都会详细的做讲解。我这里先用`git merge`解决冲突。
 
-```
+```bash
 git merge food
 ```
 
@@ -160,7 +160,7 @@ git merge food
 
 再查看冲突的内容：
 
-```
+```bash
 <<<<<<< HEAD
 honey
 =======
@@ -170,7 +170,7 @@ apple
 
 可以看到 master 的 honey 和 food 分支的 apple 冲突了，于是又要解决冲突啦。熊大找到了熊二坐在一起讨论，“弟啊！苹果快坏了，咱今天就吃苹果哈！”，熊二也没有办法，最终再次屈服了。于是熊大把蜜蜂部分去掉，保留苹果部分，再次提交到远端仓库。
 
-```
+```bash
 git add .
 git commit -m 'master merge food:eat apple'
 git push origin master
@@ -200,7 +200,7 @@ git push origin master
 
 ![在这里插入图片描述](assets/68b0bc90-e256-11eb-b23b-e34e5b5fc461)
 
-```
+```bash
 git checkout -b food2
 sed -i 's/apple/honey/g' -i today-food-menu.txt
 git add .
@@ -211,7 +211,7 @@ git commit -m 'update today-food-menu.txt:honey'
 
 ![在这里插入图片描述](assets/6da24cf0-e256-11eb-b9fd-1da92bc1a30d)
 
-```
+```bash
 sed -i 's/honey/coffee/g' -i today-food-menu.txt
 git add .
 git commit -m 'update today-food-menu.txt:coffee'
@@ -221,7 +221,7 @@ git commit -m 'update today-food-menu.txt:coffee'
 
 ![在这里插入图片描述](assets/740d5df0-e256-11eb-a751-c93d727cbe27)
 
-```
+```bash
 git pull
 sed -i 's/apple/banana/g' -i today-food-menu.txt 
 git add .
@@ -231,7 +231,7 @@ git push origin master
 
 熊大此时准备将代码push到远端，首先他切换到master分支，拉取最新的代码。
 
-```
+```bash
 git checkout master
 git pull
 ```
@@ -240,7 +240,7 @@ git pull
 
 首先切换到 master 分支拉取最新代码，这个已经做了。下面是切换到 food2 分支指定 rebase 操作。
 
-```
+```bash
 git checkout food2
 git rebase master
 ```
@@ -253,7 +253,7 @@ git rebase master
 
 又回到了我们熟悉的合并冲突，查看`today-food-menu.txt`内容：
 
-```
+```bash
 <<<<<<< HEAD
 banana
 =======
@@ -265,7 +265,7 @@ honey
 
 修改完毕后，添加到本地库，继续 rebase。
 
-```
+```bash
 git add .
 git rebase --continue
 ```
@@ -276,7 +276,7 @@ git rebase --continue
 
 意思这次 rebase 合并冲突后和远端的内容一致，可以选择跳过这次 rebase。
 
-```
+```bash
 git rebase --skip
 ```
 
@@ -288,7 +288,7 @@ git rebase --skip
 
 还记得吗，熊大还提交过一次将蜂蜜改为咖啡，我们来看一下冲突的内容：
 
-```
+```bash
 <<<<<<< HEAD
 banana
 =======
@@ -300,7 +300,7 @@ coffee
 
 修改完毕后，添加到本地库，继续 rebase。
 
-```
+```bash
 git add .
 git rebase --continue
 ```
@@ -315,7 +315,7 @@ git rebase --continue
 
 rebase 结束后切换到 master 分支合并分支代码，然后直接推送到远端即可（此时不用指定 commit）。
 
-```
+```bash
 git checkout master
 git merge food2
 git push origin master

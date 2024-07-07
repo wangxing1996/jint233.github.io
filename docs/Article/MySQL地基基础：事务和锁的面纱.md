@@ -207,7 +207,7 @@ mysql> set global tx_isolation='read-uncommitted';
 
 查询事务隔离级别：
 
-````
+```
 mysql>  SELECT @@tx_isolation;
 +------------------+
 | @@tx_isolation   |
@@ -240,8 +240,7 @@ update t\_account set balance=balance+200 where name='B'; #用户 A 继续给用
 commit; #提交事务
 
 现在我们查询一下用户 A 和用户 B 的余额：
-
-````
+```
 
 mysql> select * from t_account;
 +------+---------+
@@ -259,7 +258,6 @@ mysql> select * from t_account;
 #### 读提交
 
 设置事务隔离级别：
-
 ```
 
 mysql> set global tx_isolation='read-committed';
@@ -267,7 +265,6 @@ mysql> set global tx_isolation='read-committed';
 ```
 
 查询事务隔离级别：
-
 ```
 
 mysql>  SELECT @@tx_isolation;
@@ -305,7 +302,6 @@ select \* from t\_account where name='A'; #事务 2 查用户的余额，事务 
 #### 可重复读
 
 设置事务隔离级别：
-
 ```
 
 mysql> set global tx_isolation='repeatable-read';
@@ -313,7 +309,6 @@ mysql> set global tx_isolation='repeatable-read';
 ```
 
 查询事务隔离级别：
-
 ```
 
 mysql>  SELECT @@tx_isolation;
@@ -429,7 +424,6 @@ select \* from t\_account; #户 A 余额 100，用户 B 余额 200
 #### 序列化
 
 设置事务隔离级别：
-
 ```
 
 mysql> set global tx_isolation='serializable';
@@ -437,7 +431,6 @@ mysql> set global tx_isolation='serializable';
 ```
 
 查询事务隔离级别：
-
 ```
 
 mysql>  SELECT @@tx_isolation;
@@ -491,7 +484,6 @@ select \* from t\_account where name='A'; #用户 A 余额 200
 **共享锁（S）**
 
 允许一个事务读取数据，阻塞其他事务想要获取相同数据。共享锁之间不互斥，读和读操作可以并行。代码展示：
-
 ```
 
 select * from table where ... lock in share mode
@@ -501,7 +493,6 @@ select * from table where ... lock in share mode
 **排它锁（X）**
 
 持有排他锁的事务可以更新数据，阻塞其他事务获取数据的排他锁和共享锁。排它锁之间互斥，读和写、写和写操作不可以并行。代码展示：
-
 ```
 
 select * from table where ... for update;
@@ -589,7 +580,6 @@ IS
 #### 场景 1：insert 死锁
 
 创建一个测试表：
-
 ```
 
 mysql> create table t_insert(id decimal,no decimal,primary key(id),unique key(no));
@@ -597,7 +587,6 @@ mysql> create table t_insert(id decimal,no decimal,primary key(id),unique key(no
 ```
 
 session1：
-
 ```
 
 mysql> begin;
@@ -606,7 +595,6 @@ mysql> insert into t_insert values(1,101);
 ```
 
 session2：
-
 ```
 
 mysql> begin;
@@ -617,7 +605,6 @@ mysql> insert into t_insert values(2,101);
 此时会话一直等待无响应。
 
 session1：
-
 ```
 
 mysql> insert into t_insert values(3,100);
@@ -627,7 +614,6 @@ mysql> insert into t_insert values(3,100);
 结果如下。
 
 此时 session2 立马报出来死锁：
-
 ```
 
 ERROR 1213 (40001): ==Deadlock== found when trying to get lock; try restarting transaction
@@ -645,7 +631,6 @@ session1 在插入(1,101) 的时候会加一个 X 锁；session2 插入(2,101)�
 #### 场景 3：rollback 死锁
 
 创建一个测试表：
-
 ```
 
 mysql> create table t_rollback(id decimal,no decimal,primary key(id),unique key(no));
@@ -653,7 +638,6 @@ mysql> create table t_rollback(id decimal,no decimal,primary key(id),unique key(
 ```
 
 session1：
-
 ```
 
 mysql> begin;
@@ -662,7 +646,6 @@ mysql> insert into t_rollback values(1,100);
 ```
 
 session2：
-
 ```
 
 mysql> begin;
@@ -673,7 +656,6 @@ mysql> insert into t_rollback values(2,100);
 此时会话一直等待无响应。
 
 session3
-
 ```
 
 mysql> begin;
@@ -684,7 +666,6 @@ mysql> insert into t_rollback values(3,100);
 此时会话一直等待无响应。
 
 session1
-
 ```
 
 mysql> rollback;
@@ -692,7 +673,6 @@ mysql> rollback;
 ```
 
 结果如下： 此时 session1 执行了 rollback 成功返回，session2 的 insert 返回成功，session3 立马报出来死锁。
-
 ```
 
 ERROR 1213 (40001): ==Deadlock== found when trying to get lock; try restarting transaction
@@ -706,7 +686,6 @@ session1 在插入 (1,100) 的时候会加一个 X 锁；session2 插入 (2,100)
 #### 场景 4：commit 死锁
 
 创建一个测试表：
-
 ```
 
 mysql> create table t_commit(id decimal,no decimal,primary key(id),unique key(no));
@@ -715,7 +694,6 @@ mysql> insert into t_commit values(1,100);
 ```
 
 session1：
-
 ```
 
 mysql> begin;
@@ -724,7 +702,6 @@ mysql> delete from t_commit where id=1;
 ```
 
 session2：
-
 ```
 
 mysql> begin;
@@ -735,7 +712,6 @@ mysql> insert into t_commit values(1,100);
 此时会话一直等待无响应。
 
 session3：
-
 ```
 
 mysql> begin;
@@ -746,7 +722,6 @@ mysql> insert into t_commit values(1,100);
 此时会话一直等待无响应。
 
 session1：
-
 ```
 
 mysql> commit;
@@ -754,7 +729,6 @@ mysql> commit;
 ```
 
 结果如下：此时 session1 执行了 commit 成功返回，session3 的 insert 返回成功，session2 立马报出来死锁。
-
 ```
 
 ERROR 1213 (40001): ==Deadlock== found when trying to get lock; try restarting transaction
@@ -772,7 +746,6 @@ ERROR 1213 (40001): ==Deadlock== found when trying to get lock; try restarting t
 用户 B 和用户 C 向用户 A 借钱，用户 A 转账给用户 B 和用户 C，转账的过程中发生了用户 C 账户不存在，那么我们也要把转给用户 B 的钱也取消吗？我们可以不取消，使用一个保存点即可。
 
 查询用户 A 有 1000 元：
-
 ```
 
 mysql> select balance from t_account where name='A';
@@ -780,7 +753,6 @@ mysql> select balance from t_account where name='A';
 ```
 
 转账 100 元给用户 B：
-
 ```
 
 mysql> update t_account set balance=balance-100 where name='A';
@@ -789,7 +761,6 @@ mysql> update t_account set balance=balance+100 where name='B';
 ```
 
 **设置事务保存点**
-
 ```
 
 mysql> savepoint T_A_TO_B;
@@ -797,7 +768,6 @@ mysql> savepoint T_A_TO_B;
 ```
 
 转账 200 元给用户 C：
-
 ```
 
 mysql> update t_account set balance=balance-200 where name='A';
@@ -808,7 +778,6 @@ Rows matched: 0  Changed: 0  Warnings: 0
 ```
 
 发现转账给 C 返回有 0 条受影响的行，转账给 C 未成功，此时用户 A 已经少了 200 元了，先退 200 元再排查吧，转账给用户 B 的不需要重新操作了。
-
 ```
 
 mysql> rollback to T_A_TO_B;
@@ -817,7 +786,6 @@ mysql> commit；
 ```
 
 根据提示 0 条受影响的行，也就是说用户 C 不存在呀，我们查询一下个用户信息：
-
 ```
 
 mysql> select *from t_account where name='A';
@@ -850,7 +818,6 @@ Empty set (0.00 sec)
 首先，我们用前面的场景 1 模拟一个死锁。
 
 然后，执行如下命令获取死锁信息：
-
 ```
 
 mysql> show engine innodb status;
@@ -858,7 +825,6 @@ mysql> show engine innodb status;
 ```
 
 在打印的日志中，先看事务 1 的日志：
-
 ```
 
 ***(1) TRANSACTION:
@@ -876,7 +842,6 @@ TRANSACTION 2179, ACTIVE ==8 sec== inserting
 ```
 
 事务 1 持续了 8 秒：
-
 ```
 
 mysql ==tables in use 1==, locked 1  涉及一张表\
@@ -889,7 +854,6 @@ lock mode S waiting 锁等待为 S 锁
 ```
 
 事务 2 的日志：
-
 ```
 
 ***(2) TRANSACTION:

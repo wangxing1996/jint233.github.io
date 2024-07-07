@@ -70,7 +70,7 @@ Producer 在发送消息的时候指定什么时刻发送，然后消息被发�
 
 顺序消息在日常的功能场景中很常见，比如点外卖生成外卖订单、付款、送餐的消息需要保证严格的顺序。
 
-**全局顺序消息： **RocketMQ 的一个 Topic 下默认有八个读队列和八个写队列，如果要保证全局顺序消息的话需要在生产端只保留一个读写队列，然后消费端只有一个消费线程，这样会降低 RocketMQ 的高可用和高吞吐量。** 分区顺序消息： **分区顺序消息同样需要生产端和消费端配合，生产端根据同一个订单 ID 把消息路由到同一个 MessageQueue，消费端控制从同一个 MessageQueue 取出的消息不被并发处理。** 生成端发送分区顺序消息：**\`\`\`
+**全局顺序消息： **RocketMQ 的一个 Topic 下默认有八个读队列和八个写队列，如果要保证全局顺序消息的话需要在生产端只保留一个读写队列，然后消费端只有一个消费线程，这样会降低 RocketMQ 的高可用和高吞吐量。** 分区顺序消息： **分区顺序消息同样需要生产端和消费端配合，生产端根据同一个订单 ID 把消息路由到同一个 MessageQueue，消费端控制从同一个 MessageQueue 取出的消息不被并发处理。** 生成端发送分区顺序消息：**```
 SendResult sendResult = Producer.send(msg , new MessageQueueSelector() {
 Override
 public MessageQueue select(List <MessageQueue> mqs , Message msg ,Object arg) {

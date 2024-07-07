@@ -228,7 +228,7 @@ invalid argument: can't use stdin for both build context and dockerfile
 
 就会报错了。所以，**不能同时使用 stdin 读取 Dockerfile 和 build context** 。
 
-- **build context 支持四种行为。**\`\`\`go
+- **build context 支持四种行为。**```go
   switch {
   case options.contextFromStdin():
   // 省略
@@ -242,7 +242,7 @@ invalid argument: can't use stdin for both build context and dockerfile
   return errors.Errorf("unable to prepare context: path %q not found", specifiedContext)
   }
 
-````
+```
 从 `stdin` 传入，上文已经演示过了，传递给 `stdin` 的是 `tar` 归档文件；
 当然也可以是指定一个具体的 `PATH`，我们通常使用的 `docker build .` 便是这种用法；
 或者可以指定一个 `git` 仓库的地址，CLI 会调用 `git` 命令将仓库 `clone` 至一个临时目录，进行使用；
@@ -264,7 +264,7 @@ func ReadDockerignore(contextDir string) ([]string, error) {
     defer f.Close()
     return dockerignore.ReadAll(f)
 }
-````
+```
 
 - `.dockerignore` 是一个固定的文件名，并且需要放在 `build context` 的根目录下。类似前面提到的，使用一个 `Dockerfile` 文件的 URL 地址作为 `build context` 传入的方式，便无法使用 `.dockerignore` 。
 - `.dockerignore` 文件可以不存在，但在读取的时候如果遇到错误，便会抛出错误。
@@ -622,7 +622,7 @@ if err != nil {
 }
 ```
 
-**newImageBuildOptions 函数就是构造构建参数的，将通过 API 提交过来的参数转换为构建动作实际需要的参数形式。 **`go buildOptions.AuthConfigs = getAuthConfigs(r.Header) `** getAuthConfigs 函数用于从请求头拿到认证信息**\`\`\`go
+**newImageBuildOptions 函数就是构造构建参数的，将通过 API 提交过来的参数转换为构建动作实际需要的参数形式。 **`go buildOptions.AuthConfigs = getAuthConfigs(r.Header)`** getAuthConfigs 函数用于从请求头拿到认证信息**```go
 imgID, err := br.backend.Build(ctx, backend.BuildConfig{
 Source:         body,
 Options:        buildOptions,
@@ -632,10 +632,9 @@ if err != nil {
 return errf(err)
 }
 
-````
+```
 
 这里就需要注意了: 真正的构建过程要开始了。** 使用 backend 的 Build 函数来完成真正的构建过程**
-
 ```go
 // api/server/backend/build/backend.go#L52
 func (b *Backend) Build(ctx context.Context, config backend.BuildConfig) (string, error) {
@@ -680,7 +679,7 @@ func (b *Backend) Build(ctx context.Context, config backend.BuildConfig) (string
     }
     return imageID, err
 }
-````
+```
 
 这个函数看着比较长，但主要功能就以下三点：
 

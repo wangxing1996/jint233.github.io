@@ -42,7 +42,7 @@ ConfigMap，看到这个名字可以理解：它是用于保存配置信息的�
 
 创建一个 ConfigMap 有多种方式如下。
 
-**1. key-value 字符串创建**\`\`\`
+**1. key-value 字符串创建**```
 kubectl create configmap test-config --from-literal=baseDir=/usr
 
 ```
@@ -304,7 +304,6 @@ kubernetes:
 <artifactId>spring-cloud-kubernetes-discovery</artifactId>
 
 </dependency>
-
 ```
 开启服务发现功能：
 ```
@@ -368,7 +367,7 @@ MaxAutoRetries: 1 #对第一次请求的服务的重试次数
 
 MaxAutoRetriesNextServer: 1 #要重试的下一个服务的最大数量（不包括第一个服务）
 
-#ServerListRefreshInterval: 2000
+# ServerListRefreshInterval: 2000
 
 OkToRetryOnAllOperations: true
 
@@ -399,7 +398,6 @@ config:
 ```
 
 <parent>
-
 ```
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
@@ -432,7 +430,6 @@ config:
 ```
 
 <dependencies>
-
 ```
       <dependency>
         <groupId>org.springframework.boot</groupId>
@@ -534,7 +531,6 @@ config:
     </dependency>
 </dependencies>
 ```
-
 ```
 上面我们使用了比较新的版本：Spring Boot 2.1.13，Cloud 版本是 Greenwich.SR3，其次，我们配置了 K8s 的 ConfigMap 所用的依赖，加上了数据库的一些配置，具体其他的，实现过程中，大家可以自行添加。
 接下来，我们看启动时加载的配置文件，这里加了关于 K8s ConfigMap 所管理的配置所在的信息，以及保证服务被发现，开启了所有的 namespace，同时还启动了配置自动刷新的功能，注意的是，该配置需要在 bootstrap 文件：
@@ -681,7 +677,7 @@ public void setMessage(String message) {
 }
 ```
 
-````
+```
 这就是配置 ConfigMap 中的属性的类。剩下的可以自己定义一个接口类，来实现服务生产者。
 最后，我们需要在 K8s 下部署的话，需要准备几个脚本。
 **1\. 创建 ConfigMap **```
@@ -726,10 +722,9 @@ data:
     greeting:
 
       message: Say Hello to the Prod
+```
 
-````
-
-设置了不同环境的配置，注意，这里的 namespace 需要与服务部署的 namespace 一致，这里默认的是 default，而且在创建服务之前，先得创建这个。**2. 创建服务部署脚本**\`\`\`
+设置了不同环境的配置，注意，这里的 namespace 需要与服务部署的 namespace 一致，这里默认的是 default，而且在创建服务之前，先得创建这个。**2. 创建服务部署脚本**```
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -819,7 +814,6 @@ spec:
 ```
 
 注意：这里有个属性 replicas，其作用是当前 pod 所启动的副本数，即我们常说的启动的节点个数，当然，你也可以通过前面讲的脚本来执行生成多个 pod 副本。如果这里没有设置多个的话，也可以通过命令来执行：
-
 ```
 
 kubectl scale --replicas=3 deployment cas-server-deployment
@@ -831,7 +825,6 @@ kubectl scale --replicas=3 deployment cas-server-deployment
 同时，我们通过 `--spring.profiles.active=dev` 来指定当前 pod 的运行环境。** 3\. 创建一个 Service**
 
 最后，如果服务想被发现，需要创建一个 Service：
-
 ```
 
 apiVersion: v1
@@ -853,13 +846,11 @@ ports:
 注意，这里的 namespace 需要与服务部署的 namespace 一致，这里默认的是 default。
 
 看看服务的消费者，同样，先看引入常用的依赖：
-
 ```
 
 <parent>
 ```
     <groupId>org.springframework.boot</groupId>
-
 ```
 <artifactId>spring-boot-starter-parent</artifactId>
 
@@ -870,7 +861,6 @@ ports:
 
 </parent>
 <properties>
-
 ```
 <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -893,12 +883,13 @@ ports:
 <springcloud.kubernetes.version>1.1.1.RELEASE</springcloud.kubernetes.version>
 
 <mysql.version>5.1.46</mysql.version>
+
 ```
 
 </properties>
 <dependencyManagement>
-
 ```
+
 <dependencies>
 
     <dependency>
@@ -920,7 +911,6 @@ ports:
 
 </dependencyManagement>
 <dependencies>
-
 ```
 <dependency>
 
@@ -959,11 +949,9 @@ ports:
 
 </dependency>
 ```
-
 ```
 <!-- 配置加载依赖 -->
 ```
-
 ```
 <dependency>
 
@@ -996,7 +984,6 @@ ports:
 ```
 
 <!-- 结合 k8s 实现服务发现 -->
-
 ```
 <dependency>
 
@@ -1015,7 +1002,6 @@ ports:
 ```
 
 <!-- 负载均衡策略 -->
-
 ```
 <dependency>
 
@@ -1034,7 +1020,6 @@ ports:
 ```
 
 <!-- 熔断机制 -->
-
 ```
 <dependency>
 
@@ -1137,7 +1122,6 @@ ports:
 ```
 
 <!-- 数据库驱动 -->
-
 ```
 <dependency>
 

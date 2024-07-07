@@ -26,7 +26,7 @@ private static final ThreadLocal<SimpleDateFormat> simpleDateFormatThreadLocal =
 public static String formatDate(Date date){
    return simpleDateFormatThreadLocal.get().format(date);
 }
-````
+```
 
 ### ThreadLocal的原理
 

@@ -608,7 +608,7 @@ mysql> show master status;
 
 删除二进制日志有几种方法。不管哪种方法，都会将删除后的信息同步到二进制index文件中。
 
-**1.reset master****将会删除所有日志，并让日志文件重新从000001****开始。**\`\`\`
+**1.reset master****将会删除所有日志，并让日志文件重新从000001****开始。**```
 mysql> reset master;
 
 ```** 2.PURGE { BINARY | MASTER } LOGS { TO 'log\_name' | BEFORE datetime\_expr }**purge master logs to "binlog\_name.00000X" 将会清空00000X之前的所有日志文件。例如删除000006之前的日志文件。

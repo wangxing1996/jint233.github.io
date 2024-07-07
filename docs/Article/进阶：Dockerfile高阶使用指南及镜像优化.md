@@ -1,6 +1,6 @@
 # 进阶：Dockerfile 高阶使用指南及镜像优化
 
-### Dockerfile 高阶使用及新特性解读
+## Dockerfile 高阶使用及新特性解读
 
 通过之前的学习，我们已经知道 Dockerfile 是一种可用于镜像构建，具备特定语法的文本文件。而 Docker 自身在使用此文件进行构建镜像的过程中，遵循其固定的行为。
 
@@ -12,7 +12,7 @@ Docker 构建系统中，默认情况下为了加快构建的速度，会将构�
 
 那么在使用 Dockerfile 构建镜像的时候，除了上次 [Chat](https://gitbook.cn/gitchat/activity/5cd527e864de19331ba79278) 聊到的内容外，有哪些值得掌握的高级技巧呢？ 我们来正式开始本次 Chat 。
 
-### 打开 BuildKit 支持
+## 打开 BuildKit 支持
 
 在上次 [Chat](https://gitbook.cn/gitchat/activity/5cd527e864de19331ba79278) 的最后，我们提到可以通过 BuildKit 以提高构建效率，这里我们来对它进行更加详细的解读和分析。
 
@@ -20,7 +20,7 @@ Docker 构建系统中，默认情况下为了加快构建的速度，会将构�
 
 对于构建镜像而言，它同样是需要将待构建的内容（我们称之为 context），发送给 dockerd，并由 dockerd 的特定模块最终完成构建。
 
-#### builder
+### builder
 
 这里我们需要引入一个概念 **builder** .
 
@@ -32,7 +32,7 @@ builder 就是上面提到的特定模块，也就是说构建内容 context 是
 
 以下是 Docker 18.09 的输出信息。
 
-```
+```bash
 / # docker builder
 Usage:  docker builder COMMAND
 Manage builds
@@ -43,7 +43,7 @@ Run 'docker builder COMMAND --help' for more information on a command.
 
 而在 Docker 19.03 中，它新增了一个子命令：
 
-```
+```bash
 / # docker builder
 Usage:  docker builder COMMAND
 Manage builds
@@ -57,7 +57,7 @@ Run 'docker builder COMMAND --help' for more information on a command.
 
 builder 其实很早就存在于 Docker 当中了，我们之前在使用或者说默认在使用的就是 builder 的 v1 版本（在 Docker 内部也将它的版本号定为 1），但是由于它太久了，有一些功能缺失和不足，由此诞生了 builder 的 v2 版本，该项目被称之为 BuildKit 。
 
-#### [BuildKit](https://github.com/moby/buildkit)
+### [BuildKit](https://github.com/moby/buildkit)
 
 BuildKit 的产生主要是由于 v1 版本的 builder 的性能，存储管理和扩展性方面都有不足（毕竟它已经产生了很久，而且近些年 Docker 火热，问题也就逐步暴露出来了）, 所以它的重点也在于解决这些问题，关键的功能列在下面：
 
@@ -73,7 +73,7 @@ BuildKit 在 Docker v18.06 版本之后可通过 `export DOCKER_BUILDKIT=1` 环�
 
 如果将 /etc/docker/daemon.json 文件中添加以下配置：
 
-```
+```bash
 {
   "experimental": true,
   "features": {
@@ -84,7 +84,7 @@ BuildKit 在 Docker v18.06 版本之后可通过 `export DOCKER_BUILDKIT=1` 环�
 
 则会默认使用 BuildKit 进行构建，就不再需要指定环境了。
 
-#### 小结
+### 小结
 
 - 在上面的内容中，我们知道了 Docker 是 C/S 架构，而我们通常使用的 `docker` 命令便是它的 CLI 客户端，服务端是 dockerd 通常由 systemd 进行管理；
 - 我们介绍了一个概念 builder，它是 Docker 构建系统中的实际执行者；用于将构建的上下文 context 按照 Dockerfile 的描述最终生成 Docker 镜像（image）;
@@ -93,7 +93,7 @@ BuildKit 在 Docker v18.06 版本之后可通过 `export DOCKER_BUILDKIT=1` 环�
 
 我们来体验一下开启 BuildKit 的镜像构建：
 
-```
+```bash
 (MoeLove) ➜  ~ docker build -t local/spring-boot:buildkit https://github.com/tao12345666333/spring-boot-hello-world.git
 [+] Building 0.2s (0/1)
 [+] Building 0.6s (0/1) 
@@ -127,11 +127,11 @@ BuildKit 在 Docker v18.06 版本之后可通过 `export DOCKER_BUILDKIT=1` 环�
 
 以上便是一个开启了 BuildKit 的镜像构建过程，可以看到与我们之前默认的 builder 的输出之类的都不一样，这里暂不展开了，我们开始下一步的学习。
 
-### 构建历史
+## 构建历史
 
 我们仍然使用上次 [Chat](https://gitbook.cn/gitchat/activity/5cd527e864de19331ba79278) 中的[例子](https://github.com/tao12345666333/spring-boot-hello-world.git)：一个 Spring Boot 的项目，同样的本次 Chat 中并不涉及 Spring Boot 的任何知识。只需要知道对于这个项目而言， 需要先安装依赖、构建，才能运行。
 
-```
+```bash
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ ls -l 
 总用量 20
 -rw-rw-r--. 1 tao tao    0 5月  15 06:52 Dockerfile
@@ -144,7 +144,7 @@ drwxrwxr-x. 9 tao tao 4096 5月  15 06:52 target
 
 我们来看下该项目的 Dockerfile 的内容：
 
-```
+```bash
 FROM maven:3.6.1-jdk-8-alpine AS builder
 WORKDIR /app
 COPY pom.xml /app/
@@ -160,14 +160,14 @@ CMD [ "java", "-jar", "/gs-spring-boot-0.1.0.jar" ]
 
 我们以此 Dockerfile 来构建镜像，这里我增加了 `-q` 参数忽略掉默认的输出。
 
-```
+```bash
 (MoeLove) ➜  spring-boot-hello-world git:(master) docker build -q -t local/spring-boot:1 .
 sha256:01e4898d1141763400d39111609425ba6232b8bf42f46a6033fdb2b7306dc75b 
 ```
 
 可以看到镜像已经构建成功了，这里我们来介绍一个新的命令 `docker image history`，对新构建的镜像执行此命令：
 
-```
+```bash
 (MoeLove) ➜  spring-boot-hello-world git:(master) docker image history local/spring-boot:1
 IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
 01e4898d1141        292 years ago       CMD ["java" "-jar" "/gs-spring-boot-0.1.0.ja…   0B                  buildkit.dockerfile.v0
@@ -185,7 +185,7 @@ IMAGE               CREATED             CREATED BY                              
 
 可以看到我们镜像的构建记录（以逆序排列），最上面的部分是我们多阶段构建中的。
 
-```
+```bash
 COPY --from=builder /app/target/gs-spring-boot-0.1.0.jar /
 CMD [ "java", "-jar", "/gs-spring-boot-0.1.0.jar" ]
 ```
@@ -194,7 +194,7 @@ CMD [ "java", "-jar", "/gs-spring-boot-0.1.0.jar" ]
 
 而下面的部分，则是我们的基础镜像 `openjdk:8-jre-alpine` 的构建记录。我们的操作基本都可以在 history 中看到。
 
-#### 构建历史的不安全性
+### 构建历史的不安全性
 
 假如，我们的项目在构建过程当中，需要连接远端的数据库获取对应的信息（比如：获取某个特定的配置），之后才可以进行构建，我们通常情况下会如何去做呢？
 
@@ -203,7 +203,7 @@ CMD [ "java", "-jar", "/gs-spring-boot-0.1.0.jar" ]
 
 这里我们对 Dockerfile 做一点小改变，比如：我们使用 ENV 将密码通过环境变量的方式注入到镜像中。
 
-```
+```bash
 # 以下省略了基础镜像的构建记录
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker build -q -t local/spring-boot:2 .                    
 sha256:2f85141a35c386bbeac0ba77acd470025682bebc7da9eb204295ff8fafb6e0a8                                         
@@ -220,7 +220,7 @@ IMAGE               CREATED             CREATED BY                              
 
 由此，得出了我们的第一个结论，**Docker 镜像的构建历史是不安全的，通过 ENV 设置的信息可在 history 中看到**。
 
-这也引出了我们的第一个问题：**Docker 镜像的构建记录是可查看的，如何管理构建过程中需要的密码/密钥等敏感信息？**#### 高阶特性：密码管理
+这也引出了我们的第一个问题：**Docker 镜像的构建记录是可查看的，如何管理构建过程中需要的密码/密钥等敏感信息？**### 高阶特性：密码管理
 
 为了应对类似前面这样的问题，当开启 BuildKit 时，我们可以使用高阶用法，即：Dockerfile 的实验特性。
 
@@ -228,7 +228,7 @@ Dockerfile 的实验特性，通过给它的顶部添加 `# syntax = docker/dock
 
 具体用法如下：
 
-```
+```bash
 # syntax = docker/dockerfile:experimental
 COPY fetch_remote_data.sh .
 RUN --mount=type=secret,id=moelove,target=/cache_builder,required ./fetch_remote_data.sh
@@ -236,13 +236,13 @@ RUN --mount=type=secret,id=moelove,target=/cache_builder,required ./fetch_remote
 
 然后通过以下命令进行构建:
 
-```
+```bash
 docker build --secret id=moelove,src=./secret -t local/spring-boot:4 .
 ```
 
 构建成功后，我们来看下 history 的记录：
 
-```
+```bash
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker history local/spring-boot:4        
 IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
 b5fcff644568        292 years ago       CMD ["java" "-jar" "/gs-spring-boot-0.1.0.ja…   0B                  buildkit.dockerfile.v0
@@ -254,13 +254,13 @@ b5fcff644568        292 years ago       CMD ["java" "-jar" "/gs-spring-boot-0.1.
 
 并没有在记录中看到我们的密码，同时，当我们用该镜像启动一个容器后会发现，刚才挂载进去的文件变成空的了。
 
-#### 高阶特性：密钥管理
+### 高阶特性：密钥管理
 
 另一种很常见的情况是，在构建过程中，可能需要 `git clone` 一个私有仓库，或者是 `ssh` 到某个远程主机上获取一些数据之类的操作。
 
 对于这种情况，我们也可以使用高阶特性, （这里就不在上面例子的基础上来写了，写了一个新的 Dockerfile）。
 
-````
+```bash
 # syntax = docker/dockerfile:experimental
 FROM alpine
 # 安装必要的包
@@ -276,8 +276,7 @@ RUN --mount=type=ssh,required git clone [email protected]:tao12345666333/moe.gi
 
 构建方式如下：
 
-````
-
+```bash
 (MoeLove) ➜  d eval $(ssh-agent)
 Agent pid 28184
 (MoeLove) ➜  d ssh-add ~/.ssh/id_rsa
@@ -300,25 +299,21 @@ Identity added: /home/tao/.ssh/id_rsa (/home/tao/.ssh/id_rsa)
 => => exporting layers                                                                              0.0s
 => => writing image sha256:35d3ded5595a48de50054121feed13ebadf9b5e73b6cefeeba4215e1a20a20fd         0.0s
 => => naming to docker.io/local/ssh
-
 ```
 
 我们使用该镜像启动一个容器：
 
-```
-
+```bash
 (MoeLove) ➜  d docker run --rm -it local/ssh
 / # du -sh moe/
 108.0K  moe/
 / # ls -al ~/.ssh/\*
 -rw-r--r--    1 root     root           788 May 30 06:35 /root/.ssh/known_hosts
-
 ```
 
 可以看到，代码仓库已经成功的 clone 下来了。同时，在 `~/.ssh` 目录内也并没有保留任何我们公/私钥的信息。
 
-```
-
+```bash
 (MoeLove) ➜  d docker history local/ssh
 IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
 35d3ded5595a        35 minutes ago      RUN /bin/sh -c git clone \[email protected\]:tao1…   16.9kB              buildkit.dockerfile.v0
@@ -326,15 +321,13 @@ IMAGE               CREATED             CREATED BY                              
 <missing>           36 minutes ago      RUN /bin/sh -c apk add --no-cache git openss…   20.8MB              buildkit.dockerfile.v0
 <missing>           2 weeks ago         /bin/sh -c #(nop)  CMD \["/bin/sh"\]              0B
 <missing>           2 weeks ago         /bin/sh -c #(nop) ADD file:a86aea1f3a7d68f6a…   5.53MB
-
 ```
 
 镜像的 history 中也没有任何额外的敏感信息。
 
 如果没有运行 `ssh-agent` 或者是密钥没有 ssh-add 添加进去， 你就会看到类似下面的问题：
 
-```
-
+```bash
 ## (MoeLove) ➜  d docker build --no-cache --ssh=default -t local/ssh . \[+\] Building 11.9s (9/9) FINISHED => \[internal\] load .dockerignore                                                                    0.1s => => transferring context: 2B                                                                      0.0s => \[internal\] load build definition from Dockerfile                                                 0.1s => => transferring dockerfile: 96B                                                                  0.0s => resolve image config for docker.io/docker/dockerfile:experimental                                0.0s => CACHED docker-image://docker.io/docker/dockerfile:experimental                                   0.0s => \[internal\] load metadata for docker.io/library/alpine:latest                                     0.0s => CACHED \[1/4\] FROM docker.io/library/alpine                                                       0.0s => \[2/4\] RUN apk add --no-cache git openssh-client                                                  5.5s => \[3/4\] RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts                3.0s => ERROR \[4/4\] RUN --mount=type=ssh,required git clone \[email protected\]:tao12345666333/moe.git        2.9s
 
 > \[4/4\] RUN --mount=type=ssh,required git clone \[email protected\]:tao12345666333/moe.git         && cd moe         && git checkout -b release:
@@ -359,7 +352,7 @@ rpc error: code = Unknown desc = executor failed running \[/bin/sh -c git clone 
 
 ```
 
-#### 小结
+### 小结
 
 在上面的内容中，我们学习到了通过 `docker image history` 可以查看镜像的构建历史，但构建历史是透明的，凡是可以拿到该镜像的人均可查看到其构建历史；所以它是不安全的。
 
@@ -369,13 +362,13 @@ rpc error: code = Unknown desc = executor failed running \[/bin/sh -c git clone 
 
 在 Dockerfile 中通过使用 `RUN --mount=type=ssh` 或是 `RUN --mount=type=secret` 的方式，配合 `docker build` 时，传递 `--ssh` 或 `--secret` 参数即可使用。可参考[官方文档](https://docs.docker.com/develop/develop-images/build_enhancements/)了解更多。
 
-这是一种** 推荐 **且** 安全**的处理方式，虽然就结果而言这并不是唯一的解决方案，但我还是推荐你及时升级 `Docker` 并使用这种方式。
+这是一种 **推荐** 且 **安全** 的处理方式，虽然就结果而言这并不是唯一的解决方案，但我还是推荐你及时升级 `Docker` 并使用这种方式。
 
-### Docker 19.03 构建系统解读
+## Docker 19.03 构建系统解读
 
 Docker 19.03 在（2019/05/30 发布了 beta5 版本）正式版也将在不久之后会发布。相比其他版本而言，19.03 在构建系统方面的变化是比较大的，虽然一些特性是 18.09 时就已经增加的。
 
-#### builder cache 管理
+### builder cache 管理
 
 在 18.09 之前，有一个命令 `docker system prune` 可以清除所有的停止状态的容器、所有未被使用的网络、所有 dangling 状态的镜像以及所有 dangling 状态的构建缓存。
 
@@ -385,26 +378,24 @@ Docker 19.03 在（2019/05/30 发布了 beta5 版本）正式版也将在不久�
 
 具体配置方式是（Docker 19.03 中）在 /etc/docker/daemon.json 中写入以下内容：
 
-```
-
+```bash
 {
 "experimental": true,
 "features": {
 "buildkit": true
 },
 "builder": {
-"gc": {
-"enabled": true,
-"defaultKeepStorage": "20GB"
+    "gc": {
+      "enabled": true,
+      "defaultKeepStorage": "20GB"
+    }
+  }
 }
-}
-}
-
 ```
 
 以上配置中 experimental 表示是否开启实验性功能，features 中是选择开启 BuildKit 支持，builder 中的 gc 则表示控制垃圾回收的策略，上面配置的含义是：保留 20G 的缓存，超出则会进行清理。
 
-#### 多实例 builder 管理
+### 多实例 builder 管理
 
 我们知道 Docker CLI 是提供插件支持的，并且开发一个插件也并不难，不过这不是今天的重点，之后开 Chat 再聊。
 
@@ -412,19 +403,16 @@ Docker 19.03 会提供两个主要的插件 app 和 buildx；buildx 就是这一
 
 如果你安装了 Docker 19.03 但你输入 `docker buildx` 发现报错时，那说明你的 Docker 还尚未安装 buildx，可以使用下面的命令进行安装：
 
-```
-
+```bash
 (MoeLove) ➜  export DOCKER_BUILDKIT=1
 (MoeLove) ➜  docker build --platform=local -o . git://github.com/docker/buildx
 (MoeLove) ➜  mkdir -p ~/.docker/cli-plugins/
 (MoeLove) ➜  mv buildx ~/.docker/cli-plugins/docker-buildx
-
 ```
 
 完成后，执行 `docker buildx` 就会看到以下内容的输出：
 
-```
-
+```bash
 (MoeLove) ➜  ~ docker buildx
 Usage:  docker buildx COMMAND
 Build with BuildKit
@@ -450,7 +438,7 @@ buildx 主要作用其实是为了扩展 BuildKit 的能力，包括多 builder 
 
 我们来演示多实例构建。首先需要创建一个 builder 实例。
 
-```
+```bash
 
 (MoeLove) ➜  docker buildx create --name d1809 172.17.0.3
 d1809
@@ -469,7 +457,7 @@ default default               running  linux/amd64
 
 如果要使用新创建的 builder 需要先通过 `docker buildx use` 命令来进行切换，当前在使用的 builder 通过 `ls` 命令的时候会带有一个 `*` 标记。当然你也可能注意到了它当前的状态是 inactive，这是因为只有当它真正开始构建任务了或者是执行过构建任务了 agent 才会启动，将它注册回来。
 
-```
+```bash
 
 (MoeLove) ➜  ~ docker buildx use d1809
 (MoeLove) ➜  ~ docker buildx ls
@@ -485,7 +473,7 @@ default default               running  linux/amd64
 
 接下来还是以前面的 Spring Boot 的项目为例进行构建：
 
-```
+```bash
 
 (MoeLove) ➜  spring-boot-hello-world git:(master) docker buildx build --load -t remote/spring-boot:1 .
 \[+\] Building 31.1s (6/14)
@@ -516,7 +504,7 @@ remote/spring-boot   1                   644867602b8a        About a minute ago 
 
 此时再查看 builder 的状态：
 
-```
+```bash
 
 (MoeLove) ➜  spring-boot-hello-world git:(master) docker buildx ls
 NAME/NODE DRIVER/ENDPOINT       STATUS  PLATFORMS
@@ -533,7 +521,7 @@ default default               running linux/amd64
 
 我们到这个 builder 实际对应的机器上查看该机器上容器的状态：
 
-```
+```bash
 
 / # docker ps
 CONTAINER ID        IMAGE                  COMMAND             CREATED             STATUS              PORTS               NAMES
@@ -545,17 +533,17 @@ ff4a9e18658e        moby/buildkit:master   "buildkitd"         About an hour ago
 
 当然，buildx 还有很多特性，比如可以构建多架构平台的镜像等。可以通过[官方文档](https://github.com/docker/buildx/blob/master/README.md.html)对它进一步了解。
 
-#### 小结
+### 小结
 
 通过这一小节，我们了解到在 Docker 19.03 版本中，我们可以通过 `docker builder prune` 清理构建缓存；并且可以通过给 /etc/docker/daemon.json 中写配置的方式来开启构建缓存的自动垃圾回收机制，以减轻磁盘压力。
 
 buildx 是 Docker 的一个 CLI 插件，默认安装完 19.03 后将会同时安装它，当然你也可以手动进行安装。我们通过 buildx 可以进行多个 builder 实例的管理，通过这种方式，可以将很多机器组成一个集群来分担构建压力，或者是分担不同架构的构建任务等。
 
-### 发现并优化镜像大小 dive
+## 发现并优化镜像大小 dive
 
 镜像的构建系统我们了解的差不多了，我们再聊聊如何发现，并优化镜像大小。这里分两个部分，其一是，发现；其二是，优化。
 
-#### 发现
+### 发现
 
 首先推荐一个工具 [dive](https://github.com/wagoodman/dive) ; 通过上次的 Chat 我们已经知道了镜像的组成和结构，dive 是一个命令行工具，使用它可以浏览 Docker 镜像每层的内容，以此来发现我们镜像中是否有什么不需要的东西存在。
 
@@ -565,11 +553,11 @@ buildx 是 Docker 的一个 CLI 插件，默认安装完 19.03 后将会同时�
 
 第二种方法，则是比较一般的，通过之前介绍的 `docker image history` 来查看构建记录和每层的大小，以此来观察是否有非必要的操作之类的。
 
-#### 优化
+### 优化
 
 我们对前面所举例中的 Spring Boot 项目的 Dockerfile 做点小改动：
 
-```
+```bash
 
 FROM maven:3.6.1-jdk-8-alpine AS builder
 WORKDIR /app
@@ -592,7 +580,7 @@ CMD \[ "java", "-jar", "/gs-spring-boot-0.1.0.jar" \]
 
 给它增加了两句完全没有必要的操作，现在构建该镜像。
 
-```
+```bash
 
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker image ls remote/spring-boot\
 REPOSITORY           TAG                 IMAGE ID            CREATED             SIZE
@@ -603,10 +591,9 @@ remote/spring-boot   1                   644867602b8a        About an hour ago  
 
 可以看到使用上面修改后的 Dockerfile 构建的镜像比之前的镜像大了 18M；我们之前也讲过了，镜像是层的叠加，后面操作删掉的文件，并不会减少镜像的体积。
 
-**那我们如何在不修改 Dockerfile 的情况下让镜像体积变小呢？答案就在构建系统上。 **我们可以通过给 `docker build` 传递 `--squash` 的参数，来将镜像的层进行合并。
+**那我们如何在不修改 Dockerfile 的情况下让镜像体积变小呢？答案就在构建系统上。** 我们可以通过给 `docker build` 传递 `--squash` 的参数，来将镜像的层进行合并。
 
-```
-
+```bash
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker build --squash -t remote/spring-boot:3 .
 \[+\] Building 2.5s (16/16) FINISHED
 ...
@@ -619,7 +606,7 @@ remote/spring-boot   1                   644867602b8a        About an hour ago  
 
 查看构建好的镜像大小：
 
-```
+```bash
 
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker image ls remote/spring-boot
 REPOSITORY           TAG                 IMAGE ID            CREATED             SIZE
@@ -631,8 +618,7 @@ remote/spring-boot   1                   644867602b8a        About an hour ago  
 
 可以看到镜像的体积又恢复了正常，这表示我们对之前层的删除操作生效了。我们来看看构建历史：
 
-```
-
+```bash
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker image history remote/spring-boot:3
 IMAGE               CREATED              CREATED BY                                      SIZE                COMMENT
 a2c1e139697b        About a minute ago                                                   103MB               create new from sha256:2d5ba7eb86d2ad5594f82a896637c91137d150dab61fe8dc3acbdfcd164f6686
@@ -652,13 +638,12 @@ a2c1e139697b        About a minute ago                                          
 
 ```
 
-可以看到之前的每层大小都已经变成了 0，这是因为把所有的层都合并到了最终的镜像上去了。** 特别注意：** `--squash` 虽然在 1.13.0 版本中就已经加入了 Docker 中，但他至今仍然是实验形式；所以你需要按照我在本篇文章开始部分的介绍那样，打开实验性功能的支持。
+可以看到之前的每层大小都已经变成了 0，这是因为把所有的层都合并到了最终的镜像上去了。**特别注意：** `--squash` 虽然在 1.13.0 版本中就已经加入了 Docker 中，但他至今仍然是实验形式；所以你需要按照我在本篇文章开始部分的介绍那样，打开实验性功能的支持。
 
 但直接传递 `--squash` 的方式，相对来说足够的简单，也更安全。
 
-### 总结
+## 总结
 
 通过本次 Chat 我们学习到了关于 Docker builder 的概念，以及了解到了下一代版本的 BuildKit；学习了 Docker 19.03 中多实例的构建，以及对构建缓存的垃圾回收配置等；学习了 Dockerfile 的高阶特性，并通过这些特性来管理密码和密钥等信息；学习了如何发现并优化镜像的体积。
 
 以上内容中虽然没有具体到它们的全部功能，也没有深入到源码级的分析，但已经涵盖了 Docker 构建系统的最新特性，希望能对你有所帮助。
-```

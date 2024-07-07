@@ -79,7 +79,7 @@ mysql> select count(*) from titles;
 
 接下来我们开始看看都有哪些碎片吧。这里介绍两种方式查看表碎片。
 
-**1. 通过表状态信息查看**\`\`\`
+**1. 通过表状态信息查看**```
 show table status like '%table_name%';
 mysql> show table status like 'salaries'\\G;***************************1. row***************************Name: salaries
 Engine: InnoDB

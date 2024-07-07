@@ -348,7 +348,7 @@ gperftools 是 Google 开发的一款非常实用的工具集，它的原理是�
 
 ![img](assets/v2-cacb2478ec2ca17cbf30a38582f14568_1440w.jpg)**4.9 场景九：JNI 引发的 GC 问题 \*\*\*\* 4.9.1 现象**在 GC 日志中，出现 GC Cause 为 GCLocker Initiated GC。
 
-````text
+```text
 2020-09-23T16:49:09.727+0800: 504426.742: [GC (GCLocker Initiated GC) 504426.742: [ParNew (promotion failed): 209716K->6042K(1887488K), 0.0843330 secs] 1449487K->1347626K(3984640K), 0.0848963 secs] [Times: user=0.19 sys=0.00, real=0.09 secs]
 2020-09-23T16:49:09.812+0800: 504426.827: [Full GC (GCLocker Initiated GC) 504426.827: [CMS: 1341583K->419699K(2097152K), 1.8482275 secs] 1347626K->419699K(3984640K), [Metaspace: 297780K->297780K(1329152K)], 1.8490564 secs] [Times: user=1.62 sys=0.20, real=1.85 secs]
 ```** 4.9.2 原因**
@@ -363,7 +363,6 @@ JNI 如果需要获取 JVM 中的 String 或者数组，有两种方式：
 由于 Native 代码直接使用了 JVM 堆区的指针，如果这时发生 GC，就会导致数据错误。因此，在发生此类 JNI 调用时，禁止 GC 的发生，同时阻止其他线程进入 JNI 临界区，直到最后一个线程退出临界区时触发一次 GC。
 
 GC Locker 实验：
-
 ```text
 public class GCLockerTest {
   static final int ITERS = 100;
@@ -391,7 +390,7 @@ public class GCLockerTest {
     }
   }
 }
-````
+```
 
 ______________________________________________________________________
 

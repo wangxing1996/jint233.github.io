@@ -15,7 +15,7 @@
 
 对象的状态，我们可以理解成它的属性，例如我们定义一个Person类，定义如下：
 
-```
+```java
 public class Person {
     public string Id { get; set; }
     public string Name { get; set; }
@@ -43,7 +43,7 @@ public class Person {
 
 当我们在使用数据库主从模式的时候，如果应用程序不做读写分离，你会发现从库基本上没用，主库每天忙的要死，既要负责写入，又要负责查询，遇见访问量大的时候CPU飙升是常有的事。然而从库就太闲了，除了接收主库的变更记录做数据同步，再没有别的事情可做，不管主库压力多大，从库的CPU一直跟心电图似的0-1-0-1...当我们读写分离以后，主库负责写入，从库负责读取，代码要怎么改呢？我们只需要定义两个Repository就可以了：
 
-```
+```java
 public interface IWritablePersonRepository {
     //写入数据的方法
 }
@@ -82,7 +82,7 @@ Event Souring，翻译过来叫事件溯源。什么意思呢？它把对象的�
 
 我们举一个例子，比如说你要更新自己的个人资料，例如将Age由35修改为18，那么对应的命令为：
 
-```
+```java
 public class PersonUpdateCommand {
     public string Id { get; set; }
     public int Age{ get; set; }
@@ -95,7 +95,7 @@ public class PersonUpdateCommand {
 
 PersonUpdateCommand是一个命令，它描述了用户更新个人资料的意图。当程序接收到这个命令以后，就需要对数据更改，从而引发数据状态变化，产生Event：
 
-```
+```java
 public class PersonAgeChangeEvent {
     public string Id { get; private set; }
     public int Age{ get; private set; }
@@ -151,16 +151,13 @@ public class PersonUpdateCommandHandler {
 
 如果你的系统基于消息，那么我猜你离不开消息总线，我在[《手撸一套纯粹的CQRS实现》](https://www.cnblogs.com/youring2/p/10991338.html)中写了一个基于内存的CommandBus的实现，感兴趣的朋友可以去看一下，CommandBus的代码定义如下：
 
-```
-public class CommandBus : ICommandBus
-{
+```java
+public class CommandBus : ICommandBus {
     private readonly ICommandHandlerFactory handlerFactory;
-    public CommandBus(ICommandHandlerFactory handlerFactory)
-    {
+    public CommandBus(ICommandHandlerFactory handlerFactory) {
         this.handlerFactory = handlerFactory;
     }
-    public void Send<T>(T command) where T : ICommand
-    {
+    public void Send<T>(T command) where T : ICommand {
         var handler = handlerFactory.GetHandler<T>();
         if (handler == null)
         {

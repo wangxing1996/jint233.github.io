@@ -6,11 +6,11 @@
 - Docker 镜像的作用
 - 容器和镜像的区别及联系
 
-### Docker 镜像是什么
+## Docker 镜像是什么
 
 这里，我们以一个 Debian 系统的镜像为例。通过 `docker run --it debian` 可以启动一个 `debian` 的容器，终端会有如下输出：
 
-```
+```bash
 / # docker run -it debian
 Unable to find image 'debian:latest' locally
 latest: Pulling from library/debian
@@ -33,7 +33,7 @@ BUG_REPORT_URL="https://bugs.debian.org/"
 
 我们可以先退出此容器，来看看 Docker 镜像到底是什么。用 `docker image ls` 来查看已下载好的镜像：
 
-```
+```bash
 / # docker image ls
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 debian              latest              8d31923452f8        4 days ago          101MB
@@ -41,7 +41,7 @@ debian              latest              8d31923452f8        4 days ago          
 
 用 `docker image save` 命令将镜像保存成一个 tar 文件：
 
-```
+```bash
 / # mkdir debian-image
 / # docker image save -o debian-image/debian.tar debian
 / # ls debian-image/
@@ -50,7 +50,7 @@ debian.tar
 
 将镜像文件进行解压：
 
-```
+```bash
 / # tar -C debian-image/ -xf debian-image/debian.tar 
 / # tree -I debian.tar debian-image/
 debian-image/
@@ -68,9 +68,9 @@ debian-image/
 
 接下来我们来具体看看其中的内容，并通过这些内容来理解镜像的组成。
 
-### manifest.json
+## manifest.json
 
-```
+```json
 /debian-image # cat manifest.json  | jq
 [
   {
@@ -89,18 +89,18 @@ debian-image/
 
 `manifest.json` 包含了镜像的顶层配置，它是一系列配置按顺序组织而成的；以现在我们的 `debian` 镜像为例，它至包含了一组配置，这组配置中包含了 3 个主要的信息，我们由简到繁进行说明。
 
-### RepoTags
+## RepoTags
 
 `RepoTags` 表示镜像的名称和 tag ，这里简要的对此进行说明：`RepoTags` 其实分为两部分：
 
 - `Repo`: Docker 镜像可以存储在本地或者远端镜像仓库内，Repo 其实就是镜像的名称。 Docker 默认提供了大量的官方镜像存储在 [Docker Hub](https://hub.docker.com/u/library) 上，对于我们现在在用的这个 Docker 官方的 debian 镜像而言，完整的存储形式其实是 `docker.io/library/debian`，只不过 docker 自动帮我们省略掉了前缀。
 - `Tag`: 我们可以通过 `repo:tag` 的方式来引用一个镜像，默认情况下，如果没有指定 tag （像我们上面操作的那样），则会 pull 下来最新的镜像（即：latest）
 
-### Config
+## Config
 
 `Config` 字段包含的内容是镜像的全局配置。我们来看看具体内容：
 
-```
+```bash
 /debian-image # cat 8d31923452f8b79ae91b01568d28c90e7d667a9eaff9734c6faeb017b0efa8d0.json  | jq
 {
   "architecture": "amd64",
@@ -189,7 +189,7 @@ debian-image/
 
 重点介绍下 `rootfs`：我们知道 `rootfs` 其实是指 `/` 下一系列文件目录的组织结构；虽然 Docker 容器与我们的主机（或者称之为宿主机）共享同一个 Linux 内核，但它也有自己完整的 `rootfs`; 我们继续回到一开始的实验环境中即我们刚才创建的这个容器内看看 `/` 下有什么：
 
-```
+```bash
 /# tree -L 1 /
 /
 |-- bin
@@ -218,7 +218,7 @@ debian-image/
 
 回到这个例子当中，我们来看看这段配置的具体含义。由于一开始在 `manifest.json` 中已经定义了 layer 的内容，我们来看看该 layer 的 `sha256sum` 值：
 
-```
+```bash
 /debian-image # ls b50334e3be68f82d0b94bb7d3cfe1789119c040c6c159759f57a19ad34547af3/
 VERSION    json       layer.tar
 /debian-image # 
@@ -228,7 +228,7 @@ f94641f1fe1f5c42c325652bf55f0513c881c86b620b912b15460e0bca07cc12  b50334e3be68f8
 
 可以看到与配置文件中相符，表示 `b50334e3be68f82d0b94bb7d3cfe1789119c040c6c159759f57a19ad34547af3/layer.tar` 便是 debian 镜像的 `rootfs` 我们将它进行解压，看看它的内容。
 
-```
+```bash
 /debian-image # mkdir b50334e3be68f82d0b94bb7d3cfe1789119c040c6c159759f57a19ad34547af3/layer
 /debian-image # tar -C b50334e3be68f82d0b94bb7d3cfe1789119c040c6c159759f57a19ad34547af3/layer -xf b50334e3be68f82
 d0b94bb7d3cfe1789119c040c6c159759f57a19ad34547af3/layer.tar 
@@ -239,11 +239,11 @@ boot   etc    lib    media  opt    root   sbin   sys    usr
 
 可以看到它的内容确实是 `rootfs` 应该有的内容。同时，上面操作中也包含了一个知识点：
 
-**Docker 镜像相关的配置中，所用的 id 或者文件名/目录名大多是采用 sha256sum 计算得出的**
+- **Docker 镜像相关的配置中，所用的 id 或者文件名/目录名大多是采用 sha256sum 计算得出的**
 
 关于配置的部分我们先谈这些，我们继续看配置中尚未解释的 `Layers`。
 
-### Layers
+## Layers
 
 其实根据前面的介绍，我们已经大致看到，Docker 镜像是分层的模式，将一系列层按顺序组织起来加上配置文件等共同构成完整的镜像。这样做的好处主要有：
 
@@ -255,7 +255,7 @@ boot   etc    lib    media  opt    root   sbin   sys    usr
 
 Docker 提供了一个命令可以更加直观的看到构建记录：
 
-```
+```bash
 /debian-image # docker image history  debian
 IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
 8d31923452f8        4 days ago          /bin/sh -c #(nop)  CMD ["bash"]                 0B                      
@@ -273,7 +273,7 @@ IMAGE               CREATED             CREATED BY                              
 
 从 Docker Hub 上我们也可以找到[此镜像的 `Dockerfile` 文件](https://github.com/debuerreotype/docker-debian-artifacts/blob/fd138cb56a6a6a4fd9cb30c2acce9e8d9cccd28a/stretch/Dockerfile)，看下具体内容：
 
-```
+```bash
 FROM scratch
 ADD rootfs.tar.xz /
 CMD ["bash"]
@@ -283,7 +283,7 @@ CMD ["bash"]
 
 以上便详细解释了 Docker 镜像是什么：它其实是一组按照规范进行组织的分层文件，各层互不影响，并且每层的操作都将记录在 `history` 中。
 
-### Docker 镜像的作用
+## Docker 镜像的作用
 
 从前面的讲述中，我们可以看到镜像中包含了一个完整的 `rootfs` ，在我们使用 `docker run` 命令时，便将指定镜像中的各层和配置组织起来共同启动一个新的容器；而在容器中，我们可以随意进行操作（包括读写）。
 
@@ -292,17 +292,17 @@ CMD ["bash"]
 - 为启动容器提供必要的文件；
 - 记录了各层的操作和配置等。
 
-### 容器和镜像的区别及联系
+## 容器和镜像的区别及联系
 
 这里可以直接得出一个很直观的结论了。
 
 镜像就是一系列文件和配置的组合，它是静态的，只读的，不可修改的； 而容器由镜像而来，但它是可操作的，是动态的，可修改的。
 
-### Docker 镜像常规管理操作
+## Docker 镜像常规管理操作
 
 Docker 由于不断增加新功能，为了方便，在后续版本中便对命令进行了分组。对镜像相关的命令都放到了 `docker image` 组内：
 
-```
+```bash
 / # docker image
 Usage:  docker image COMMAND
 Manage images
@@ -330,15 +330,15 @@ Run 'docker image COMMAND --help' for more information on a command.
 
 `build` 命令会在接下来详细说明，剩余命令都比较简单直观了。
 
-### 如何构建 Docker 镜像
+## 如何构建 Docker 镜像
 
 前面详细讲述了 Docker 镜像是什么，以及简单介绍了常用的 Docker 镜像管理命令。那如何构建一个 Docker 镜像呢？通常情况下，有两种办法可以用于构建镜像（但并不只有这两种办法，以后再开 chat 来单独讲）。
 
-#### 从容器创建
+### 从容器创建
 
 还是以 debian 镜像为例，使用官方的 debian 镜像，启动一个容器：
 
-```
+```bash
 / # docker run --rm -it debian
 [email protected]:/# toilet
 bash: toilet: command not found
@@ -348,7 +348,7 @@ bash: toilet: command not found
 
 看上面的输入，当前的 PATH 中并没有该命令。我们使用 `apt` 进行安装。
 
-```
+```bash
 [email protected]:/# apt update
 Get:1 http://security-cdn.debian.org/debian-security stretch/updates InRelease [94.3 kB]
 Ign:2 http://cdn-fastly.deb.debian.org/debian stretch InRelease
@@ -386,7 +386,7 @@ Processing triggers for libc-bin (2.24-11+deb9u4) ...
 
 可以看到，安装已经完成，我们在终端下输入 `toilet docker` 来查看下效果：
 
-```
+```bash
 [email protected]:/# toilet docker
      #                #                   
   mmm#   mmm    mmm   #   m   mmm    m mm 
@@ -400,7 +400,7 @@ Processing triggers for libc-bin (2.24-11+deb9u4) ...
 
 Docker 提供了一个命令 `docker container commit` 用于从容器创建一个镜像（当前也可以使用 `docker commit` ）。
 
-```
+```bash
 / # docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES          
 daccf1e9155b        debian              "bash"              19 minutes ago      Up 19 minutes                           kind_lamport
@@ -416,7 +416,7 @@ debian              latest              8d31923452f8        5 days ago          
 
 使用新的镜像来启动一个容器进行验证：
 
-```
+```bash
 / # docker run --rm -it local/debian:toilet 
 [email protected]:/# toilet debian
      #         #        "                 
@@ -428,11 +428,11 @@ debian              latest              8d31923452f8        5 days ago          
 
 可以看到 `toilet` 已经存在。从容器创建镜像的目的达成。
 
-#### 从 Dockerfile 创建
+### 从 Dockerfile 创建
 
 Docker 提供了一种可根据配置文件构建镜像的方式，该配置文件通常命名为 `Dockerfile`。我们将刚才创建镜像的过程以 Dockerfile 进行描述。
 
-```
+```bash
 / # mkdir toilet       
 / # cd toilet/
 /toilet # vi Dockerfile
@@ -444,7 +444,7 @@ RUN apt install -y toilet
 
 Dockerfile 语法是固定的，但本篇不会对全部语法逐个解释，如有兴趣可查阅[官方文档](https://docs.docker.com/engine/reference/builder/#usage)。接下来使用该 Dockerfile 构建镜像。
 
-```
+```bash
 /toilet # docker image build -t local/debian:toilet-using-dockerfile .                                          
 Sending build context to Docker daemon   2.048kB       
 Step 1/3 : FROM debian                 
@@ -483,7 +483,7 @@ local/debian        toilet                    9ca72f9dcedb        26 minutes ago
 
 使用 `-t` 参数来指定新生成镜像的名称，并且我们也可以看到该镜像已经构建成功。同样的使用该镜像创建容器进行测试：
 
-```
+```bash
 /toilet # docker run --rm -it local/debian:toilet-using-dockerfile
 [email protected]:/# toilet debian
      #         #        "                 
@@ -497,17 +497,17 @@ local/debian        toilet                    9ca72f9dcedb        26 minutes ago
 
 以上便是两种最常见构建容器镜像的方法了。其他办法之后开 chat 单独再聊。
 
-### 逐步分解构建 Docker 镜像的最佳实践
+## 逐步分解构建 Docker 镜像的最佳实践
 
-#### 从容器构建 VS 从 Dockerfile 构建
+### 从容器构建 VS 从 Dockerfile 构建
 
 通过上面的介绍也可以看到，从容器构建很简单很直接，从 Dockerfile 构建则需要你描述出来每一步所做内容。
 
 但是，如果对构建过程会有修改，或者是想要可维护，可记录，可追溯，那还是选择 Dockerfile 更为恰当。
 
-#### 以一个 Spring Boot 的项目为例
+### 以一个 Spring Boot 的项目为例
 
-```
+```bash
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ ls -l 
 总用量 20
 -rw-rw-r--. 1 tao tao    0 5月  15 06:52 Dockerfile
@@ -522,9 +522,9 @@ drwxrwxr-x. 9 tao tao 4096 5月  15 06:52 target
 
 那我们来看看一般情况下，对于这样的项目 `Dockerfile` 的内容是什么样的。
 
-#### 利用缓存
+### 利用缓存
 
-```
+```bash
 FROM debian
 COPY . /app
 RUN apt update
@@ -542,7 +542,7 @@ CMD [ "java", "-jar", "/app/target/gs-spring-boot-0.1.0.jar" ]
 
 对此 `Dockerfile` 进行改进：
 
-```
+```bash
 FROM debian
 RUN apt update
 RUN apt install -y openjdk-8-jdk
@@ -552,13 +552,13 @@ CMD [ "java", "-jar", "/app/target/gs-spring-boot-0.1.0.jar" ]
 
 第一个实践指南： **为了更有效的利用构建缓存，将更新最频繁的步骤放在最后面**这样在之后的构建中，前三步都可以利用缓存。你可以运行多次 `docker build` 以进行验证。
 
-#### 部分拷贝
+### 部分拷贝
 
 在项目变大，或者是项目中其他目录，比如 `docs` 目录内容很大时，根据前面对镜像相关的说明，直接使用 `COPY . /app` 会把所有内容拷贝至镜像中，导致镜像变大。
 
 而对于我们要构建的镜像而言，那些文件是不必要的，所以我们可以将 `Dockerfile` 改成这样：
 
-```
+```bash
 FROM debian
 RUN apt update
 RUN apt install -y openjdk-8-jdk
@@ -570,13 +570,13 @@ CMD [ "java", "-jar", "/app/gs-spring-boot-0.1.0.jar" ]
 
 `docker build` 的过程是先加载 `.dockerignore` 文件，然后才按照 `Dockerfile` 进行构建，`.dockerignore` 的用法与 `.gitignore` 类似，排除掉你不想要的文件即可。
 
-#### 防止包缓存过期
+### 防止包缓存过期
 
 上面我们已经提到了， `docker build` 可以利用缓存，但你有没有考虑到，如果使用我们前面的 `Dockerfile`，当你机器上需要构建多个不同项目的镜像，或者是需要安装的依赖发生变化的时候，缓存可能就不是我们想要的了。
 
 比如说，我想安装一个最新版的 `vim` 在镜像中，可以简单的修改第三行为 `RUN apt install -y openjdk-8-jdk vim` ，但由于 `RUN apt update` 是被缓存的，所以我无法安装到最新版本的 `vim` 。
 
-```
+```bash
 FROM debian
 RUN apt update && apt install -y openjdk-8-jdk
 COPY target/gs-spring-boot-0.1.0.jar /app/
@@ -585,13 +585,13 @@ CMD [ "java", "-jar", "/app/gs-spring-boot-0.1.0.jar" ]
 
 第三个实践指南：**将包管理器的缓存生成与安装包的命令写到一起可防止包缓存过期**
 
-#### 谨慎使用包管理器
+### 谨慎使用包管理器
 
 了解 `apt`/`apt-get` 的朋友应该知道，在使用 `apt`/`apt-get` 安装包的时候，它会自动增加一些推荐安装的包，并且一同下载。但那些包对我们镜像中跑应用程序而言无关紧要。它有一个 `--no-install-recommends` 的选项可以避免安装那些推荐的包。
 
 我们先来看下是否使用此选项的区别，我启动一个 `debian` 的容器进行测试：
 
-```
+```bash
 [email protected]:/# apt install  --no-install-recommends openjdk-8-jdk | grep 'additional disk space will be used'
 ...
 After this operation, 344 MB of additional disk space will be used.
@@ -606,7 +606,7 @@ After this operation, 548 MB of additional disk space will be used.
 
 所以 `Dockerfile` 可以修改为：
 
-```
+```bash
 FROM debian
 RUN apt update && apt install -y --no-install-recommends openjdk-8-jdk
 COPY target/gs-spring-boot-0.1.0.jar /app/
@@ -615,7 +615,7 @@ CMD [ "java", "-jar", "/app/gs-spring-boot-0.1.0.jar" ]
 
 此时构建镜像，我们来与之前的镜像做下对比：
 
-```
+```bash
 (MoeLove) ➜  docker image ls local/spring-boot
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 local/spring-boot   4                   716523c83a26        3 minutes ago       497MB
@@ -628,7 +628,7 @@ local/spring-boot   2                   178dacdaf015        9 hours ago         
 
 启动一个新的容器验证下：
 
-```
+```bash
 (MoeLove) ➜  docker run --rm -it debian
 [email protected]:/# apt -qq  update 
 All packages are up to date.
@@ -639,7 +639,7 @@ All packages are up to date.
 
 可以看到有 16M 左右的大小，我们修改 `Dockerfile` 增加删除操作：
 
-```
+```bash
 FROM debian
 RUN apt update && apt install -y --no-install-recommends openjdk-8-jdk \
         && rm -rf /var/lib/apt/lists/*  
@@ -649,7 +649,7 @@ CMD [ "java", "-jar", "/app/gs-spring-boot-0.1.0.jar" ]
 
 对比使用这个 `Dockerfile` 构建镜像的镜像大小
 
-```
+```bash
 (MoeLove) ➜  docker image ls local/spring-boot                    
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE                     
 local/spring-boot   4-2                 ac272f3dcac2        24 seconds ago      481MB                    
@@ -661,7 +661,7 @@ local/spring-boot   2                   178dacdaf015        10 hours ago        
 
 第四个实践指南： **谨慎使用包管理器，不安装非必要的包，注意清理包管理器缓存文件**。
 
-#### 选择合适的基础镜像
+### 选择合适的基础镜像
 
 Docker Hub 上提供了很多 [官方镜像](https://hub.docker.com/search/?q=&type=image&image_filter=official) 这些镜像的构建基本上都经过了大量的优化，尽可能缩小镜像体积，减少镜像层数。
 
@@ -669,7 +669,7 @@ Docker Hub 上提供了很多 [官方镜像](https://hub.docker.com/search/?q=&t
 
 我们选择 Docker 官方 `openjdk` 镜像来作为基础镜像，`Dockerfile` 可以改写为：
 
-```
+```bash
 FROM openjdk:8-jdk-stretch
 COPY target/gs-spring-boot-0.1.0.jar /app/
 CMD [ "java", "-jar", "/app/gs-spring-boot-0.1.0.jar" ]
@@ -679,7 +679,7 @@ CMD [ "java", "-jar", "/app/gs-spring-boot-0.1.0.jar" ]
 
 我们其实只想要一个 Java 的运行环境，所以选择一个基于 [Alpine Linux](https://alpinelinux.org/) 的超小的镜像 `openjdk:8-jre-alpine` 这样 `Dockerfile` 可以改写为:
 
-```
+```bash
 FROM openjdk:8-jre-alpine
 COPY target/gs-spring-boot-0.1.0.jar /app/
 CMD [ "java", "-jar", "/app/gs-spring-boot-0.1.0.jar" ]
@@ -687,7 +687,7 @@ CMD [ "java", "-jar", "/app/gs-spring-boot-0.1.0.jar" ]
 
 分别用上面的 `Dockerfile` 构建镜像，可以看到镜像大小
 
-```
+```bash
 (MoeLove) ➜  docker image ls local/spring-boot                           
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 local/spring-boot   5-1                 b423dfc8d995        23 minutes ago      103MB
@@ -701,11 +701,11 @@ local/spring-boot   2                   178dacdaf015        14 hours ago        
 
 第五个实践指南：**尽可能选择官方镜像，看实际需求进行最终选择**这样说的原因，主要是因为 Alpine Linux 并非基于 glibc 的，而是基于 musl 的，如果是 Python 的项目，请实际测试下性能损失再决定是否选择 Alpine Linux （[这里](http://moelove.info/docker-python-perf/)是我做的一份关于 Python 各镜像主要的性能对比，有需要可以参考）
 
-#### 保持构建环境一致
+### 保持构建环境一致
 
 在前面的实践中，我们都是先本地构建好之后，才 `COPY` 进去的，这容易导致不同用户构建出的镜像可能不同。所以我们将构建过程写入到 `Dockerfile`:
 
-```
+```bash
 FROM maven:3.6.1-jdk-8-alpine
 WORKDIR /app
 COPY pom.xml /app/
@@ -718,7 +718,7 @@ CMD [ "java", "-jar", "/app/target/gs-spring-boot-0.1.0.jar" ]
 
 但我们也会发现一个问题，在 `mvn -e -B package` 这一步耗费的时间特别长，因为它需要先拉取依赖才能进行构建。而对于项目开发而言，代码变更比依赖变更更加频繁，为了能加快构建速度，有效的利用缓存，我们将解决依赖与构建分成两步。
 
-```
+```bash
 FROM maven:3.6.1-jdk-8-alpine
 WORKDIR /app
 COPY pom.xml /app/
@@ -732,7 +732,7 @@ CMD [ "java", "-jar", "/app/target/gs-spring-boot-0.1.0.jar" ]
 
 当然，现在我们构建的镜像中，还是包含着项目的源代码，这其实并非我们所需要的。那么我们可以使用**多阶段构建**来解决这个问题。`Dockerfile` 可以修改为：
 
-```
+```bash
 FROM maven:3.6.1-jdk-8-alpine AS builder
 WORKDIR /app
 COPY pom.xml /app/
@@ -748,7 +748,7 @@ CMD [ "java", "-jar", "/gs-spring-boot-0.1.0.jar" ]
 
 `Dockerfile` 可以修改为：
 
-```
+```bash
 FROM maven:3.6.1-jdk-8-alpine AS builder
 WORKDIR /app
 COPY pom.xml /app/
@@ -764,7 +764,7 @@ CMD [ "java", "-jar", "/gs-spring-boot-0.1.0.jar" ]
 
 我们可以使用如下的命令来构建不同阶段的镜像；
 
-```
+```bash
 # 构建用于开发的镜像
 (MoeLove) ➜  docker build --target dev -t local/spring-boot:6-4-dev .    
 # 构建用于生产部署的镜像
@@ -773,7 +773,7 @@ CMD [ "java", "-jar", "/gs-spring-boot-0.1.0.jar" ]
 
 我们来看看在这个过程中镜像大小的变化：
 
-```
+```bash
 (MoeLove) ➜  docker image ls local/spring-boot                           
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 local/spring-boot   6-4-dev             f47a322c9de3        6 seconds ago       250MB
@@ -783,7 +783,7 @@ local/spring-boot   6-2                 2b3d3f923e05        4 minutes ago       
 local/spring-boot   6                   f96bea38825f        2 hours ago         188MB
 ```
 
-### 如何提升构建效率
+## 如何提升构建效率
 
 在构建 Docker 镜像的最佳实践部分中，我们提到了很多方法，比如利用缓存；减少安装依赖等，这些都可以提升构建效率。
 
@@ -791,7 +791,7 @@ local/spring-boot   6                   f96bea38825f        2 hours ago         
 
 通过添加环境变量 `DOCKER_BUILDKIT=1` 或者在 Docker 的配置文件 `/etc/docker/daemon.json` 中添加如下配置：
 
-```
+```bash
 "features": {
     "buildkit": true
 }

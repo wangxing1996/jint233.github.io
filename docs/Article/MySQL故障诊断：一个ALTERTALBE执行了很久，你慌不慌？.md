@@ -34,7 +34,7 @@ performance_schema 这个是什么，是不是用它来让我们解除慌张？
 
 想要使用这个能力，我们需要开启几个功能。
 
-**Enable the stage/innodb/alter% instruments**\`\`\`
+**Enable the stage/innodb/alter% instruments**```
 mysql> UPDATE performance_schema.setup_instruments
 
 ```

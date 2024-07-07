@@ -285,7 +285,7 @@ nginx获取到相应的upstreams信息更新， 则动态变更nginx内部的ups
 
 将以上注册和发现逻辑通过脚本或者统一的发布部署平台固化后，就可以实现透明的服务访问和扩展。
 
-**链路监控实践**
+- **链路监控实践**
 
 我们发现，以前在单应用下的日志监控很简单，在微服务架构下却成为了一个大问题，如果无法跟踪业务流，无法定位问题，我们将耗费大量的时间来查找和定位问题，在复杂的微服务交互关系中，我们就会非常被动，此时分布式链路监控应运而生，其核心就是调用链。通过一个全局的ID将分布在各个服务节点上的同一次请求串联起来，还原原有的调用关系、追踪系统问题、分析调用数据、统计系统指标。
 
@@ -333,7 +333,7 @@ Zipkin的java应用端是通过一个叫Brave的组件来实现对应用内部�
 
 ![enter image description here](assets/d415eb80-7a78-11e7-be31-0ba46ae5a9d4.png)
 
-**断路器实践**
+- **断路器实践**
 
 在微服务架构中，我们将系统拆分成了一个个的微服务，这样就有可能因为网络原因或是依赖服务自身问题出现调用故障或延迟，而这些问题会直接导致调用方的对外服务也出现延迟，若此时调用方的请求不断增加，最后就会出现因等待出现故障的依赖方响应而形成任务积压，最终导致自身服务的瘫痪。为了解决这样的问题，因此产生了[断路器模式](http://microservices.io/patterns/reliability/circuit-breaker.html)
 
@@ -345,7 +345,7 @@ Zipkin的java应用端是通过一个叫Brave的组件来实现对应用内部�
 
 启用断路器
 
-```
+```java
     @SpringBootApplication
     @EnableCircuitBreaker
     public class Application {
@@ -357,7 +357,7 @@ Zipkin的java应用端是通过一个叫Brave的组件来实现对应用内部�
 
 代用使用方式
 
-```
+```java
     @Component
     public class StoreIntegration {
     @HystrixCommand(fallbackMethod = "defaultStores")
@@ -374,7 +374,7 @@ Zipkin的java应用端是通过一个叫Brave的组件来实现对应用内部�
 
 ![enter image description here](assets/af074780-7a7d-11e7-be31-0ba46ae5a9d4.png)
 
-**资源控制实践**
+- **资源控制实践**
 
 聊到资源控制，估计很多小伙伴会联系到docker，docker确实是一个实现资源控制很不错的解决方案，我们前期做调研时也对是否使用docker进行了评审，但是最终选择放弃，而使用linux 的libcgroup脚本控制，原因如下：
 
@@ -389,19 +389,19 @@ libcgroup使用流程：
 
 安装
 
-```
-    yum install libcgroup
+```bash
+  yum install libcgroup
 ```
 
 启动服务
 
-```
-    service cgconfig start
+```bash
+  service cgconfig start
 ```
 
 配置文件模板（以memory为例）：
 
-```
+```bash
     cat /etc/cgconfig.conf
 ```
 
@@ -409,13 +409,13 @@ libcgroup使用流程：
 
 看到memory子系统是挂载在目录/sys/fs/cgroup/memory下，进入这个目录创建一个文件夹，就创建了一个control group了。
 
-```
+```bash
     mkdir test
     echo "服务进程号">>  tasks(tasks是test目录下的一个文件)
 ```
 
 这样就将当前这个终端进程加入到了内存限制的cgroup中了。
 
-# 总结
+## 总结
 
 总结一下，本文从我们微服务实践的背景聊起，介绍了微服务实践的工作方式，技术选型，以及相关的一些微服务技术。包括：API网关、注册中心、断路器等。相信这些技术会给大家在实践中带来一些新的思路。当然整个微服务实践之路内容繁多，一篇文章不可能全部包括，大家有兴趣可以在chat中提出来，我们chat见！

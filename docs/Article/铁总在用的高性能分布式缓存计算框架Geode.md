@@ -258,7 +258,7 @@ Monitor and Manage Apache Geode
 
 要管理 Goode 集群我们需要连接到主 locator 上， 有两种方式。**1. 直接使用 JMX 进行连接**当我们知道哪个是主的时候，就直接使用 JMX 进行连接即可。
 
-````
+```
 gfsh>connect --jmx-manager=192.168.33.15
 Connecting to Manager at [host=192.168.33.15, port=1099] ..
 Successfully connected to: [host=192.168.33.15, port=1099]
@@ -268,15 +268,13 @@ Cluster-254 gfsh>
 指定 locator 的 ip \[端口\] 就可以了。
 
 注意看 shell 中的第三行
-
-````
+```
 
 Connecting to Manager at \[host=192.168.33.15, port=1099\] ..
 
 ```
 
 实际上 locator 也是会返回 leader 的 JMX 让本地进行连接。
-
 ```
 
 gfsh>connect --locator=192.168.33.23\[10334\]
@@ -292,7 +290,6 @@ Cluster-254 gfsh>
 详见安装时候的脚本实例。
 
 #### 创建 region
-
 ```
 
 gfsh>create region --name=test --type=PARTITION_REDUNDANT_PERSISTENT_OVERFLOW --redundant-copies=1
@@ -315,7 +312,6 @@ gfsh>create region --name=test --type=PARTITION_REDUNDANT_PERSISTENT_OVERFLOW --
 *   OVERFLOW：内存不足减少内存使用
 *   REDUNDANT：冗余 -> 可配置冗余数量，但是不知道是否会参与 read 不清楚
 *   HEAP\_LRU：最近最少使用清除内存
-
 ```
 
 LOCAL                                     LOCAL_HEAP_LRU                            LOCAL_OVERFLOW                            LOCAL_PERSISTENT
@@ -328,7 +324,6 @@ REPLICATE_PERSISTENT                      REPLICATE_PERSISTENT_OVERFLOW         
 ```
 
 #### get、put
-
 ```
 
 Cluster-254 gfsh>put  --region=test --key=abc --value=abc_v
@@ -347,7 +342,6 @@ Value       : "abc_v"
 ```
 
 #### list
-
 ```
 
 list 的所有命令
@@ -369,7 +363,6 @@ list gateways             list indexes              list jdbc-mappings        li
 #### describe
 
 所有的命令，我们可以看到，跟上个命令所能看的东西很像。
-
 ```
 
 Cluster-254 gfsh>describe
@@ -379,7 +372,6 @@ describe jndi-binding         describe lucene               describe member     
 ```
 
 查看 region 的描述：
-
 ```
 
 Cluster-254 gfsh>describe region --name=test
@@ -406,7 +398,6 @@ Partition | redundant-copies   | 1
 ```
 
 查看 member 的描述：
-
 ```
 
 gfsh>describe member --name=server_33_15
@@ -445,7 +436,6 @@ Client Connections       : 1
 #### status
 
 所有能查看的：
-
 ```
 
 status cluster-config-service   status gateway-receiver         status gateway-sender           status locator                  status server
@@ -453,7 +443,6 @@ status cluster-config-service   status gateway-receiver         status gateway-s
 ```
 
 查看 locator 的状态：
-
 ```
 
 gfsh>status locator --name=locator_33_15
@@ -472,7 +461,6 @@ Cluster configuration service is up and running.
 #### query
 
 可以做类似 SQL 语法的查询，这点其他缓存框架是做不到的。
-
 ```
 
 ## Cluster-254 gfsh>query --query="select * from /test" Result : true Limit  : 100 Rows   : 1 Result
@@ -486,7 +474,6 @@ query 更多实例我们在 OQL 一节去探讨。
 #### export
 
 导出有日志、配置、集群配置、数据，我们常用的就是导出集群配置。
-
 ```
 
 Cluster-254 gfsh>export cluster-configuration --zip-file-name=./cluster-config-back.zip
@@ -495,7 +482,6 @@ File saved to /opt/geode_work18/./cluster-config-back.zip
 ```
 
 有导出就有导入：
-
 ```
 
 Cluster-254 gfsh>import
@@ -506,7 +492,6 @@ Cluster-254 gfsh>import cluster-configuration --
 ```
 
 #### version
-
 ```
 
 Cluster-254 gfsh>version --full
@@ -529,7 +514,6 @@ Running on: /192.168.33.15, 4 cpu(s), amd64 Linux 2.6.32-696.23.1.el6.x86_64
 OQL（object query language），对象查询语言，类 SQL 语法。
 
 请注意使用 OQL 查询的前提，你要将你的应用对象上传到服务器中，所以我们先学习一个命令 deploy。
-
 ```
 
 Cluster-254 gfsh>deploy --jar /opt/geode-study.jar
@@ -561,7 +545,6 @@ Continue?  (Y/n): y
 我们示例中使用的是 Java 序列化。关于序列化，Geode 官方文档中使用了一个章节来说明 [请看这里](https://geode.apache.org/docs/guide/19/developing/data_serialization/chapter_overview.html)。
 
 基于我们的 user 对象我们尝试一下 OQL 的查询：
-
 ```
 
 @Data
@@ -577,7 +560,6 @@ private Date createTime;
 #### 类似 map 的查询
 
 keySet、values、entries 跟我们的 map 中的属性是一样的。
-
 ```
 
 ## Cluster-254 gfsh>query --query="select * from /user.keySet limit 1" Result
@@ -593,7 +575,6 @@ id       |  name  | age | createTime
 ```
 
 #### 条件查询和排序
-
 ```
 
 Cluster-254 gfsh>query --query="select * from /user t where t.age > 90 and t.age \< 95 order by t.age desc "
@@ -609,7 +590,6 @@ id       |  name  | age | createTime
 #### 联合查询
 
 暂时未准备数据，不过估计查询效率不会高了。
-
 ```
 
 SELECT portfolio1.ID, portfolio2.status FROM /exampleRegion portfolio1,
@@ -620,7 +600,6 @@ SELECT portfolio1.ID, portfolio2.status FROM /exampleRegion portfolio1,
 #### 方法调用
 
 实例中使用了 Spring 的 endsWith 和 length 方法。
-
 ```
 
 Cluster-254 gfsh>query --query="select name , name.length from /user t where t.name.endsWith('99') "
@@ -632,7 +611,6 @@ Cluster-254 gfsh>query --query="select name , name.length from /user t where t.n
 ```
 
 #### 聚合查询
-
 ```
 
 Cluster-254 gfsh>query --query="select age, count(\*), max(id)  from /user t where t.age > 90 group by t.age "
@@ -662,7 +640,6 @@ Cluster-254 gfsh>query --query="select age, count(\*), max(id)  from /user t whe
 ### Geode 连续查询
 
 连续查询就是，当我们指定了一个查询语句的时候，比如 `age > 99`，那么会直接返回当前的查询结果，同时你可以注册一个监听，后续有 `age > 99` 的记录的创建、更新、删除，都会回调到你的这个监听中来，这个后续满足条件的回调就是所谓的连续了。
-
 ```
 
 @Test
@@ -715,7 +692,6 @@ e.printStackTrace();
 ```
 
 监听器：
-
 ```
 
 @Slf4j
@@ -747,7 +723,6 @@ log.info("error {}" , aCqEvent);
 ```
 
 最终输出：
-
 ```
 
 Intial result includes: User(id=1574821109586, name=xy99, age=99, createTime=Wed Nov 27 10:18:29 CST 2019)
@@ -772,7 +747,6 @@ id=1574827945765
 spring-data-geode 符合 data 系列的一贯作风，提供 template 和 repository 对象化操作。我们以 Spring Boot 为例。
 
 POM 文件：
-
 ```
 
 <dependency>
@@ -1592,7 +1566,7 @@ list is: [[ent(27134):60330/45855, ent(27130):60333/36743]]
 
 > [https://gitee.com/gavinage/geode_study](https://gitee.com/gavinage/geode_study)
 
-#### Geode 扩展功能**memCache 适配器**\`\`\`
+#### Geode 扩展功能**memCache 适配器**```
 
 gfsh>start server
 --name=\<server_name>
@@ -1600,11 +1574,11 @@ gfsh>start server
 --memcached-port=\<port_number>
 --memcached-protocol=BINARY|ASCII
 
-````** HTTP 分布式 session **之前接触的分布式 session 方案是 Redis-cluster + Tomcat 来做的， 其实道理是一样的， Geode 替换了 Redis 就成功 geode-session-Tomcat 了。
+```** HTTP 分布式 session **之前接触的分布式 session 方案是 Redis-cluster + Tomcat 来做的， 其实道理是一样的， Geode 替换了 Redis 就成功 geode-session-Tomcat 了。
 Geode 使用了不小的篇幅来描述该扩展功能，[详见](https://geode.apache.org/docs/guide/110/tools_modules/http_session_mgmt/quick_start.html)。** Redis 适配器 **```
 gfsh> start server --name=server1 --redis-bind-address=localhost \
  --redis-port=11211 --J=-Dgemfireredis.regiontype=PARTITION_PERSISTENT
-````
+```
 
 来自官方的夸奖：
 

@@ -338,7 +338,7 @@ gtid_mode=on                      # 必须项
 
 \*\*1.备份master。\*\*我选择的是xtrabackup的innobackupex工具，因为它速度快，操作简单，而且在线备份也比较安全。如果不知道xtrabackup备份的使用方法，见我的另一篇文章：[xtrabackup用法和原理详述](https://www.cnblogs.com/f-ck-need-u/p/9018716.html)。当然，你也可以采用mysqldump和冷备份的方式，因为gtid复制的特性，这些备份方式也都很安全。
 
-````
+```
 # master上执行，备份所有数据：
 [[email protected] ~]# mkdir /backdir   # 备份目录
 [[email protected] ~]# innobackupex -uroot [email protected]! -S /data/mysql.sock /backdir/  # 准备数据
@@ -347,8 +347,7 @@ gtid_mode=on                      # 必须项
 ```** 2.将备份恢复到slave2。**
 
 在slave2上执行：
-
-````
+```
 
 \[\[email protected\] ~\]# systemctl stop mysqld
 \[\[email protected\] ~\]# rm -rf /data/\*    # 恢复前必须先清空数据目录
@@ -363,7 +362,6 @@ gtid_mode=on                      # 必须项
 由于xtrabackup备份数据集却不备份binlog，所以必须先获取此次备份结束时的最后一个事务ID，并在slave上明确指定跳过这些事务，否则slave会再次从master上复制这些binlog并执行，导致数据重复执行。
 
 可以从slave2数据目录中的`xtrabackup_info`文件中获取。如果不是xtrabackup备份的，那么可以直接从master的`show global variables like "gtid_executed";`中获取，它表示master中已执行过的事务。
-
 ```
 
 \[\[email protected\] ~\]# cat /data/xtrabackup_info
@@ -392,7 +390,6 @@ encrypted = N
 其中`binlog_pos`中的GTID对应的就是已备份的数据对应的事务。换句话说，这里的gtid集合1-54表示这54个事务不需要进行复制。
 
 或者在master上直接查看executed的值，注意不是gtid\_purged的值，master上的gtid\_purged表示的是曾经删除掉的binlog。
-
 ```
 
 mysql> show global variables like '%gtid%';
@@ -412,7 +409,6 @@ mysql> show global variables like '%gtid%';
 ```
 
 可以\*\*在启动slave线程之前使用gtid\_purged变量来指定需要跳过的gtid集合。\*\*但因为要设置gtid\_purged必须保证全局变量gtid\_executed为空，所以先在slave上执行`reset master`(注意，不是reset slave)，再设置gtid\_purged。
-
 ```
 
 # slave2上执行
@@ -423,7 +419,6 @@ mysql> set @@global.gtid_purged='a659234f-6aea-11e8-a361-000c29ed4cf4:1-54';
 ```
 
 设置好gtid\_purged之后，就可以开启复制线程了。
-
 ```
 
 mysql> change master to
@@ -439,7 +434,6 @@ mysql> start slave user='repl' password='\[email protected\]!';
 **4.回到master，purge掉已同步的binlog。**
 
 当slave指定gtid\_purged并实现了同步之后，为了下次重启mysqld实例不用再次设置gtid\_purged(甚至可能会在启动的时候自动开启复制线程)，所以应该去master上将已经同步的binlog给purged掉。
-
 ```
 
 # master上执行
@@ -457,7 +451,6 @@ mysql> purge master logs to "master-bin.000006";
 
 6.1 `show slave status`中和gtid复制相关的状态行
 -------------------------------------
-
 ```
 
 Retrieved_Gtid_Set: a659234f-6aea-11e8-a361-000c29ed4cf4:1-54
@@ -476,7 +469,6 @@ Auto_Position: 1
 --------------------
 
 例如：
-
 ```
 
 \[\[email protected\] ~\]# mysqlbinlog /data/master-bin.000007
@@ -546,7 +538,7 @@ DELIMITER ;
 /_!50003 SET \[email protected\]_COMPLETION_TYPE_/;
 /_!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0\_/;
 
-````
+```
 
 其中：
 
@@ -562,7 +554,7 @@ DELIMITER ;
 
 *   ```
     enforce_gtid_consistency
-    ```
+```
 
     ：强制要求只允许复制事务安全的事务。
 
@@ -571,11 +563,11 @@ DELIMITER ;
     *   不能在事务内部创建和删除临时表。只能在事务外部进行，且autocommit需要设置为1。
     *   不能执行 _create table ... select_ 语句。该语句除了创建一张新表并填充一些数据，其他什么事也没干。
     *   不能在事务内既更新事务表又更新非事务表。
-*   `gtid_executed`：已经执行过的GTID。 _reset master_ 会清空该项的全局变量值。
+- `gtid_executed`：已经执行过的GTID。 _reset master_ 会清空该项的全局变量值。
 
-*   `gtid_purged`：已经purge掉的gtid。要设置该项，必须先保证 _gtid\_executed_ 已经为空，这意味着也一定会同时设置该项为空。在slave上设置该项时，表示稍后启动io线程和SQL线程都跳过这些gtid，slave上设置时应该让此项的gtid集合等于master上 _gtid\_executed_ 的值。
+- `gtid_purged`：已经purge掉的gtid。要设置该项，必须先保证 _gtid\_executed_ 已经为空，这意味着也一定会同时设置该项为空。在slave上设置该项时，表示稍后启动io线程和SQL线程都跳过这些gtid，slave上设置时应该让此项的gtid集合等于master上 _gtid\_executed_ 的值。
 
-*   `gtid_next`：表示下一个要执行的gtid事务。
+- `gtid_next`：表示下一个要执行的gtid事务。
 
 需要注意，master和slave上都有`gtid_executed`和`gtid_purged`，它们代表的意义有时候是不同的。
 
@@ -586,7 +578,7 @@ DELIMITER ;
 
 MySQL 5.7中添加了一张记录已执行gtid的表`mysql.gtid_executed`，所以slave上的binlog不是必须开启的。
 
-````
+```
 
 mysql> select * from mysql.gtid_executed;
 +--------------------------------------+----------------+--------------+
@@ -596,7 +588,6 @@ mysql> select * from mysql.gtid_executed;
 | a659234f-6aea-11e8-a361-000c29ed4cf4 |             58 |           58 |
 | a659234f-6aea-11e8-a361-000c29ed4cf4 |             59 |           59 |
 +--------------------------------------+----------------+--------------+
-
 ```
 
 7.一张图说明GTID复制

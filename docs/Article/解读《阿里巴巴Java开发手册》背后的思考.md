@@ -12,7 +12,7 @@
 
 下面开始展开正文。
 
-# 为什么禁止工程师直接使用日志系统(Log4j、Logback)中的 API
+## 为什么禁止工程师直接使用日志系统(Log4j、Logback)中的 API
 
 ![enter image description here](assets/a5f68f40-63f4-11e9-a3c7-cd698ad2fb06.jpg)
 
@@ -24,23 +24,23 @@ Java 语言之所以强大，就是因为他很成熟的生态体系。包括日
 
 首先，我们先来看一下目前有哪些框架被广泛的使用。
 
-## 常用日志框架
+### 常用日志框架
 
-### **j.u.l**![img](assets/15430468008617.png)￼ j.u.l 是 java.util.logging 包的简称，是 JDK 在 1.4 版本中引入的 Java 原生日志框架。Java Logging API 提供了七个日志级别用来控制输出。这七个级别分别是：SEVERE、WARNING、INFO、CONFIG、FINE、FINER、FINEST
+#### **j.u.l**![img](assets/15430468008617.png)￼ j.u.l 是 java.util.logging 包的简称，是 JDK 在 1.4 版本中引入的 Java 原生日志框架。Java Logging API 提供了七个日志级别用来控制输出。这七个级别分别是：SEVERE、WARNING、INFO、CONFIG、FINE、FINER、FINEST
 
-### **Log4j**![img](assets/15430468310499.png)￼
+#### **Log4j**![img](assets/15430468310499.png)￼
 
 Log4j 是 Apache 的一个开源项目，通过使用 Log4j，我们可以控制日志信息输送的目的地是控制台、文件、GUI 组件，甚至是套接口服务器、NT 的事件记录器、UNIX Syslog 守护进程等；我们也可以控制每一条日志的输出格式；通过定义每一条日志信息的级别，我们能够更加细致地控制日志的生成过程。最令人感兴趣的就是，这些可以通过一个配置文件来灵活地进行配置，而不需要修改应用的代码。
 
 Log4 也有七种日志级别：OFF、FATAL、ERROR、WARN、INFO、DEBUG 和 TRACE。
 
-### **LogBack**![img](assets/15430469302562.jpg)￼
+#### **LogBack**![img](assets/15430469302562.jpg)￼
 
 LogBack 也是一个很成熟的日志框架，其实 LogBack 和 Log4j 出自一个人之手，这个人就是 Ceki Gülcü。
 
 logback 当前分成三个模块：logback-core,logback- classic 和 logback-access。logback-core 是其它两个模块的基础模块。logback-classic 是 Log4j 的一个改良版本。此外 logback-classic 完整实现 SLF4J API 使你可以很方便地更换成其它日记系统如 Log4j 或 j.u.l。logback-access 访问模块与 Servlet 容器集成提供通过 Http 来访问日记的功能。
 
-### **Log4j2**前面介绍过 Log4j，这里要单独介绍一下 Log4j2，之所以要单独拿出来说，而没有和 Log4j 放在一起介绍，是因为作者认为，Log4j2 已经不仅仅是 Log4j 的一个升级版本了，而是从头到尾被重写的，这可以认为这其实就是完全不同的两个框架
+#### **Log4j2**前面介绍过 Log4j，这里要单独介绍一下 Log4j2，之所以要单独拿出来说，而没有和 Log4j 放在一起介绍，是因为作者认为，Log4j2 已经不仅仅是 Log4j 的一个升级版本了，而是从头到尾被重写的，这可以认为这其实就是完全不同的两个框架
 
 关于 Log4j2 解决了 Log4j 的哪些问题，Log4j2 相比较于 Log4j、j.u.l 和 logback 有哪些优势，我们在后续的文章中介绍。
 
@@ -52,7 +52,7 @@ logback 当前分成三个模块：logback-core,logback- classic 和 logback-acc
 
 说好了以上四种常用的日志框架是给 Java 应用提供的方便进行记录日志的，那为什么又不让在应用中直接使用其 API 呢？这里面推崇使用的 SLF4J 是什么呢？所谓的门面模式又是什么东西呢？
 
-## 什么是日志门面
+#### 什么是日志门面
 
 日志门面，是门面模式的一个典型的应用。
 
@@ -66,7 +66,7 @@ logback 当前分成三个模块：logback-core,logback- classic 和 logback-acc
 
 在软件开发领域有这样一句话：计算机科学领域的任何问题都可以通过增加一个间接的中间层来解决。而门面模式就是对于这句话的典型实践。
 
-## 为什么需要日志门面
+#### 为什么需要日志门面
 
 前面提到过一个重要的原因，就是为了在应用中屏蔽掉底层日志框架的具体实现。这样的话，即使有一天要更换代码的日志框架，只需要修改 jar 包，最多再改改日志输出相关的配置文件就可以了。这就是解除了应用和日志框架之间的耦合。
 
@@ -82,11 +82,11 @@ logback 当前分成三个模块：logback-core,logback- classic 和 logback-acc
 
 以上，就是日志门面的一个比较重要的好处——解耦。
 
-## 常用日志门面
+#### 常用日志门面
 
 介绍过了日志门面的概念和好处之后，我们看看 Java 生态体系中有哪些好的日志门面的实现可供选择。
 
-### **SLF4J**
+##### **SLF4J**
 
 ![img](assets/15430470902836.jpg)￼
 
@@ -105,7 +105,7 @@ SLF4J 的作者就是 Log4j 的作者 Ceki Gülcü，他宣称 SLF4J 比 Log4j �
 - 从 commons--logger 和 Log4j merge 非常方便，SLF4J 也提供了一个 swing 的 tools 来帮助大家完成这个 merge。
 - 提供字串内容替换的功能，会比较有效率，说明如下：
 
-```
+```java
         // 传统的字符串产生方式，如果没有要记录Debug等级的信息，就会浪费时间在产生不必要的信息上
         logger.debug("There are now " + count + " user accounts: " + userAccountList);
         // 为了避免上述问题，我们可以先检查是不是开启了Debug信息记录功能，只是程序的编码会比较复杂
@@ -118,7 +118,7 @@ SLF4J 的作者就是 Log4j 的作者 Ceki Gülcü，他宣称 SLF4J 比 Log4j �
 
 - SLF4J 只支持 MDC，不支持 NDC。
 
-### **commons-logging**
+###### **commons-logging**
 
 ![img](assets/15430471808825.png)￼
 
@@ -126,7 +126,7 @@ Apache Commons Logging 是一个基于 Java 的日志记录实用程序，是用
 
 commons-logging 和 SLF4J 的功能是类似的，主要是用来做日志门面的。提供更加好友的 API 工具。
 
-## 小结
+#### 小结
 
 在 Java 生态体系中，围绕着日志，有很多成熟的解决方案。关于日志输出，主要有两类工具。
 
@@ -138,7 +138,7 @@ commons-logging 和 SLF4J 的功能是类似的，主要是用来做日志门面
 
 综上，请不要在你的 Java 代码中出现任何 Log4j 等日志框架的 API 的使用，而是应该直接使用 SLF4J 这种日志门面。
 
-# 为什么禁止开发人员使用 isSuccess 作为变量名
+## 为什么禁止开发人员使用 isSuccess 作为变量名
 
 ![-w656](assets/15449439364854.jpg)￼
 
@@ -148,7 +148,7 @@ commons-logging 和 SLF4J 的功能是类似的，主要是用来做日志门面
 
 一般情况下，我们可以有以下四种方式来定义一个布尔类型的成员变量：
 
-```
+```java
 boolean success
 boolean isSuccess
 Boolean success
@@ -163,7 +163,7 @@ Boolean isSuccess
 
 首先，我们来分析一下，到底应该是用 success 来命名，还是使用 isSuccess 更好一点。
 
-## success 还是 isSuccess
+### success 还是 isSuccess
 
 到底应该是用 success 还是 isSuccess 来给变量命名呢？从语义上面来讲，两种命名方式都可以讲的通，并且也都没有歧义。那么还有什么原则可以参考来让我们做选择呢。
 
@@ -173,7 +173,7 @@ Boolean isSuccess
 
 那么，为什么会有这样的规定呢？我们看一下 POJO 中布尔类型变量不同的命名有什么区别吧。
 
-```
+```java
     class Model1  {
         private Boolean isSuccess;
         public void setSuccess(Boolean success) {
@@ -223,14 +223,14 @@ Boolean isSuccess
 
 **Java Bean 中关于 setter/getter 的规范**关于 Java Bean 中的 getter/setter 方法的定义其实是有明确的规定的，根据[JavaBeans(TM) Specification](https://download.oracle.com/otndocs/jcp/7224-javabeans-1.01-fr-spec-oth-JSpec/)规定，如果是普通的参数 propertyName，要以以下方式定义其 setter/getter：
 
-```
+```java
 public <PropertyType> get<PropertyName>();
 public void set<PropertyName>(<PropertyType> a);
 ```
 
 但是，布尔类型的变量 propertyName 则是单独定义的：
 
-```
+```java
 public boolean is<PropertyName>();
 public void set<PropertyName>(boolean m);
 ```
@@ -243,7 +243,7 @@ public void set<PropertyName>(boolean m);
 
 在一般情况下，其实是没有影响的。但是有一种特殊情况就会有问题，那就是发生序列化的时候。**序列化带来的影响**关于序列化和反序列化请参考[Java 对象的序列化与反序列化](https://www.hollischuang.com/archives/1150)。我们这里拿比较常用的 JSON 序列化来举例，看看看常用的 fastJson、jackson和 Gson 之间有何区别：
 
-```
+```java
     public class BooleanMainTest {
         public static void main(String[] args) throws IOException {
             //定一个Model3类型
@@ -278,7 +278,7 @@ public void set<PropertyName>(boolean m);
 
 以上代码输出结果：
 
-```
+```java
     Serializable Result With fastjson :{"hollis":"hollischuang","success":true}
     Serializable Result With Gson :{"isSuccess":true}
     Serializable Result With jackson :{"success":true,"hollis":"hollischuang"}
@@ -294,7 +294,7 @@ public void set<PropertyName>(boolean m);
 
 前面提到的关于对 getHollis 的序列化只是为了说明 fastjson、jackson 和 Gson 之间的序列化策略的不同，我们暂且把他放到一边，我们把他从 Model3 中删除后，重新执行下以上代码，得到结果：
 
-```
+```java
 Serializable Result With fastjson :{"success":true}
 Serializable Result With Gson :{"isSuccess":true}
 Serializable Result With jackson :{"success":true}
@@ -302,7 +302,7 @@ Serializable Result With jackson :{"success":true}
 
 现在，不同的序列化框架得到的 json 内容并不相同，如果对于同一个对象，我使用 fastjson 进行序列化，再使用 Gson 反序列化会发生什么？
 
-```
+```java
     public class BooleanMainTest {
         public static void main(String[] args) throws IOException {
             Model3 model3 = new Model3();
@@ -331,7 +331,7 @@ Serializable Result With jackson :{"success":true}
 
 以上代码，输出结果：
 
-```
+```java
 Model3[isSuccess=false]
 ```
 
@@ -349,11 +349,11 @@ Model3[isSuccess=false]
 
 所以，**在定义 POJO 中的布尔类型的变量时，不要使用 isSuccess 这种形式，而要直接使用 success！**
 
-## Boolean 还是 boolean？
+### Boolean 还是 boolean？
 
 前面我们介绍完了在 success 和 isSuccess 之间如何选择，那么排除错误答案后，备选项还剩下：
 
-```
+```java
 boolean success
 Boolean success
 ```
@@ -366,7 +366,7 @@ Boolean success
 
 我们来看一段简单的代码
 
-```
+```java
      /**
      * @author Hollis
      */
@@ -400,7 +400,7 @@ Boolean success
 
 以上代码输出结果为：
 
-```
+```java
 default model : Model[success=null, failure=false]
 ```
 
@@ -422,9 +422,9 @@ default model : Model[success=null, failure=false]
 
 这种使用包装类型定义变量的方式，通过异常来阻断程序，进而可以被识别到这种线上问题。如果使用基本数据类型的话，系统可能不会报错，进而认为无异常。
 
-\*\*以上，就是建议在 POJO 和 RPC 的返回值中使用包装类型的原因。\*\*但是关于这一点，作者之前也有过不同的看法：对于布尔类型的变量，我认为可以和其他类型区分开来，作者并不认为使用 null 进而导致 NPE 是一种最好的实践。因为布尔类型只有 true/false 两种值，我们完全可以和外部调用方约定好当返回值为 false 时的明确语义。
+**以上，就是建议在 POJO 和 RPC 的返回值中使用包装类型的原因。**但是关于这一点，作者之前也有过不同的看法：对于布尔类型的变量，我认为可以和其他类型区分开来，作者并不认为使用 null 进而导致 NPE 是一种最好的实践。因为布尔类型只有 true/false 两种值，我们完全可以和外部调用方约定好当返回值为 false 时的明确语义。
 
-后来，作者单独和《阿里巴巴 Java 开发手册》、《码出高效》的作者——孤尽 单独 1V1(qing) Battle(jiao)了一下。最终达成共识，还是\*\*尽量使用包装类型 **。** 但是，作者还是想强调一个我的观点，尽量避免在你的代码中出现不确定的 null 值。 \*\*\*\* null 何罪之有？\*\*关于 null 值的使用，我在[使用 Optional 避免NullPointerException](https://www.hollischuang.com/archives/883)、[9 Things about Null in Java](https://www.hollischuang.com/archives/74)等文中就介绍过。
+后来，作者单独和《阿里巴巴 Java 开发手册》、《码出高效》的作者——孤尽 单独 1V1(qing) Battle(jiao)了一下。最终达成共识，还是**尽量使用包装类型 **。** 但是，作者还是想强调一个我的观点，尽量避免在你的代码中出现不确定的 null 值。 **** null 何罪之有？**关于 null 值的使用，我在[使用 Optional 避免NullPointerException](https://www.hollischuang.com/archives/883)、[9 Things about Null in Java](https://www.hollischuang.com/archives/74)等文中就介绍过。
 
 `null`是很模棱两可的，很多时候会导致令人疑惑的的错误，很难去判断返回一个`null`代表着什么意思。
 
@@ -438,11 +438,11 @@ default model : Model[success=null, failure=false]
 
 所以，当我们要定义一个布尔类型的成员变量时，尽量选择 boolean，而不是 Boolean。当然，编程中并没有绝对。
 
-## 小结
+### 小结
 
 本文围绕布尔类型的变量定义的类型和命名展开了介绍，最终我们可以得出结论，在定义一个布尔类型的变量，尤其是一个给外部提供的接口返回值时，要使用 success 来命名，阿里巴巴 Java 开发手册建议使用封装类来定义 POJO 和 RPC 返回值中的变量。但是这不意味着可以随意的使用 null，我们还是要尽量避免出现对 null 的处理的。
 
-# 为什么禁止开发人员修改 serialVersionUID 字段的值
+## 为什么禁止开发人员修改 serialVersionUID 字段的值
 
 ![-w934](assets/15455608799770.jpg)￼
 
@@ -461,15 +461,15 @@ default model : Model[success=null, failure=false]
 背景知识
 ----**Serializable 和 Externalizable**
 
-类通过实现 `java.io.Serializable` 接口以启用其序列化功能。\*\*未实现此接口的类将无法进行序列化或反序列化。\*\*可序列化类的所有子类型本身都是可序列化的。
+类通过实现 `java.io.Serializable` 接口以启用其序列化功能。**未实现此接口的类将无法进行序列化或反序列化。**可序列化类的所有子类型本身都是可序列化的。
 
-如果读者看过`Serializable`的源码，就会发现，他只是一个空的接口，里面什么东西都没有。\*\*Serializable 接口没有方法或字段，仅用于标识可序列化的语义。\*\*但是，如果一个类没有实现这个接口，想要被序列化的话，就会抛出`java.io.NotSerializableException`异常。
+如果读者看过`Serializable`的源码，就会发现，他只是一个空的接口，里面什么东西都没有。**Serializable 接口没有方法或字段，仅用于标识可序列化的语义。**但是，如果一个类没有实现这个接口，想要被序列化的话，就会抛出`java.io.NotSerializableException`异常。
 
 它是怎么保证只有实现了该接口的方法才能进行序列化与反序列化的呢？
 
 原因是在执行序列化的过程中，会执行到以下代码：
 
-```
+```java
     if (obj instanceof String) {
         writeString((String) obj, unshared);
     } else if (cl.isArray()) {
@@ -510,7 +510,7 @@ Java中还提供了`Externalizable`接口，也可以实现它来提供序列化
 
 那么，到底什么是`serialVersionUID`呢？为什么要设置这样一个字段呢？
 
-## 什么是 serialVersionUID
+### 什么是 serialVersionUID
 
 序列化是将对象的状态信息转换为可存储或传输的形式的过程。我们都知道，Java 对象是保存在 JVM 的堆内存中的，也就是说，如果 JVM 堆不存在了，那么对象也就跟着消失了。
 
@@ -518,11 +518,11 @@ Java中还提供了`Externalizable`接口，也可以实现它来提供序列化
 
 虚拟机是否允许反序列化，不仅取决于类路径和功能代码是否一致，一个非常重要的一点是两个类的序列化 ID 是否一致，这个所谓的序列化 ID，就是我们在代码中定义的`serialVersionUID`。
 
-## 如果 serialVersionUID 变了会怎样
+### 如果 serialVersionUID 变了会怎样
 
 我们举个例子吧，看看如果`serialVersionUID`被修改了会发生什么？
 
-```
+```java
     public class SerializableDemo1 {
         public static void main(String[] args) {
             //Initializes The Object
@@ -554,7 +554,7 @@ Java中还提供了`Externalizable`接口，也可以实现它来提供序列化
 
 我们先执行以上代码，把一个 User1 对象写入到文件中。然后我们修改一下 User1 类，把`serialVersionUID`的值改为`2L`。
 
-```
+```java
     class User1 implements Serializable {
         private static final long serialVersionUID = 2L;
         private String name;
@@ -569,7 +569,7 @@ Java中还提供了`Externalizable`接口，也可以实现它来提供序列化
 
 然后执行以下代码，把文件中的对象反序列化出来：
 
-```
+```java
     public class SerializableDemo2 {
         public static void main(String[] args) {
             //Read Obj from File
@@ -597,7 +597,7 @@ Java中还提供了`Externalizable`接口，也可以实现它来提供序列化
 
 执行结果如下：
 
-```
+```java
 java.io.InvalidClassException: com.hollis.User1; local class incompatible: stream classdesc serialVersionUID = 1, local class serialVersionUID = 2
 ```
 
@@ -605,19 +605,19 @@ java.io.InvalidClassException: com.hollis.User1; local class incompatible: strea
 
 这是因为，在进行反序列化时，JVM 会把传来的字节流中的`serialVersionUID`与本地相应实体类的`serialVersionUID`进行比较，如果相同就认为是一致的，可以进行反序列化，否则就会出现序列化版本不一致的异常，即是`InvalidCastException`。
 
-这也是《阿里巴巴 Java 开发手册》中规定，在兼容性升级中，在修改类的时候，不要修改`serialVersionUID`的原因。\*\*除非是完全不兼容的两个版本 **。所以，** serialVersionUID其实是验证版本一致性的。\*\*如果读者感兴趣，可以把各个版本的 JDK 代码都拿出来看一下，那些向下兼容的类的`serialVersionUID`是没有变化过的。比如 String 类的`serialVersionUID`一直都是`-6849794470754667710L`。
+这也是《阿里巴巴 Java 开发手册》中规定，在兼容性升级中，在修改类的时候，不要修改`serialVersionUID`的原因。**除非是完全不兼容的两个版本 **。所以，** serialVersionUID其实是验证版本一致性的。**如果读者感兴趣，可以把各个版本的 JDK 代码都拿出来看一下，那些向下兼容的类的`serialVersionUID`是没有变化过的。比如 String 类的`serialVersionUID`一直都是`-6849794470754667710L`。
 
 但是，作者认为，这个规范其实还可以再严格一些，那就是规定：
 
 如果一个类实现了`Serializable`接口，就必须手动添加一个`private static final long serialVersionUID`变量，并且设置初始值。
 
-## 为什么要明确定一个 serialVersionUID
+### 为什么要明确定一个 serialVersionUID
 
 如果我们没有在类中明确的定义一个`serialVersionUID`的话，看看会发生什么。
 
 尝试修改上面的 demo 代码，先使用以下类定义一个对象，该类中不定义`serialVersionUID`，将其写入文件。
 
-```
+```java
     class User1 implements Serializable {
         private String name;
         public String getName() {
@@ -631,7 +631,7 @@ java.io.InvalidClassException: com.hollis.User1; local class incompatible: strea
 
 然后我们修改 User1 类，向其中增加一个属性。在尝试将其从文件中读取出来，并进行反序列化。
 
-```
+```java
     class User1 implements Serializable {
         private String name;
         private int age;
@@ -658,7 +658,7 @@ java.io.InvalidClassException: com.hollis.User1; local class incompatible: strea
 
 所以，一旦类实现了`Serializable`，就建议明确的定义一个`serialVersionUID`。不然在修改类的时候，就会发生异常。
 
-```
+```java
 serialVersionUID`有两种显示的生成方式：
 一是默认的 1L，比如：`private static final long serialVersionUID = 1L;`
 二是根据类名、接口名、成员方法及属性等来生成一个64位的哈希字段，比如：
@@ -667,13 +667,13 @@ serialVersionUID`有两种显示的生成方式：
 
 后面这种方式，可以借助 IDE 生成，后面会介绍。
 
-## 背后原理
+### 背后原理
 
 知其然，要知其所以然，我们再来看看源码，分析一下为什么`serialVersionUID`改变的时候会抛异常？在没有明确定义的情况下，默认的`serialVersionUID`是怎么来的？
 
 为了简化代码量，反序列化的调用链如下：
 
-```
+```java
 ObjectInputStream.readObject -> readObject0 -> readOrdinaryObject -> readClassDesc -> readNonProxyDesc -> ObjectStreamClass.initNonProxy
 ```
 
@@ -685,7 +685,7 @@ ObjectInputStream.readObject -> readObject0 -> readOrdinaryObject -> readClassDe
 
 深入看一下`getSerialVersionUID`方法：
 
-```
+```java
     public long getSerialVersionUID() {
         // REMIND: synchronize instead of relying on volatile?
         if (suid == null) {
@@ -705,7 +705,7 @@ ObjectInputStream.readObject -> readObject0 -> readOrdinaryObject -> readClassDe
 
 这也就找到了以上两个问题的根源，其实是代码中做了严格的校验。
 
-## IDEA 提示
+### IDEA 提示
 
 为了确保我们不会忘记定义`serialVersionUID`，可以调节一下 Intellij IDEA 的配置，在实现`Serializable`接口后，如果没定义`serialVersionUID`的话，IDEA（eclipse 一样）会进行提示： ![img](assets/15455657868672.jpg)￼
 
@@ -719,7 +719,7 @@ ObjectInputStream.readObject -> readObject0 -> readOrdinaryObject -> readClassDe
 
 在图中标号 3 的地方（Serializable class without serialVersionUID的配置），打上勾，保存即可。
 
-## 小结
+### 小结
 
 `serialVersionUID`是用来验证版本一致性的。所以在做兼容性升级的时候，不要改变类中`serialVersionUID`的值。
 
@@ -727,7 +727,7 @@ ObjectInputStream.readObject -> readObject0 -> readOrdinaryObject -> readClassDe
 
 之所以会发生异常，是因为反序列化过程中做了校验，并且如果没有明确定义的话，会根据类的属性自动生成一个。
 
-# 为什么不建议在 for 循环中使用"+"进行字符串拼接
+## 为什么不建议在 for 循环中使用"+"进行字符串拼接
 
 ![img](assets/15472850170230.jpg)￼
 
@@ -749,7 +749,7 @@ ObjectInputStream.readObject -> readObject0 -> readOrdinaryObject -> readClassDe
 
 本文，也是对于 Java 中字符串相关知识的一个补充，主要来介绍一下字符串拼接相关的知识。本文基于 jdk1.8.0_181。
 
-## 字符串拼接
+### 字符串拼接
 
 字符串拼接是我们在 Java 代码中比较经常要做的事情，就是把多个字符串拼接到一起。
 
@@ -759,7 +759,7 @@ ObjectInputStream.readObject -> readObject0 -> readOrdinaryObject -> readClassDe
 
 但是，既然字符串是不可变的，那么字符串拼接又是怎么回事呢？**字符串不变性与字符串拼接**其实，所有的所谓字符串拼接，都是重新生成了一个新的字符串。下面一段字符串拼接代码：
 
-```
+```yml
 <pre><code class="language-text">String s = "abcd";
 s = s.concat("ef");
 </code></pre>
@@ -773,7 +773,7 @@ s 中保存的是一个重新创建出来的 String 对象的引用。
 
 那么，在 Java 中到底如何进行字符串拼接呢？字符串拼接有很多种方式，这里简单介绍几种比较常用的。**使用+拼接字符串**在 Java 中，拼接字符串最简单的方式就是直接使用符号`+`来拼接。如：
 
-```text
+```java
 String wechat = "Hollis";
 String introduce = "每日更新Java相关技术文章";
 String hollis = wechat + "," + introduce;
@@ -785,35 +785,41 @@ String hollis = wechat + "," + introduce;
 >
 > 语法糖：语法糖（Syntactic sugar），也译为糖衣语法，是由英国计算机科学家彼得·兰丁发明的一个术语，指计算机语言中添加的某种语法，这种语法对语言的功能没有影响，但是更方便程序员使用。语法糖让程序更加简洁，有更高的可读性。**concat**除了使用`+`拼接字符串之外，还可以使用 String 类中的方法 concat 方法来拼接字符串。如：
 
-````text
+```java
 String wechat = "Hollis";
 String introduce = "每日更新Java相关技术文章";
 String hollis = wechat.concat(",").concat(introduce);
-```** StringBuffer **关于字符串，Java 中除了定义了一个可以用来定义** 字符串常量 **的`String`类以外，还提供了可以用来定义** 字符串变量 **的`StringBuffer`类，它的对象是可以扩充和修改的。
+```
+
+**StringBuffer **关于字符串，Java 中除了定义了一个可以用来定义** 字符串常量 **的`String`类以外，还提供了可以用来定义** 字符串变量**的`StringBuffer`类，它的对象是可以扩充和修改的。
 
 使用`StringBuffer`可以方便的对字符串进行拼接。如：
 
-```text
+```java
 StringBuffer wechat = new StringBuffer("Hollis");
 String introduce = "每日更新Java相关技术文章";
 StringBuffer hollis = wechat.append(",").append(introduce);
-```** StringBuilder **除了`StringBuffer`以外，还有一个类`StringBuilder`也可以使用，其用法和`StringBuffer`类似。如：
+```
 
-```text
+**StringBuilder** 除了`StringBuffer`以外，还有一个类`StringBuilder`也可以使用，其用法和`StringBuffer`类似。如：
+
+```java
 StringBuilder wechat = new StringBuilder("Hollis");
 String introduce = "每日更新Java相关技术文章";
 StringBuilder hollis = wechat.append(",").append(introduce);
-```** StringUtils.join** 除了 JDK 中内置的字符串拼接方法，还可以使用一些开源类库中提供的字符串拼接方法名，如`apache.commons中`提供的`StringUtils`类，其中的`join`方法可以拼接字符串。
+```
 
-```text
+**StringUtils.join** 除了 JDK 中内置的字符串拼接方法，还可以使用一些开源类库中提供的字符串拼接方法名，如`apache.commons中`提供的`StringUtils`类，其中的`join`方法可以拼接字符串。
+
+```java
 String wechat = "Hollis";
 String introduce = "每日更新Java相关技术文章";
 System.out.println(StringUtils.join(wechat, ",", introduce));
-````
+```
 
 这里简单说一下，StringUtils 中提供的 join 方法，最主要的功能是：将数组或集合以某拼接符拼接到一起形成新的字符串，如：
 
-```
+```java
 String []list  ={"Hollis","每日更新Java相关技术文章"};
 String result= StringUtils.join(list,",");
 System.out.println(result);
@@ -828,13 +834,13 @@ System.out.println(result);
 
 (阿里巴巴 Java 开发手册中关于字符串拼接的规约)
 
-## 使用`+`拼接字符串的实现原理
+### 使用`+`拼接字符串的实现原理
 
 前面提到过，使用`+`拼接字符串，其实只是 Java 提供的一个语法糖， 那么，我们就来解一解这个语法糖，看看他的内部原理到底是如何实现的。
 
 还是这样一段代码。我们把他生成的字节码进行反编译，看看结果。
 
-```text
+```java
 String wechat = "Hollis";
 String introduce = "每日更新Java相关技术文章";
 String hollis = wechat + "," + introduce;
@@ -842,7 +848,7 @@ String hollis = wechat + "," + introduce;
 
 反编译后的内容如下，反编译工具为jad。
 
-```text
+```java
 String wechat = "Hollis";
 String introduce = "\u6BCF\u65E5\u66F4\u65B0Java\u76F8\u5173\u6280\u672F\u6587\u7AE0";//每日更新Java相关技术文章
 String hollis = (new StringBuilder()).append(wechat).append(",").append(introduce).toString();
@@ -852,11 +858,11 @@ String hollis = (new StringBuilder()).append(wechat).append(",").append(introduc
 
 那么也就是说，Java 中的`+`对字符串的拼接，其实现原理是使用`StringBuilder.append`。
 
-## concat 是如何实现的
+### concat 是如何实现的
 
 我们再来看一下 concat 方法的源代码，看一下这个方法又是如何实现的。
 
-```text
+```java
 public String concat(String str) {
     int otherLen = str.length();
     if (otherLen == 0) {
@@ -873,25 +879,25 @@ public String concat(String str) {
 
 通过源码我们也可以看到，经过 concat 方法，其实是 new 了一个新的 String，这也就呼应到前面我们说的字符串的不变性问题上了。
 
-## StringBuffer 和 StringBuilder
+### StringBuffer 和 StringBuilder
 
 接下来我们看看`StringBuffer`和`StringBuilder`的实现原理。
 
 和`String`类类似，`StringBuilder`类也封装了一个字符数组，定义如下：
 
-```text
+```java
 char[] value;
 ```
 
 与`String`不同的是，它并不是`final`的，所以他是可以修改的。另外，与`String`不同，字符数组中不一定所有位置都已经被使用，它有一个实例变量，表示数组中已经使用的字符个数，定义如下：
 
-```text
+```java
 int count;
 ```
 
 其 append 源码如下：
 
-```text
+```java
 public StringBuilder append(String str) {
     super.append(str);
     return this;
@@ -900,7 +906,7 @@ public StringBuilder append(String str) {
 
 该类继承了`AbstractStringBuilder`类，看下其`append`方法：
 
-```text
+```java
 public AbstractStringBuilder append(String str) {
     if (str == null)
         return appendNull();
@@ -916,7 +922,7 @@ append 会直接拷贝字符到内部的字符数组中，如果字符数组长�
 
 `StringBuffer`和`StringBuilder`类似，最大的区别就是`StringBuffer`是线程安全的，看一下`StringBuffer`的`append`方法。
 
-```text
+```java
 public synchronized StringBuffer append(String str) {
     toStringCache = null;
     super.append(str);
@@ -926,11 +932,11 @@ public synchronized StringBuffer append(String str) {
 
 该方法使用`synchronized`进行声明，说明是一个线程安全的方法。而`StringBuilder`则不是线程安全的。
 
-## StringUtils.join 是如何实现的
+### StringUtils.join 是如何实现的
 
 通过查看`StringUtils.join`的源代码，我们可以发现，其实他也是通过`StringBuilder`来实现的。
 
-```text
+```java
 public static String join(final Object[] array, String separator, final int startIndex, final int endIndex) {
     if (array == null) {
         return null;
@@ -957,11 +963,11 @@ public static String join(final Object[] array, String separator, final int star
 }
 ```
 
-## 效率比较
+### 效率比较
 
 既然有这么多种字符串拼接的方法，那么到底哪一种效率最高呢？我们来简单对比一下。
 
-```text
+```java
 long t1 = System.currentTimeMillis();
 //这里是初始字符串定义
 for (int i = 0; i &lt; 50000; i++) {
@@ -973,7 +979,7 @@ System.out.println("cost:" + (t2 - t1));
 
 我们使用形如以上形式的代码，分别测试下五种字符串拼接代码的运行时间。得到结果如下：
 
-```text
+```java
 + cost:5119
 StringBuilder cost:3
 StringBuffer cost:4
@@ -983,7 +989,7 @@ StringUtils.join cost:25726
 
 从结果可以看出，用时从短到长的对比是：
 
-```
+```java
 StringBuilder`<`StringBuffer`<`concat`<`+`<`StringUtils.join
 ```
 
@@ -995,7 +1001,7 @@ StringUtils.join 也是使用了 StringBuilder，并且其中还是有很多其�
 
 我们再把以下代码反编译下：
 
-```text
+```java
 long t1 = System.currentTimeMillis();
 String str = "hollis";
 for (int i = 0; i &lt; 50000; i++) {
@@ -1008,7 +1014,7 @@ System.out.println("+ cost:" + (t2 - t1));
 
 反编译后代码如下：
 
-```text
+```java
 long t1 = System.currentTimeMillis();
 String str = "hollis";
 for(int i = 0; i &lt; 50000; i++)
@@ -1026,7 +1032,7 @@ System.out.println((new StringBuilder()).append("+ cost:").append(t2 - t1).toStr
 
 所以，阿里巴巴 Java 开发手册建议：循环体内，字符串的连接方式，使用 `StringBuilder` 的 `append` 方法进行扩展。而不要使用`+`。
 
-## 小结
+### 小结
 
 本文介绍了什么是字符串拼接，虽然字符串是不可变的，但是还是可以通过新建字符串的方式来进行字符串的拼接。
 
@@ -1041,11 +1047,11 @@ System.out.println((new StringBuilder()).append("+ cost:").append(t2 - t1).toStr
 1. 如果不是在循环体中进行字符串拼接的话，直接使用`+`就好了。
 1. 如果在并发场景中进行字符串拼接的话，要使用`StringBuffer`来代替`StringBuilder`。
 
-# 为什么禁止在 foreach 循环里进行元素的 remove/add 操作
+## 为什么禁止在 foreach 循环里进行元素的 remove/add 操作
 
 ![-w1191](assets/15497724883532-1.jpg)￼
 
-## foreach 循环
+### foreach 循环
 
 Foreach 循环（Foreach loop）是计算机编程语言中的一种控制流程语句，通常用来循环遍历数组或集合中的元素。
 
@@ -1053,7 +1059,7 @@ Java 语言从 JDK 1.5.0 开始引入 foreach 循环。在遍历数组、集合�
 
 foreach 语法格式如下：
 
-```
+```java
 for(元素类型t 元素变量x : 遍历对象obj){ 
      引用了x的java语句; 
 } 
@@ -1061,7 +1067,7 @@ for(元素类型t 元素变量x : 遍历对象obj){
 
 以下实例演示了普通 for 循环和 foreach 循环使用：
 
-```
+```java
     public static void main(String[] args) {
         // 使用ImmutableList初始化一个List
         List<String> userNames = ImmutableList.of("Hollis", "hollis", "HollisChuang", "H");
@@ -1078,7 +1084,7 @@ for(元素类型t 元素变量x : 遍历对象obj){
 
 以上代码运行输出结果为：
 
-```
+```java
 使用for循环遍历List
 Hollis
 hollis
@@ -1097,7 +1103,7 @@ H
 
 其实，增强 for 循环也是 Java 给我们提供的一个语法糖，如果将以上代码编译后的 class 文件进行反编译（使用 jad 工具）的话，可以得到以下代码：
 
-```
+```java
     Iterator iterator = userNames.iterator();
     do
     {
@@ -1112,11 +1118,11 @@ H
 
 可以发现，原本的增强 for 循环，其实是依赖了 while 循环和 Iterator 实现的。（请记住这种实现方式，后面会用到！）
 
-## 问题重现
+### 问题重现
 
 规范中指出不让我们在 foreach 循环中对集合元素做 add/remove 操作，那么，我们尝试着做一下看看会发生什么问题。
 
-```
+```java
     // 使用双括弧语法（double-brace syntax）建立并初始化一个List
     List<String> userNames = new ArrayList<String>() {{
         add("Hollis");
@@ -1136,13 +1142,13 @@ H
 
 然后使用普通 for 循环对 List 进行遍历，删除 List 中元素内容等于 Hollis 的元素。然后输出 List，输出结果如下：
 
-```
+```java
 [hollis, HollisChuang, H]
 ```
 
 以上是哪使用普通的 for 循环在遍历的同时进行删除，那么，我们再看下，如果使用增强 for 循环的话会发生什么：
 
-```
+```java
     List<String> userNames = new ArrayList<String>() {{
         add("Hollis");
         add("hollis");
@@ -1159,7 +1165,7 @@ H
 
 以上代码，使用增强 for 循环遍历元素，并尝试删除其中的 Hollis 字符串元素。运行以上代码，会抛出以下异常：
 
-```
+```java
 java.util.ConcurrentModificationException
 ```
 
@@ -1167,7 +1173,7 @@ java.util.ConcurrentModificationException
 
 之所以会出现这个异常，是因为触发了一个 Java 集合的错误检测机制——fail-fast 。
 
-## fail-fast
+### fail-fast
 
 接下来，我们就来分析下在增强 for 循环中 add/remove 元素的时候会抛出 java.util.ConcurrentModificationException 的原因，即解释下到底什么是 fail-fast 进制，fail-fast 的原理等。
 
@@ -1179,7 +1185,7 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
 
 要分析这个问题，我们先将增强 for 循环这个语法糖进行解糖，得到以下代码：
 
-```
+```java
     public static void main(String[] args) {
         // 使用ImmutableList初始化一个List
         List<String> userNames = new ArrayList<String>() {{
@@ -1211,7 +1217,7 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
 
 我们直接看下 checkForComodification 方法的代码，看下抛出异常的原因：
 
-```
+```java
     final void checkForComodification() {
         if (modCount != expectedModCount)
             throw new ConcurrentModificationException();
@@ -1222,7 +1228,7 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
 
 那么，就来看一下，remove/add 操作室如何导致 modCount 和 expectedModCount 不相等的吧。
 
-## remove/add 做了什么
+### remove/add 做了什么
 
 首先，我们要搞清楚的是，到底 modCount 和 expectedModCount 这两个变量都是个什么东西。
 
@@ -1234,7 +1240,7 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
 
 他们之间的关系如下：
 
-```
+```java
     class ArrayList{
         private int modCount;
         public void add();
@@ -1258,7 +1264,7 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
 
 简单总结一下，之所以会抛出 ConcurrentModificationException 异常，是因为我们的代码中使用了增强 for 循环，而在增强 for 循环中，集合遍历是通过 iterator 进行的，但是元素的 add/remove 却是直接使用的集合类自己的方法。这就导致 iterator 在遍历的时候，会发现有一个元素在自己不知不觉的情况下就被删除/添加了，就会抛出一个异常，用来提示用户，可能发生了并发修改！
 
-## 正确姿势
+### 正确姿势
 
 至此，我们介绍清楚了不能在 foreach 循环体中直接对集合进行 add/remove 操作的原因。
 
@@ -1266,7 +1272,7 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
 
 **1、直接使用普通 for 循环进行操作**我们说不能在 foreach 中进行，但是使用普通的 for 循环还是可以的，因为普通 for 循环并没有用到 Iterator 的遍历，所以压根就没有进行 fail-fast 的检验。
 
-```
+```java
         List<String> userNames = new ArrayList<String>() {{
             add("Hollis");
             add("hollis");
@@ -1281,9 +1287,11 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
         System.out.println(userNames);
 ```
 
-这种方案其实存在一个问题，那就是 remove 操作会改变 List 中元素的下标，可能存在漏删的情况。**2、直接使用 Iterator 进行操作**除了直接使用普通 for 循环以外，我们还可以直接使用 Iterator 提供的 remove 方法。
+这种方案其实存在一个问题，那就是 remove 操作会改变 List 中元素的下标，可能存在漏删的情况。
 
-```
+**2、直接使用 Iterator 进行操作**除了直接使用普通 for 循环以外，我们还可以直接使用 Iterator 提供的 remove 方法。
+
+```java
         List<String> userNames = new ArrayList<String>() {{
             add("Hollis");
             add("hollis");
@@ -1301,9 +1309,11 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
 
 如果直接使用 Iterator 提供的 remove 方法，那么就可以修改到 expectedModCount 的值。那么就不会再抛出异常了。其实现代码如下：
 
-![-w375](assets/15515125763808-1.jpg)￼**3、使用 Java 8 中提供的 filter 过滤**Java 8 中可以把集合转换成流，对于流有一种 filter 操作， 可以对原始 Stream 进行某项测试，通过测试的元素被留下来生成一个新 Stream。
+![-w375](assets/15515125763808-1.jpg)￼
 
-````
+**3、使用 Java 8 中提供的 filter 过滤**Java 8 中可以把集合转换成流，对于流有一种 filter 操作， 可以对原始 Stream 进行某项测试，通过测试的元素被留下来生成一个新 Stream。
+
+```java
         List<String> userNames = new ArrayList<String>() {{
             add("Hollis");
             add("hollis");
@@ -1312,11 +1322,11 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
         }};
         userNames = userNames.stream().filter(userName -> !userName.equals("Hollis")).collect(Collectors.toList());
         System.out.println(userNames);
-```** 4、使用增强 for 循环其实也可以 **如果，我们非常确定在一个集合中，某个即将删除的元素只包含一个的话， 比如对 Set 进行操作，那么其实也是可以使用增强 for 循环的，只要在删除之后，立刻结束循环体，不要再继续进行遍历就可以了，也就是说不让代码执行到下一次的 next 方法。
-
-````
-
 ```
+
+**4、使用增强 for 循环其实也可以** 如果，我们非常确定在一个集合中，某个即将删除的元素只包含一个的话， 比如对 Set 进行操作，那么其实也是可以使用增强 for 循环的，只要在删除之后，立刻结束循环体，不要再继续进行遍历就可以了，也就是说不让代码执行到下一次的 next 方法。
+
+```java
     List<String> userNames = new ArrayList<String>() {{
         add("Hollis");
         add("hollis");
@@ -1332,13 +1342,11 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
     System.out.println(userNames);
 ```
 
-```** 5、直接使用 fail-safe 的集合类 **在 Java 中，除了一些普通的集合类以外，还有一些采用了 fail-safe 机制的集合类。这样的集合容器在遍历时不是直接在集合内容上访问的，而是先复制原有集合内容，在拷贝的集合上进行遍历。
+**5、直接使用 fail-safe 的集合类** 在 Java 中，除了一些普通的集合类以外，还有一些采用了 fail-safe 机制的集合类。这样的集合容器在遍历时不是直接在集合内容上访问的，而是先复制原有集合内容，在拷贝的集合上进行遍历。
 
 由于迭代时是对原集合的拷贝进行遍历，所以在遍历过程中对原集合所作的修改并不能被迭代器检测到，所以不会触发ConcurrentModificationException。
 
-```
-
-```
+```java
 ConcurrentLinkedDeque<String> userNames = new ConcurrentLinkedDeque<String>() {{
     add("Hollis");
     add("hollis");
@@ -1352,14 +1360,11 @@ for (String userName : userNames) {
 }
 ```
 
-```
-
 基于拷贝内容的优点是避免了ConcurrentModificationException，但同样地，迭代器并不能访问到修改后的内容，即：迭代器遍历的是开始遍历那一刻拿到的集合拷贝，在遍历期间原集合发生的修改迭代器是不知道的。
 
 java.util.concurrent 包下的容器都是安全失败，可以在多线程下并发使用，并发修改。
 
-小结
-==
+### 小结
 
 我们使用的增强 for 循环，其实是 Java 提供的语法糖，其实现原理是借助 Iterator 进行元素的遍历。
 
@@ -1367,8 +1372,7 @@ java.util.concurrent 包下的容器都是安全失败，可以在多线程下�
 
 当然还是有很多种方法可以解决这类问题的。比如使用普通 for 循环、使用 Iterator 进行元素删除、使用 Stream 的 filter、使用 fail-safe 的类等。
 
-为什么建议集合初始化时，指定集合容量大小
-====================
+## 为什么建议集合初始化时，指定集合容量大小
 
 ![img](assets/15551485633238.jpg)￼
 
@@ -1376,14 +1380,11 @@ java.util.concurrent 包下的容器都是安全失败，可以在多线程下�
 
 关于集合类，还有很多地方需要注意，本文就来分析下问什么建议集合初始化时，指定集合容量大小？如果一定要设置初始容量的话，设置多少比较合适？
 
-为什么要设置 HashMap 的初始化容量
----------------------
+### 为什么要设置 HashMap 的初始化容量
 
 我们先来写一段代码在 JDK 1.7 （jdk1.7.0\_79）下面来分别测试下，在不指定初始化容量和指定初始化容量的情况下性能情况如何。（jdk 8 结果会有所不同，我会在后面的文章中分析）
 
-```
-
-```
+```java
 public static void main(String[] args) {
     int aHundredMillion = 10000000;
     Map<Integer, Integer> map = new HashMap<>();
@@ -1410,19 +1411,17 @@ public static void main(String[] args) {
 }
 ```
 
-```
-
 以上代码不难理解，我们创建了 3 个 HashMap，分别使用默认的容量（16）、使用元素个数的一半（5千万）作为初始容量、使用元素个数（一亿）作为初始容量进行初始化。然后分别向其中 put 一亿个 KV。
 
 输出结果：
 
-```
-
+```log
 未初始化容量，耗时 ： 14419
 初始化容量5000000，耗时 ： 11916
 初始化容量为10000000，耗时 ： 7984
+```
 
-```** 从结果中，我们可以知道，在已知 HashMap 中将要存放的 KV 个数的时候，设置一个合理的初始化容量可以有效的提高性能。**
+**从结果中，我们可以知道，在已知 HashMap 中将要存放的 KV 个数的时候，设置一个合理的初始化容量可以有效的提高性能。**
 
 当然，以上结论也是有理论支撑的。我们[HashMap 中傻傻分不清楚的那些概念](http://www.hollischuang.com/archives/2416)文章介绍过，HashMap 有扩容机制，就是当达到扩容条件时会进行扩容。HashMap 的扩容条件就是当 HashMap 中的元素个数（size）超过临界值（threshold）时就会自动扩容。在 HashMap 中，`threshold = loadFactor * capacity`。
 
@@ -1430,24 +1429,19 @@ public static void main(String[] args) {
 
 从上面的代码示例中，我们还发现，同样是设置初始化容量，设置的数值不同也会影响性能，那么当我们已知 HashMap 中即将存放的 KV 个数的时候，容量设置成多少为好呢？
 
-HashMap 中容量的初始化
----------------
+### HashMap 中容量的初始化
 
 默认情况下，当我们设置 HashMap 的初始化容量时，实际上 HashMap 会采用第一个大于该数值的 2 的幂作为初始化容量。
 
 如以下示例代码：
 
-```
-
-```
+```java
 Map<String, String> map = new HashMap<String, String>(1);
 map.put("hahaha", "hollischuang");
 Class<?> mapType = map.getClass();
 Method capacity = mapType.getDeclaredMethod("capacity");
 capacity.setAccessible(true);
 System.out.println("capacity : " + capacity.invoke(map));
-```
-
 ```
 
 在 jdk1.7 中，初始化容量设置成 1 的时候，输出结果是 2。在 jdk1.8 中，如果我们传入的初始化容量为 1，实际上设置的结果也为 1，上面代码输出结果为 2 的原因是代码中 map.put("hahaha", "hollischuang")；导致了扩容，容量从 1 扩容到 2。
@@ -1458,9 +1452,7 @@ System.out.println("capacity : " + capacity.invoke(map));
 
 不管是 Jdk 1.7 还是 Jdk 1.8，计算初始化容量的算法其实是如出一辙的，主要代码如下：
 
-```
-
-```
+```java
     int n = cap - 1;
     n |= n >>> 1;
     n |= n >>> 2;
@@ -1468,8 +1460,6 @@ System.out.println("capacity : " + capacity.invoke(map));
     n |= n >>> 8;
     n |= n >>> 16;
     return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
-```
-
 ```
 
 上面的代码挺有意思的，一个简单的容量初始化，Java 的工程师也有很多考虑在里面。
@@ -1483,45 +1473,40 @@ System.out.println("capacity : " + capacity.invoke(map));
 请关注上面的几个例子中，蓝色字体部分的变化情况，或许你会发现些规律。5->8、9->16、19->32、37->64 都是主要经过了两个阶段。
 
 > Step 1，5->7
-> 
+>
 > Step 2，7->8
-> 
+>
 > Step 1，9->15
-> 
+>
 > Step 2，15->16
-> 
+>
 > Step 1，19->31
-> 
+>
 > Step 2，31->32
 
 对应到以上代码中，Step1：
 
-```
-
+```java
 n |= n >>> 1;
 n |= n >>> 2;
 n |= n >>> 4;
 n |= n >>> 8;
 n |= n >>> 16;
-
 ```
 
 对应到以上代码中，Step2：
 
-```
-
+```java
 return (n \< 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
-
 ```
 
 Step 2 比较简单，就是做一下极限值的判断，然后把 Step 1 得到的数值 +1。
 
-Step 1 怎么理解呢？\*\*其实是对一个二进制数依次向右移位，然后与原值取或。\*\*其目的对于一个数字的二进制，从第一个不为 0 的位开始，把后面的所有位都设置成 1。
+Step 1 怎么理解呢？**其实是对一个二进制数依次向右移位，然后与原值取或。**其目的对于一个数字的二进制，从第一个不为 0 的位开始，把后面的所有位都设置成 1。
 
 随便拿一个二进制数，套一遍上面的公式就发现其目的了：
 
-```
-
+```java
 1100 1100 1100 >>>1 = 0110 0110 0110
 1100 1100 1100 | 0110 0110 0110 = 1110 1110 1110
 1110 1110 1110 >>>2 = 0011 1011 1011
@@ -1537,33 +1522,27 @@ Step 1 怎么理解呢？\*\*其实是对一个二进制数依次向右移位，
 
 但是还有一种特殊情况套用以上公式不行，这些数字就是 2 的幂自身。如果数字 4 套用公式的话。得到的会是 8 ：
 
-```
-
-```
-Step 1: 
+```java
+Step 1:
 0100 >>>1 = 0010
 0100 | 0010 = 0110
 0110 >>>1 = 0011
 0110 | 0011 = 0111
 Step 2:
 0111 + 0001 = 1000
-```
 
 ```
 
 为了解决这个问题，JDK 的工程师把所有用户传进来的数在进行计算之前先 -1，就是源码中的第一行：
 
-```
-
+```java
 int n = cap - 1;
 
 ```
 
 至此，再来回过头看看这个设置初始容量的代码，目的是不是一目了然了：
 
-```
-
-```
+```java
     int n = cap - 1;
     n |= n >>> 1;
     n |= n >>> 2;
@@ -1571,12 +1550,10 @@ int n = cap - 1;
     n |= n >>> 8;
     n |= n >>> 16;
     return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
-```
 
 ```
 
-HashMap 中初始容量的合理值
------------------
+### HashMap 中初始容量的合理值
 
 当我们使用`HashMap(int initialCapacity)`来初始化容量的时候，jdk 会默认帮我们计算一个相对合理的值当做初始容量。那么，是不是我们只需要把已知的 HashMap 中即将存放的元素个数直接传给 initialCapacity 就可以了呢？
 
@@ -1586,15 +1563,14 @@ HashMap 中初始容量的合理值
 
 这个值，并不是阿里巴巴的工程师原创的，在 guava（21.0 版本）中也使用的是这个值。
 
-```
-
-```
+```java
 public static <K, V> HashMap<K, V> newHashMapWithExpectedSize(int expectedSize) {
     return new HashMap<K, V>(capacity(expectedSize));
 }
 /**
-* Returns a capacity that is sufficient to keep the map from being resized as long as it grows no
-* larger than expectedSize and the load factor is ≥ its default (0.75).
+
+- Returns a capacity that is sufficient to keep the map from being resized as long as it grows no
+- larger than expectedSize and the load factor is ≥ its default (0.75).
 */
 static int capacity(int expectedSize) {
     if (expectedSize < 3) {
@@ -1609,7 +1585,6 @@ static int capacity(int expectedSize) {
     }
     return Integer.MAX_VALUE; // any large value
 }
-```
 
 ```
 
@@ -1625,8 +1600,7 @@ static int capacity(int expectedSize) {
 
 所以，我可以认为，当我们明确知道 HashMap 中元素的个数的时候，把默认容量设置成 expectedSize / 0.75F + 1.0F 是一个在性能上相对好的选择，但是，同时也会牺牲些内存。
 
-小结
---
+### 小结
 
 当我们想要在代码中创建一个 HashMap 的时候，如果我们已知这个 Map 中即将存放的元素个数，给 HashMap 设置初始容量可以在一定程度上提升效率。
 
@@ -1634,10 +1608,8 @@ static int capacity(int expectedSize) {
 
 但是，为了最大程度的避免扩容带来的性能消耗，我们建议可以把默认容量的数字设置成 expectedSize / 0.75F + 1.0F 。在日常开发中，可以使用
 
-```
-
-Map\<String, String> map = Maps.newHashMapWithExpectedSize(10);
-
+```java
+Map<String, String> map = Maps.newHashMapWithExpectedSize(10);
 ```
 
 来创建一个 HashMap，计算的过程 guava 会帮我们完成。
@@ -1645,4 +1617,3 @@ Map\<String, String> map = Maps.newHashMapWithExpectedSize(10);
 但是，以上的操作是一种用内存换性能的做法，真正使用的时候，要考虑到内存的影响。
 
 好啦，以上就是本次 Chat 的全部内容，由于篇幅有限，无法把这个系列的内容全部都写出来，本文主要挑选了部分知识点进行讲解。希望读者可以学会在使用规约的同时，去洞悉其背后的思考。
-```

@@ -161,19 +161,17 @@ MySQL 数据库字符集和校对规则有 4 个级别：服务器级、数据�
 
 **方式一**在 MySQL 配置文件 my.cnf 中进行配置设置：
 
-````
+```
 [mysqld]
 default-character-set=gbk
 ```** 方式二 **在启动 MySQL 时设置：
-
-````
+```
 
 mysqld --default-character-set=gbk
 
 ```** 方式三**
 
 在源码编译时指定，如果未指定，默认使用 latin1：
-
 ```
 
 ./configure --with-charcter=gbk
@@ -208,7 +206,6 @@ mysqld --default-character-set=gbk
 **1\. 为数据库设置字符集和校对规则**
 
 设置数据库字符集：
-
 ```
 
 create database db1 default character set utf8;
@@ -216,7 +213,6 @@ create database db1 default character set utf8;
 ```
 
 设置数据库校对规则：
-
 ```
 
 create database db1 default character set utf8 collate utf8_bin;
@@ -232,7 +228,6 @@ create database db1 default character set utf8 collate utf8_bin;
 **2\. 为表设置字符集和校对规则**
 
 设置表字符集：
-
 ```
 
 create table tab1(column1 varchar(5)) default character set utf8;
@@ -240,7 +235,6 @@ create table tab1(column1 varchar(5)) default character set utf8;
 ```
 
 设置表校对规则：
-
 ```
 
 create table tab1(column1 varchar(5)) default character set utf8 collate utf8_bin;
@@ -256,7 +250,6 @@ create table tab1(column1 varchar(5)) default character set utf8 collate utf8_bi
 **3\. 为列设置字符集和校对规则**
 
 设置列字符集：
-
 ```
 
 create table tab1(column1 varchar(5) character SET utf8);
@@ -264,12 +257,11 @@ create table tab1(column1 varchar(5) character SET utf8);
 ```
 
 设置列校对规则：
-
 ```
 
 create table tab1(column1 varchar(5) character set utf8 collate utf8_bin);
 
-````
+```
 
 说明：
 
@@ -286,8 +278,7 @@ create database db1 default charset gbk;
 ```** 第六步：创建表 **```
 mysql -uroot -p db1 < createtab.sql
 ```** 第七步：导入数据**
-
-````
+```
 
 mysql -uroot -p db1 \< data.sql
 

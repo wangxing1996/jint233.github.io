@@ -96,7 +96,7 @@ mysql> select * from information_schema.innodb_locks;
 
 结果显示有两个锁相关内容。
 
-**定位事务**\`\`\`
+**定位事务**```
 mysql> select trx_id,trx_started,trx_requested_lock_id,trx_query,trx_mysql_thread_id from information_schema.innodb_trx;
 +--------+---------------------+-----------------------+---------------------------+---------------------+
 | trx_id | trx_started         | trx_requested_lock_id | trx_query                 | trx_mysql_thread_id |

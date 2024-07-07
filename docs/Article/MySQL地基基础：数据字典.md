@@ -1,21 +1,20 @@
-MySQL 地基基础：数据字典
-===============
+# MySQL 地基基础：数据字典
 
 ### 数据字典是什么
 
 MySQL 数据字典的发展史：
 
-* MySQL 4 提供了 information\_schema 数据字典，可以简单的使用 SQL 来检索系统元数据。
-* MySQL 5.5 提供了 performa nce\_schema 性能引擎，可以查看 MySQL 性能问题，但是这个有一定难度。
-* MySQL 5.7 提供了 sys 系统数据库，其包含的表、视图、函数、存储过程、触发器可以帮我们快速了解数据库的情况。
+- MySQL 4 提供了 information_schema 数据字典，可以简单的使用 SQL 来检索系统元数据。
+- MySQL 5.5 提供了 performa nce_schema 性能引擎，可以查看 MySQL 性能问题，但是这个有一定难度。
+- MySQL 5.7 提供了 sys 系统数据库，其包含的表、视图、函数、存储过程、触发器可以帮我们快速了解数据库的情况。
 
 **数据字典的作用**
 
 数据字典我们用一句话来概括，就是数据的数据，用于查询数据库中数据的信息内容。
 
-### MySQL information\_schema 详解（崭露头角)
+### MySQL information_schema 详解（崭露头角)
 
-我们部署完 MySQL 后发现会自动生成一个 information\_schema 库，这个库提供了访问 MySQL 元数据的访问方式。
+我们部署完 MySQL 后发现会自动生成一个 information_schema 库，这个库提供了访问 MySQL 元数据的访问方式。
 
 那么什么是元数据呢？元数据就是数据字典，就是数据的数据，前者这个数据就是我们所知道，所用的数据，后者这个数据就是解释前者的数据。比如，数据库名、表名、列名、列类型、权限等等。
 
@@ -36,7 +35,7 @@ mysql> select * from schema_object_overview where db='information_schema';
 
 结果显示，有 61 张系统视图。既然是视图，那就没有相关的数据文件了，我们去验证一下。
 
-到 MySQL 的 data 目录中看看是否有 information\_schema 相关的数据文件。经过查询根本找不到这个库的目录。
+到 MySQL 的 data 目录中看看是否有 information_schema 相关的数据文件。经过查询根本找不到这个库的目录。
 
 都有什么视图内容呢？我们可以通过 show tables 命令查看。
 
@@ -45,25 +44,25 @@ mysql> use information_schema
 mysql> show tables;
 ```
 
-接下来我们讲几个 information\_schema 中重要常用视图。
+接下来我们讲几个 information_schema 中重要常用视图。
 
-* **SCHEMATA**：查看 MySQL 实例中所有数据库信息
-* **TABLES**：查询数据库中的表、视图信息
-* **COLUMNS**：查询表中的列信息
-* **STATISTICS**：查询表中的索引信息
-* **USER\_PRIVILEGES**：查询用户权限信息
-* **SCHEMA\_PRIVILEGES**：查询数据库权限信息
-* **TABLE\_PRIVILEGES**：查询表权限信息
-* **COLUMN\_PRIVILEGES**：查询列权限信息
-* **CHARACTER\_SETS**：查询字符集信息
+- **SCHEMATA**：查看 MySQL 实例中所有数据库信息
+- **TABLES**：查询数据库中的表、视图信息
+- **COLUMNS**：查询表中的列信息
+- **STATISTICS**：查询表中的索引信息
+- **USER_PRIVILEGES**：查询用户权限信息
+- **SCHEMA_PRIVILEGES**：查询数据库权限信息
+- **TABLE_PRIVILEGES**：查询表权限信息
+- **COLUMN_PRIVILEGES**：查询列权限信息
+- **CHARACTER_SETS**：查询字符集信息
 
-好了，information\_schema 不做过多的介绍了，查询的内容比较全面，也比较简单，大家可以自行去探索。
+好了，information_schema 不做过多的介绍了，查询的内容比较全面，也比较简单，大家可以自行去探索。
 
-### MySQL performance\_schema 详解（成长升级）
+### MySQL performance_schema 详解（成长升级）
 
 MySQL 在 5.7 开始，对数据字典的使用有了很大的改进，使用上更加的方便，提供的能力也更高。它可以查询事务信息、获取元数据锁、跟踪事件、统计内存使用情况等等。
 
-我们先说一个你想不到的事情，MySQL 的 performance\_schema 其实是一个引擎。
+我们先说一个你想不到的事情，MySQL 的 performance_schema 其实是一个引擎。
 
 ```
 mysql> select * from information_schema.engines;
@@ -83,7 +82,7 @@ mysql> select * from information_schema.engines;
 9 rows in set (0.00 sec)
 ```
 
-看到了吗，在 MySQL 支持的存储引擎中发现了 PERFORMANCE\_SCHEMA，是不是很神奇。
+看到了吗，在 MySQL 支持的存储引擎中发现了 PERFORMANCE_SCHEMA，是不是很神奇。
 
 在 MySQL 配置中可以配置启用这个引擎，默认是启动的。
 
@@ -119,18 +118,18 @@ mysql> select * from schema_object_overview where db='performance_schema';
 1 row in set (0.06 sec)
 ```
 
-结果显示，有 87 张表。我们知道 MySQL 有很多需要监控和统计的内容，而 performance\_schema 将这些监控、统计信息之类的内容通过库中的表统计出来，都展现在这些表中。那么这些表都是做什么用的呢？我们就去研究一下。
+结果显示，有 87 张表。我们知道 MySQL 有很多需要监控和统计的内容，而 performance_schema 将这些监控、统计信息之类的内容通过库中的表统计出来，都展现在这些表中。那么这些表都是做什么用的呢？我们就去研究一下。
 
 总体分类：
 
-* setup 表
-* instance 表
-* wait event 表
-* stage event 表
-* statement event 表
-* transaction event 表
-* summary 表
-* other 表
+- setup 表
+- instance 表
+- wait event 表
+- stage event 表
+- statement event 表
+- transaction event 表
+- summary 表
+- other 表
 
 #### setup 表
 
@@ -149,7 +148,7 @@ mysql> show tables like '%setup%';
 5 rows in set (0.00 sec)
 ```
 
-**setup\_actors**
+**setup_actors**
 
 作用：配置用户维度的监控，默认监控所有用户。
 
@@ -165,7 +164,7 @@ mysql> select * from setup_actors;
 
 `%` 表示默认是对所有的用户监控。
 
-**setup\_consumers**
+**setup_consumers**
 
 作用：配置事件的消费者类型，管理将收集的监控内容保存在哪些表中。
 
@@ -210,12 +209,12 @@ global_instrumentation
 |-----statements_digest
 ```
 
-* 第一级：global\_instrumentation 是全局统计，只有它生效其余的才生效。如果设置它生效，其余都设置未生效，则只收集全局统计信息，不收集用户级统计信息。
-* 第二级：thread\_instrumentation 是用户线程统计，statements\_digest 是全局 SQL 统计。
-* 第三级：events\_waits\_current、events\_stages\_current、events\_statements\_current，分别是事件的 wait、stage、statement 的统计。
-* 第四级：分别是对应的历史统计内容了。
+- 第一级：global_instrumentation 是全局统计，只有它生效其余的才生效。如果设置它生效，其余都设置未生效，则只收集全局统计信息，不收集用户级统计信息。
+- 第二级：thread_instrumentation 是用户线程统计，statements_digest 是全局 SQL 统计。
+- 第三级：events_waits_current、events_stages_current、events_statements_current，分别是事件的 wait、stage、statement 的统计。
+- 第四级：分别是对应的历史统计内容了。
 
-**setup\_instruments**
+**setup_instruments**
 
 作用：配置仪器，这个表中内容非常丰富，包含了统计 SQL 执行阶段情况、统计等待事件情况、IO 情况、内存情况、锁情况等。
 
@@ -255,16 +254,16 @@ mysql> SELECT @@SESSION.sql_mode;
 mysql> set @@session.sql_mode ='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
 ```
 
-通过修改会话级的 sql\_mode 可以解决问题。
+通过修改会话级的 sql_mode 可以解决问题。
 
-* idle：表示空闲
-* memory：表示内存的统计
-* stage：表示 SQL 语句每个阶段的统计
-* statement：表示 SQL 语句的统计
-* transaction：表示事务的统计
-* wait：表示各种等待的统计
+- idle：表示空闲
+- memory：表示内存的统计
+- stage：表示 SQL 语句每个阶段的统计
+- statement：表示 SQL 语句的统计
+- transaction：表示事务的统计
+- wait：表示各种等待的统计
 
-**setup\_objects**
+**setup_objects**
 
 作用：配置监控对象。
 
@@ -299,12 +298,12 @@ mysql> select * from setup_objects;
 
 通过结果我们看到默认对 EVENT、FUNCTION、PROCEDURE、TABLE、TRIGGER 的配置：
 
-* mysql 库都不监控
-* performance\_schema 都不监控
-* information\_schema 都不监控
-* 其余库都监控
+- mysql 库都不监控
+- performance_schema 都不监控
+- information_schema 都不监控
+- 其余库都监控
 
-**setup\_timers**
+**setup_timers**
 
 作用：配置每种类型统计的时间单位。
 
@@ -322,11 +321,11 @@ mysql> select * from setup_timers;
 5 rows in set (0.00 sec)
 ```
 
-* idle：微妙
-* wait：CPU 时钟
-* stage：纳秒
-* statement：纳秒
-* transaction：纳秒
+- idle：微妙
+- wait：CPU 时钟
+- stage：纳秒
+- statement：纳秒
+- transaction：纳秒
 
 那么为什么使用这样的时间呢，这个时间定义来源于 MySQL 的基础定义。
 
@@ -364,12 +363,12 @@ mysql> show tables like '%instances';
 6 rows in set (0.00 sec)
 ```
 
-* **cond\_instances**：保存系统中使用的条件变量的对象
-* **file\_instances**：保存系统中打开文件的对象
-* **mutex\_instances**：保存系统中使用互斥变量的对象
-* **prepared\_statements\_instances**：保存预处理 SQL 语句的 statements 的对象
-* **rwlock\_instances**：保存系统中使用读写锁的对象
-* **socket\_instances**：保存系统中使用的 socket 的对象
+- **cond_instances**：保存系统中使用的条件变量的对象
+- **file_instances**：保存系统中打开文件的对象
+- **mutex_instances**：保存系统中使用互斥变量的对象
+- **prepared_statements_instances**：保存预处理 SQL 语句的 statements 的对象
+- **rwlock_instances**：保存系统中使用读写锁的对象
+- **socket_instances**：保存系统中使用的 socket 的对象
 
 #### wait event 表
 
@@ -397,9 +396,9 @@ mysql> show tables like '%waits%';
 
 这里是说前三个，其他的后面介绍。
 
-* **events\_waits\_current**：保存当前线程的等待事件
-* **events\_waits\_history**：保存每个线程的最近 N 个等待事件
-* **events\_waits\_history\_long**：保存所有线程的最近 N 个等待事件
+- **events_waits_current**：保存当前线程的等待事件
+- **events_waits_history**：保存每个线程的最近 N 个等待事件
+- **events_waits_history_long**：保存所有线程的最近 N 个等待事件
 
 #### stage event 表
 
@@ -423,9 +422,9 @@ mysql> show tables like '%stage%';
 
 这里是说前三个，其他的后面介绍。
 
-* **events\_stages\_current**：保存当前线程所处的执行阶段
-* **events\_stages\_history**：保存当前线程最新的 N 个执行阶段
-* **events\_stages\_history\_long**：保存当前线程最新的 N 个执行阶段
+- **events_stages_current**：保存当前线程所处的执行阶段
+- **events_stages_history**：保存当前线程最新的 N 个执行阶段
+- **events_stages_history_long**：保存当前线程最新的 N 个执行阶段
 
 #### statement event 表
 
@@ -452,9 +451,9 @@ mysql> show tables like '%statement%';
 
 这里是说前三个，其他的后面介绍。
 
-* **events\_statements\_current**：保存当前线程执行的语句
-* **events\_statements\_history**：保存每个线程最新的 N 个执行的语句
-* **events\_statements\_history\_long**：保存每个线程最新的 N 个执行的语句
+- **events_statements_current**：保存当前线程执行的语句
+- **events_statements_history**：保存每个线程最新的 N 个执行的语句
+- **events_statements_history_long**：保存每个线程最新的 N 个执行的语句
 
 #### transaction event 表
 
@@ -478,9 +477,9 @@ mysql> show tables like '%transactions%';
 
 这里是说前三个，其他的后面介绍。
 
-* **events\_transactions\_current**：保存每个线程当前事务事件
-* **events\_transactions\_history**：保存每个线程最近的 N 个事务事件
-* **events\_transactions\_history\_long**：保存每个线程最近的 N 个事务事件
+- **events_transactions_current**：保存每个线程当前事务事件
+- **events_transactions_history**：保存每个线程最近的 N 个事务事件
+- **events_transactions_history_long**：保存每个线程最近的 N 个事务事件
 
 #### summary 表
 
@@ -532,27 +531,27 @@ mysql> show tables like '%summary%';
 
 这些 summary 表有很多，提供了一段时间内已经执行完成的事件的汇总情况，我们从不同的维度整理如下：
 
-* 按阶段事件的汇总摘要：events\_stages\_summary\_\*
-* 按语句事件的汇总摘要：events\_statements\_summary\_\*
-* 按事务事件的汇总摘要：events\_transactions\_summary\_\*
-* 按等待事件的汇总摘要：events\_waits\_summary\_\*
-* 按文件事件的汇总摘要：file\_summary\_\*
-* 按内存事件的汇总摘要：memory\_summary\_\*
-* 按对象事件的汇总摘要：objects\_summary\_global\_by\_type
-* 按套接字事件的汇总摘要：socket\_summary\_\*
-* 按表事件的汇总摘要：table\_summary\_\*
+- 按阶段事件的汇总摘要：events_stages_summary\_\*
+- 按语句事件的汇总摘要：events_statements_summary\_\*
+- 按事务事件的汇总摘要：events_transactions_summary\_\*
+- 按等待事件的汇总摘要：events_waits_summary\_\*
+- 按文件事件的汇总摘要：file_summary\_\*
+- 按内存事件的汇总摘要：memory_summary\_\*
+- 按对象事件的汇总摘要：objects_summary_global_by_type
+- 按套接字事件的汇总摘要：socket_summary\_\*
+- 按表事件的汇总摘要：table_summary\_\*
 
 #### other 表
 
-其他的表还有很多，可以监控统计 accounts、file、status、hosts、memory、metadata\_locks、replication、session、socket、table、threads 等。
+其他的表还有很多，可以监控统计 accounts、file、status、hosts、memory、metadata_locks、replication、session、socket、table、threads 等。
 
-好了，performance\_schema 是数据库，是性能引擎，内部逻辑比较复杂，能做的事情也很多，这里就先介绍到这里，大家可以继续深入研究。
+好了，performance_schema 是数据库，是性能引擎，内部逻辑比较复杂，能做的事情也很多，这里就先介绍到这里，大家可以继续深入研究。
 
 ### MySQL sys 详解（演变进化）
 
 MySQL 在 5.7 版本引入了 sys Schema，这个 sys 可以理解为是一个 MySQL 系统库，这个库中提供了表、视图、函数、存储过程、触发器，这些就可以帮我们快捷、高效地知道 MySQL 数据库的元数据信息，比如我们可以了解：SQL 执行情况是否使用了索引，是否走了全表扫描，统计信息的情况、内存使用情况、IO 使用情况、会话连接等等。
 
-前面我们学习了 information\_schema 和 performance\_schema，这个 sys 提供的视图其实就是前面这两个化繁为简的总结，降低复杂度，让你更快乐的了解 MySQL 的现状。可见 MySQL 在自我优化方面是多么的努力，它帮你做了很多的工作，我们可以更简单的获取更直观的数据，怎么样，MySQL 优秀吧。
+前面我们学习了 information_schema 和 performance_schema，这个 sys 提供的视图其实就是前面这两个化繁为简的总结，降低复杂度，让你更快乐的了解 MySQL 的现状。可见 MySQL 在自我优化方面是多么的努力，它帮你做了很多的工作，我们可以更简单的获取更直观的数据，怎么样，MySQL 优秀吧。
 
 说这么多了，这个 sys 库里到底有什么内容呢？好，赶紧一睹芳容。
 
@@ -604,13 +603,13 @@ mysql> select * from schema_object_overview where db='sys';
 
 这些内容可以帮我们做什么呢？
 
-* 视图：获取更可读的 performance\_schema 中的数据
-* 存储过程：调整 performance\_schema 的配置信息，生成系统诊断报告等
-* 函数：查询 performance\_schema 配置信息，提供格式化数据等
+- 视图：获取更可读的 performance_schema 中的数据
+- 存储过程：调整 performance_schema 的配置信息，生成系统诊断报告等
+- 函数：查询 performance_schema 配置信息，提供格式化数据等
 
 #### 1 张表
 
-在这些所有内容中，我们常用的就是这一张表和其他视图，我们先来看看这唯一一张表，它是 sys\_config。
+在这些所有内容中，我们常用的就是这一张表和其他视图，我们先来看看这唯一一张表，它是 sys_config。
 
 ```
 mysql> select * from sys_config;
@@ -627,18 +626,18 @@ mysql> select * from sys_config;
 6 rows in set (0.00 sec)
 ```
 
-只有简单的 6 行数据，这张表保存的是基础参数的配置内容。内容级别是会话级。默认最后一列 set\_by（配置修改者）为空，其保存的内容是最后一次修改配置时的用户名。
+只有简单的 6 行数据，这张表保存的是基础参数的配置内容。内容级别是会话级。默认最后一列 set_by（配置修改者）为空，其保存的内容是最后一次修改配置时的用户名。
 
 参数说明
 
-* diagnostics.allow\_i\_s\_tables：默认 OFF，这参数控制调用 diagnostics() 存储过程时会扫描 information\_schema.tables 找到所有的基表与 statistics 表关联查询，扫描每个表的统计信息。
-* diagnostics.include\_raw：默认 OFF，这参数控制调用 diagnostics() 存储过程输出包含 metrics 视图的原始信息。
-* ps\_thread\_trx\_info.max\_length：默认 65535，保存的是 ps\_thread\_trx\_info() 函数生成的 json 输出内容的最大长度。
-* statement\_performance\_analyzer.limit：默认 100，返回不具有内置限制的视图的行数。
-* statement\_performance\_analyzer.view：默认 NULL，给 statement\_performance\_analyzer() 存储过程当作入参使用的自定义查询或视图名称。
-* statement\_truncate\_len：默认 64，控制 format\_statement() 函数返回的语句的最大长度。
+- diagnostics.allow_i_s_tables：默认 OFF，这参数控制调用 diagnostics() 存储过程时会扫描 information_schema.tables 找到所有的基表与 statistics 表关联查询，扫描每个表的统计信息。
+- diagnostics.include_raw：默认 OFF，这参数控制调用 diagnostics() 存储过程输出包含 metrics 视图的原始信息。
+- ps_thread_trx_info.max_length：默认 65535，保存的是 ps_thread_trx_info() 函数生成的 json 输出内容的最大长度。
+- statement_performance_analyzer.limit：默认 100，返回不具有内置限制的视图的行数。
+- statement_performance_analyzer.view：默认 NULL，给 statement_performance_analyzer() 存储过程当作入参使用的自定义查询或视图名称。
+- statement_truncate_len：默认 64，控制 format_statement() 函数返回的语句的最大长度。
 
-接下来我们测试修改一下 statement\_truncate\\len 这个参数内容：
+接下来我们测试修改一下 statement_truncate\\len 这个参数内容：
 
 ```
 # statement_truncate_len，调用 format_statement()函数返回是 64 字节长度的值，在未被调用过任何涉及到该配置选项的函数之前，该参数的值是 NULL。
@@ -687,11 +686,11 @@ mysql> select format_statement(@stmt);
 1 row in set (0.00 sec)
 ```
 
-上面这 6 行配置时默认自带的，sys\_config 中还有一个 sys.debug 参数，这个参数默认没有，我们可以手工插入。
+上面这 6 行配置时默认自带的，sys_config 中还有一个 sys.debug 参数，这个参数默认没有，我们可以手工插入。
 
 **debug**
 
-默认是 NULL，调用 diagnostics() 和 execute\_prepared\_stmt() 存储过程，执行检查。这个参数默认不存在，是临时使用的。
+默认是 NULL，调用 diagnostics() 和 execute_prepared_stmt() 存储过程，执行检查。这个参数默认不存在，是临时使用的。
 
 ```
 # 会话级设置
@@ -717,11 +716,11 @@ mysql> update sys_config set value = 'OFF' where variable = 'debug';
 
 #### 2 个触发器
 
-前面 sys\_config 这个表介绍的差不多了，接下来我们说一下这两个触发器，他们和这张表有紧密的关系。
+前面 sys_config 这个表介绍的差不多了，接下来我们说一下这两个触发器，他们和这张表有紧密的关系。
 
 在 MySQL 5.7 开始提供了一个新的用户 mysql.sys，这个用户可避免修改或删除 root 用户时发生的问题，但是该用户被锁定是无法连接客户端的。
 
-接下来说的两个触发器，在定义时使用了 `[[email protected]](/cdn-cgi/l/email-protection)`，就是说只能用 mysql.sys 调用触发器，从而对表 sys\_config 的内容做修改，如果 mysql.sys 用户不存在会报错
+接下来说的两个触发器，在定义时使用了 `[[email protected]](/cdn-cgi/l/email-protection)`，就是说只能用 mysql.sys 调用触发器，从而对表 sys_config 的内容做修改，如果 mysql.sys 用户不存在会报错
 
 ```
 ERROR 1449 (HY000): The user specified as a definer ('mysql.sys'@'localhost') does not exist
@@ -743,11 +742,11 @@ Query OK, 1 row affected (0.02 sec)
 Rows matched: 1  Changed: 1  Warnings: 0
 ```
 
-**sysconfiginsertsetuser **当对 sys.sys\_config 表做 insert 操作时，该触发器会将 sys\_config 表的 set\_by 列设置为当前用户名。** sysconfigupdatesetuser**
+**sysconfiginsertsetuser **当对 sys.sys_config 表做 insert 操作时，该触发器会将 sys_config 表的 set_by 列设置为当前用户名。** sysconfigupdatesetuser**
 
-当对 sys.sys\_config 表做 insert 操作时，该触发器会将 sys\_config 表的 set\_by 列设置为当前用户名。
+当对 sys.sys_config 表做 insert 操作时，该触发器会将 sys_config 表的 set_by 列设置为当前用户名。
 
-这两个触发器可以更新 set\_by 字段都有一个前提条件：
+这两个触发器可以更新 set_by 字段都有一个前提条件：
 
 ```
 mysql> set @sys.ignore_sys_config_triggers=0;
@@ -759,49 +758,49 @@ mysql> set @sys.ignore_sys_config_triggers=0;
 
 我们重点介绍一下字母开头的视图，重点分为几类：
 
-* host\_summary：服务器层级，以 IP 分组，汇总 IO 信息。
-* innodb：InnoDB 层级，汇总 innodb 存储引擎信息和事务锁、等待等信息。
-* io：IO 层级，汇总 IO 使用情况、IO 等待情况等。
-* memory：内存使用情况。
-* metrics：数据库内部统计值。
-* processlist：线程情况。
-* ps\_check\_lost\_instrumentation：发生监控丢失的信息情况。
-* schema：模式层级，汇总表统计信息等。
-* session：会话层级，汇总会话情况。
-* statement：执行语句层级，汇总统计信息等。
-* user\_summary：用户层级，以用户分组，汇总用户使用文件 IO 信息，执行语句的统计信息等。
-* wait：汇总主机，等待事情等。
+- host_summary：服务器层级，以 IP 分组，汇总 IO 信息。
+- innodb：InnoDB 层级，汇总 innodb 存储引擎信息和事务锁、等待等信息。
+- io：IO 层级，汇总 IO 使用情况、IO 等待情况等。
+- memory：内存使用情况。
+- metrics：数据库内部统计值。
+- processlist：线程情况。
+- ps_check_lost_instrumentation：发生监控丢失的信息情况。
+- schema：模式层级，汇总表统计信息等。
+- session：会话层级，汇总会话情况。
+- statement：执行语句层级，汇总统计信息等。
+- user_summary：用户层级，以用户分组，汇总用户使用文件 IO 信息，执行语句的统计信息等。
+- wait：汇总主机，等待事情等。
 
 接下来我们重点介绍几个视图。
 
-* **host\_summary**：这个视图我们可以查看连接数据库的主机情况，统计每个主机 SQL 执行次数、SQL 执行时长、表扫描次数、文件 IO 情况、连接情况、用户情况、内存分布情况。通过这些信息我们可以快速了解连接数据库的主机情况。
-* **hostsummarybyfileio\_type**：查询连接数据库每个主机的文件 IO 使用情况。
-* **hostsummarybyfileio**：查询连接数据库主机的总 IO 使用情况。
-* **innodbbufferstatsbyschema**：扫描整个 buffer pool 来统计查看每个库的内存占用情况。如果生产环境 buffer pool 很大，扫描会占用很多资源，造成性能问题，慎用。
-* **innodbbufferstatsbytable**：扫描整个 buffer pool 来统计查看每个库的每个对象的内存占用情况。如果生产环境 buffer pool 很大，扫描会占用很多资源，造成性能问题，慎用。
-* **ioglobalbyfileby\_bytes**：查询数据库的 IO 情况。
-* **memorybyhostbycurrent\_bytes**：查询连接数据库的主机内存情况。
-* **memorybythreadbycurrent\_bytes**：查询连接数据库的线程内存情况。
-* **memorybyuserbycurrent\_bytes**：查询连接数据库的用户内存情况。
-* **processlist**：查询数据库连接情况。
-* **session**：查询连接数据库的会话情况。
-* **schematablelock\_waits**：查询锁等待情况。
-* **schematablestatistics**：查询对表的 insert、update、delete、select 的 IO 情况。
-* **schematableswithfulltable\_scans**：查询全表扫描情况。
-* **schemaautoincrement\_columns**：查询自增列情况。
-* **schemaobjectoverview**：查询 MySQL 中每个数据库的对象情况（包括表、索引、视图、函数、存储过程、触发器）。
-* **schemaredundantindexes**：查询数据库的冗余索引情况。
-* **schemaunusedindexes**：查询数据库中没有使用索引的情况。
-* **schemaindexstatistics**：查询索引的 select、insert、update、delete 情况。
-* **statement\_analysis**：查询执行语句总体的统计信息情况。
-* **statementswitherrorsorwarnings**：查询执行语句的错误和警告情况。
-* **statementswithfulltablescans**：查询全表扫描情况。
-* **statementswithruntimesin95th\_percentile**：查询语句平均执行时间大于整体 95%平均分布的情况。
-* **statementswithsorting**：查询使用了文件排序的情况。
-* **statementswithtemp\_tables**：查询使用了临时表的执行语句情况。
-* **user\_summary**：查询连接的总体执行时间、平均执行时间、IO、内存等情况。
-* **version**：查询 sys schema 和 MySQL 版本情况。
-* **waitclassesglobalbyavg\_latency**：查询等待事件的平均延迟时间情况。
-* **waitclassesglobalbylatency**：查询等待事件的总体延迟时间情况。
+- **host_summary**：这个视图我们可以查看连接数据库的主机情况，统计每个主机 SQL 执行次数、SQL 执行时长、表扫描次数、文件 IO 情况、连接情况、用户情况、内存分布情况。通过这些信息我们可以快速了解连接数据库的主机情况。
+- **hostsummarybyfileio_type**：查询连接数据库每个主机的文件 IO 使用情况。
+- **hostsummarybyfileio**：查询连接数据库主机的总 IO 使用情况。
+- **innodbbufferstatsbyschema**：扫描整个 buffer pool 来统计查看每个库的内存占用情况。如果生产环境 buffer pool 很大，扫描会占用很多资源，造成性能问题，慎用。
+- **innodbbufferstatsbytable**：扫描整个 buffer pool 来统计查看每个库的每个对象的内存占用情况。如果生产环境 buffer pool 很大，扫描会占用很多资源，造成性能问题，慎用。
+- **ioglobalbyfileby_bytes**：查询数据库的 IO 情况。
+- **memorybyhostbycurrent_bytes**：查询连接数据库的主机内存情况。
+- **memorybythreadbycurrent_bytes**：查询连接数据库的线程内存情况。
+- **memorybyuserbycurrent_bytes**：查询连接数据库的用户内存情况。
+- **processlist**：查询数据库连接情况。
+- **session**：查询连接数据库的会话情况。
+- **schematablelock_waits**：查询锁等待情况。
+- **schematablestatistics**：查询对表的 insert、update、delete、select 的 IO 情况。
+- **schematableswithfulltable_scans**：查询全表扫描情况。
+- **schemaautoincrement_columns**：查询自增列情况。
+- **schemaobjectoverview**：查询 MySQL 中每个数据库的对象情况（包括表、索引、视图、函数、存储过程、触发器）。
+- **schemaredundantindexes**：查询数据库的冗余索引情况。
+- **schemaunusedindexes**：查询数据库中没有使用索引的情况。
+- **schemaindexstatistics**：查询索引的 select、insert、update、delete 情况。
+- **statement_analysis**：查询执行语句总体的统计信息情况。
+- **statementswitherrorsorwarnings**：查询执行语句的错误和警告情况。
+- **statementswithfulltablescans**：查询全表扫描情况。
+- **statementswithruntimesin95th_percentile**：查询语句平均执行时间大于整体 95%平均分布的情况。
+- **statementswithsorting**：查询使用了文件排序的情况。
+- **statementswithtemp_tables**：查询使用了临时表的执行语句情况。
+- **user_summary**：查询连接的总体执行时间、平均执行时间、IO、内存等情况。
+- **version**：查询 sys schema 和 MySQL 版本情况。
+- **waitclassesglobalbyavg_latency**：查询等待事件的平均延迟时间情况。
+- **waitclassesglobalbylatency**：查询等待事件的总体延迟时间情况。
 
 以上差不多就是 sys 库常用的视图了，基本满足我们的日常分析统计需求，大家可以通过官网继续深入学习，学好这一部分的内容，对 MySQL 的底层原理及性能分析有非常大的帮助。

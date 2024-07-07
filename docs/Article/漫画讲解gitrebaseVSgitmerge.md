@@ -1,5 +1,4 @@
-漫画讲解 git rebase VS git merge
-============================
+# 漫画讲解 git rebase VS git merge
 
 关于 `git rebase` ，首先要理解的是它解决了和 `git merge` 同样的问题。这两个命令都旨在将更改从一个分支合并到另一个分支，但二者的合并方式却有很大的不同。
 
@@ -8,18 +7,17 @@
 Chat 内容：
 
 1. 分析代码冲突的原因，并通过漫画的形式举例讲解。
-2. 分析 `git merge` 合并分支代码
-3. `git rebase` 合并分支代码，并通过漫画的形式举例讲解
-4. `git merge` 对比 `git rebase` 该如何选择？
-5. 加餐学习：`git stash` 解决线上代码冲突
+1. 分析 `git merge` 合并分支代码
+1. `git rebase` 合并分支代码，并通过漫画的形式举例讲解
+1. `git merge` 对比 `git rebase` 该如何选择？
+1. 加餐学习：`git stash` 解决线上代码冲突
 
-分析代码冲突的原因，并通过漫画的形式举例讲解
-----------------------
+## 分析代码冲突的原因，并通过漫画的形式举例讲解
 
 代码冲突是团队协同开发绕不开的问题，要更好的解决它，首先我们就得深入的认识它。首先我们有一个基本的认识就是 **代码冲突都是在代码合并的时候才产生** 。所以代码冲突通常会在以下两个场景出现：
 
 1. 本地仓库拉取远端仓库时产生
-2. 本地主分支合并代码分支时产生
+1. 本地主分支合并代码分支时产生
 
 下面我通过漫画的形式来演示两种场景。首先准备两个本地客户端和一个代码仓库，两个客户端为了好记，姑且就叫熊大熊二吧（简称A和B）。
 
@@ -178,8 +176,7 @@ git commit -m 'master merge food:eat apple'
 git push origin master
 ```
 
-![在这里插入图片描述](assets/58b4f090-e256-11eb-83cb-07ac0d3b70bf)**总结：在前面我们看到，如果 master 分支上开发。由于 master 分支时刻保持最新的发行代码，所以变动频繁，因此拉取 master 分支非常容易造成冲突。因此这里是将更改在本地分支上进行，在需要合并时，切换到 master 分支拉取最新代码后，根据拉取的内容，再去合并分支。同时这种方式也是更受大家推崇的。**分析 git merge 合并分支代码的特点
-----------------------
+## ![在这里插入图片描述](assets/58b4f090-e256-11eb-83cb-07ac0d3b70bf)\*\*总结：在前面我们看到，如果 master 分支上开发。由于 master 分支时刻保持最新的发行代码，所以变动频繁，因此拉取 master 分支非常容易造成冲突。因此这里是将更改在本地分支上进行，在需要合并时，切换到 master 分支拉取最新代码后，根据拉取的内容，再去合并分支。同时这种方式也是更受大家推崇的。\*\*分析 git merge 合并分支代码的特点
 
 上一节演示了冲突是如何产生的，并演示了通过`git merge`方式合并分支冲突。这一章节我们来分析一下`get merge`合并分支代码冲突的特点。
 
@@ -197,8 +194,7 @@ git push origin master
 
 在实际的生产开发过程中，采用这种方式会导致分叉的 commit 记录非常多，不利于开发人员代码审查。下面我们来看一下`git rebase`又是如何解决的呢？
 
-git rebase 合并分支代码，并通过漫画的形式举例讲解
-------------------------------
+## git rebase 合并分支代码，并通过漫画的形式举例讲解
 
 熊大在本机创建 food2 分支，在本地分支上将内容修改为 honey。
 
@@ -253,7 +249,7 @@ git rebase master
 
 > First, rewinding head to replay your work on top of it… Applying: update today-food-menu.txt:honey Using index info to reconstruct a base tree… M today-food-menu.txt Falling back to patching base and 3-way merge… Auto-merging today-food-menu.txt CONFLICT (content): Merge conflict in today-food-menu.txt error: Failed to merge in the changes. Patch failed at 0001 update today-food-menu.txt:honey Use 'git am --show-current-patch' to see the failed patch
 >
-> Resolve all conflicts manually, mark them as resolved with "git add/rm <conflicted\_files>", then run "git rebase --continue". You can instead skip this commit: run "git rebase --skip". To abort and get back to the state before "git rebase", run "git rebase --abort".
+> Resolve all conflicts manually, mark them as resolved with "git add/rm \<conflicted_files>", then run "git rebase --continue". You can instead skip this commit: run "git rebase --skip". To abort and get back to the state before "git rebase", run "git rebase --abort".
 
 又回到了我们熟悉的合并冲突，查看`today-food-menu.txt`内容：
 
@@ -288,7 +284,7 @@ git rebase --skip
 
 > Applying: update today-food-menu.txt:coffee Using index info to reconstruct a base tree… M today-food-menu.txt Falling back to patching base and 3-way merge… Auto-merging today-food-menu.txt CONFLICT (content): Merge conflict in today-food-menu.txt error: Failed to merge in the changes. Patch failed at 0002 update today-food-menu.txt:coffee Use 'git am --show-current-patch' to see the failed patch
 >
-> Resolve all conflicts manually, mark them as resolved with "git add/rm <conflicted\_files>", then run "git rebase --continue". You can instead skip this commit: run "git rebase --skip". To abort and get back to the state before "git rebase", run "git rebase --abort".
+> Resolve all conflicts manually, mark them as resolved with "git add/rm \<conflicted_files>", then run "git rebase --continue". You can instead skip this commit: run "git rebase --skip". To abort and get back to the state before "git rebase", run "git rebase --abort".
 
 还记得吗，熊大还提交过一次将蜂蜜改为咖啡，我们来看一下冲突的内容：
 
@@ -333,30 +329,27 @@ git push origin master
 
 ![在这里插入图片描述](assets/9067aaf0-e256-11eb-be77-f581c3259eef)
 
-由于没有多出 merge 的 commit 记录，所以不会存在分叉的 commit 记录，代码记录都是以线性的方式，做代码审查一目了然。**总结：有的小伙伴可能会说，看着前面的演示步骤好复杂啊。确实是，rebase 其实相当于是 merge 的进阶使用方式，目的就是为了让代码 commit 呈线性记录。**git merge 对比 git rebase 该如何选择？
-------------------------------
+## 由于没有多出 merge 的 commit 记录，所以不会存在分叉的 commit 记录，代码记录都是以线性的方式，做代码审查一目了然。\*\*总结：有的小伙伴可能会说，看着前面的演示步骤好复杂啊。确实是，rebase 其实相当于是 merge 的进阶使用方式，目的就是为了让代码 commit 呈线性记录。\*\*git merge 对比 git rebase 该如何选择？
 
 `git merge` 操作合并分支会让两个分支的每一次提交都按照提交时间（并不是 push 时间）排序，并且会将两个分支的最新一次 commit 点进行合并成一个新的 commit，最终的分支树呈现非整条线性直线的形式。
 
-`git rebase` 操作实际上是将当前执行 rebase 分支的所有基于原分支提交点之后的 commit 打散成一个一个的 patch，并重新生成一个新的 commit hash 值，再次基于原分支目前最新的commit点上进行提交，并不根据两个分支上实际的每次提交的时间点排序，rebase 完成后，切到基分支进行合并另一个分支时也不会生成一个新的 commit 点，可以保持整个分支树的完美线性。**从效果出发，如果代码版本迭代快，项目大，参与人多，建议最好用 rebase 方式合并。反之则直接用 merge 即可。**加餐学习：git stash 解决线上代码冲突
------------------------
+## `git rebase` 操作实际上是将当前执行 rebase 分支的所有基于原分支提交点之后的 commit 打散成一个一个的 patch，并重新生成一个新的 commit hash 值，再次基于原分支目前最新的commit点上进行提交，并不根据两个分支上实际的每次提交的时间点排序，rebase 完成后，切到基分支进行合并另一个分支时也不会生成一个新的 commit 点，可以保持整个分支树的完美线性。\*\*从效果出发，如果代码版本迭代快，项目大，参与人多，建议最好用 rebase 方式合并。反之则直接用 merge 即可。\*\*加餐学习：git stash 解决线上代码冲突
 
 以上的演示合并冲突，是为了让我们的 commit 历史记录更加的便于审查。接下来我要说的`git stash`则是应急所需，平时工作中都是迫不得已的时候采用的，学会了以备不时之需。
 
 1. 当正在 dev 分支上开发某个项目，这时项目中出现一个 bug，需要紧急修复，但是正在开发的内容只是完成一半，还不想提交，这时可以用`git stash`命令将修改的内容保存至堆栈区，然后顺利切换到 hotfix 分支进行 bug 修复，修复完成后，再次切回到 dev 分支，从堆栈中恢复刚刚保存的内容。
-2. 由于疏忽，本应该在 dev 分支开发的内容，却在 master上进行了开发，需要重新切回到 dev 分支上进行开发，可以用git stash将内容保存至堆栈中，切回到 dev 分支后，再次恢复内容即可。
+1. 由于疏忽，本应该在 dev 分支开发的内容，却在 master上进行了开发，需要重新切回到 dev 分支上进行开发，可以用git stash将内容保存至堆栈中，切回到 dev 分支后，再次恢复内容即可。
 
 `git stash`命令的作用就是将目前还不想提交的但是已经修改的内容保存至堆栈中，后续可以在某个分支上恢复出堆栈中的内容。这也就是说，stash 中的内容不仅仅可以**恢复到原先开发的分支，也可以恢复到其他任意指定的分支上**。`git stash`作用的范围包括工作区和暂存区中的内容，也就是说没有提交的内容都会保存至堆栈中。
 
 下面是一些有关stash的常用命令：
 
-* `git stash`：能够将所有未提交的修改（工作区和暂存区）保存至堆栈中，用于后续恢复当前工作目录
-* `git stash list`：查看当前 stash 的列表，因为有些时候会存多个暂存区
-* `git stash pop`：将当前 stash 中的内容弹出，并应用到当前工作目录上。
-* `git stash apply`：将堆栈中的内容应用到当前目录，不同于`git stash pop`，该命令不会将内容从堆栈中删除，也就说该命令能够将堆栈的内容多次应用到工作目录中，适应于多个分支的情况。
-* `git stash clear`：除堆栈中的所有内容
+- `git stash`：能够将所有未提交的修改（工作区和暂存区）保存至堆栈中，用于后续恢复当前工作目录
+- `git stash list`：查看当前 stash 的列表，因为有些时候会存多个暂存区
+- `git stash pop`：将当前 stash 中的内容弹出，并应用到当前工作目录上。
+- `git stash apply`：将堆栈中的内容应用到当前目录，不同于`git stash pop`，该命令不会将内容从堆栈中删除，也就说该命令能够将堆栈的内容多次应用到工作目录中，适应于多个分支的情况。
+- `git stash clear`：除堆栈中的所有内容
 
-总结
---
+## 总结
 
 本文试图想用全漫画的形式展示，但是发现漫画绘制的时间长，且表达意思没有直接演示命令来的直接，所以曲线救国，采用了故事情节加代码叙述的方式讲解（希望别被骂成标题党）。文章的写作思路是，先从源头出发，了解产生冲突的来源。然后再进一步演示了通过`git merge`、`git rebase`合并分支代码，从提交 commit 记录、云端提交结构图、原理几个方面阐述了两者的差异，我个人比较推崇用`git rebase`。为了让内容更加的充实，文章再最后引入了`git stash`的内容，限于篇幅和侧重点，`git stash`只是起到了抛砖引玉的目的，没有展开和举例讲解，这点小伙伴们可以在网上查找资料补充学习。

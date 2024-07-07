@@ -1,5 +1,4 @@
-Spring中眼花缭乱的BeanDefinition
-==========================
+# Spring中眼花缭乱的BeanDefinition
 
 #### 引入主题
 
@@ -9,10 +8,10 @@ Spring中眼花缭乱的BeanDefinition
 
 ![image.png](assets/15100432-b6f3e81ca4e0b5b4.png) Spring官网中有详细的说明，我们来翻译下： SpringIoc容器管理一个Bean或多个Bean，这些Bean通过我们提供给容器的配置元数据被创建出来（例如，在xml中的定义） 在容器中，这些Bean的定义用BeanDefinition对象来表示，包含以下元数据：
 
-* 全限定类名， 通常是Bean的实际实现类；
-* Bean行为配置元素，它们说明Bean在容器中的行为（作用域、生命周期回调等等）；
-* Bean执行工作所需要的的其他Bean的引用，这些Bean也称为协作者或依赖项；
-* 其他配置信息，例如，管理连接池的bean中，限制池的大小或者使用的连接的数量。
+- 全限定类名， 通常是Bean的实际实现类；
+- Bean行为配置元素，它们说明Bean在容器中的行为（作用域、生命周期回调等等）；
+- Bean执行工作所需要的的其他Bean的引用，这些Bean也称为协作者或依赖项；
+- 其他配置信息，例如，管理连接池的bean中，限制池的大小或者使用的连接的数量。
 
 Spring官网中对BeanDefinition的解释还是很详细的，但是不是那么通俗易懂，其实BeanDefinition是比较容易解释的：BeanDefinition就是用来描述一个Bean或者BeanDefinition就是Bean的定义。
 
@@ -114,8 +113,8 @@ org.springframework.aop.framework.autoproxy.AutoProxyUtils.preserveTargetClass:t
 
 可以看到，Spring在里面放了两个item：
 
-* 第一个item保存着这个配置类是否是一个Full配置类，关于Full配置类，我在先前的博客有简单的介绍过：[Spring中你可能不知道的事（二）](https://juejin.im/user/3544481219222488/posts)
-* 第二个item，从名字上就可以知道和AOP相关。
+- 第一个item保存着这个配置类是否是一个Full配置类，关于Full配置类，我在先前的博客有简单的介绍过：[Spring中你可能不知道的事（二）](https://juejin.im/user/3544481219222488/posts)
+- 第二个item，从名字上就可以知道和AOP相关。
 
 ### BeanDefinition
 
@@ -223,11 +222,11 @@ CodeBear
 来分析下代码：
 
 1. 创建了GenericBeanDefinition对象parentBeanDefinition，设置为了单例模式，设置了Attribute，声明了构造方法的两个参数值；
-2. 创建了GenericBeanDefinition对象childBeanDefinition，设置parentName为parent，BeanClass为ChildService；
-3. 注册parentBeanDefinition，beanName为parent，childBeanDefinition，beanName为child；
-4. 刷新容器；
-5. 从mergedBeanDefinitions取出了child，mergedBeanDefinitions存放的是合并后的BeanDefinition；
-6. 打印出child的attribute、scope、构造方法的两个参数值。
+1. 创建了GenericBeanDefinition对象childBeanDefinition，设置parentName为parent，BeanClass为ChildService；
+1. 注册parentBeanDefinition，beanName为parent，childBeanDefinition，beanName为child；
+1. 刷新容器；
+1. 从mergedBeanDefinitions取出了child，mergedBeanDefinitions存放的是合并后的BeanDefinition；
+1. 打印出child的attribute、scope、构造方法的两个参数值。
 
 大家可以看到，childBeanDefinition继承了parentBeanDefinition。
 

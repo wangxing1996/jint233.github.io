@@ -1,5 +1,4 @@
-MySQL 性能优化：碎片整理
-===============
+# MySQL 性能优化：碎片整理
 
 ### MySQL 碎片是什么
 
@@ -80,26 +79,26 @@ mysql> select count(*) from titles;
 
 接下来我们开始看看都有哪些碎片吧。这里介绍两种方式查看表碎片。
 
-**1\. 通过表状态信息查看**```
+**1. 通过表状态信息查看**\`\`\`
 show table status like '%table_name%';
-mysql> show table status like 'salaries'\G;***************************1. row***************************Name: salaries
-         Engine: InnoDB
-        Version: 10
-     Row_format: Dynamic
-           Rows: 2838918
- Avg_row_length: 31
-    Data_length: 90832896
+mysql> show table status like 'salaries'\\G;***************************1. row***************************Name: salaries
+Engine: InnoDB
+Version: 10
+Row_format: Dynamic
+Rows: 2838918
+Avg_row_length: 31
+Data_length: 90832896
 Max_data_length: 0
-   Index_length: 0
-      Data_free: 4194304
- Auto_increment: NULL
-    Create_time: 2021-01-14 14:33:47
-    Update_time: 2021-01-14 14:34:42
-     Check_time: NULL
-      Collation: utf8_bin
-       Checksum: NULL
- Create_options:
-        Comment:
+Index_length: 0
+Data_free: 4194304
+Auto_increment: NULL
+Create_time: 2021-01-14 14:33:47
+Update_time: 2021-01-14 14:34:42
+Check_time: NULL
+Collation: utf8_bin
+Checksum: NULL
+Create_options:
+Comment:
 1 row in set (0.00 sec)
 
 ```
@@ -210,3 +209,4 @@ mysql> select count(*) from salaries;
 速度还是提高了不少，清理碎片后提高了查询速度。
 
 **总结一下**：清理表的碎片可以提高 MySQL 性能，在日常工作中我们可以定期执行表碎片整理，从而提高 MySQL 性能。
+```

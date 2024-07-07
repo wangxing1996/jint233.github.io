@@ -1,5 +1,4 @@
-Kafka 源码阅读笔记
-============
+# Kafka 源码阅读笔记
 
 作者：guolonglin，腾讯 IEG 后台开发工程师
 
@@ -113,7 +112,7 @@ Kafka 源码阅读笔记
 
 ### **九、transactionCoordinator 事务处理**
 
-1）kafka 支持事务操作，并支持消费者设定 read\_commited 和 read\_uncommited 读取级别；
+1）kafka 支持事务操作，并支持消费者设定 read_commited 和 read_uncommited 读取级别；
 
 2）用户提交的事务 log 会保存在内置写死的 topic 中，跟消费者数据相似的方法，依赖 replica 保证数据安全，执行的操作也会正常保存进消息 log（非事务 log），不过会有标志标示消息状态，如正在事务中还没提交，或者已经废弃还是提交了；
 

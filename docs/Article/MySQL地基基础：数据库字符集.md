@@ -1,5 +1,4 @@
-MySQL 地基基础：数据库字符集
-=================
+# MySQL 地基基础：数据库字符集
 
 ### 字符集简介
 
@@ -11,18 +10,18 @@ MySQL 地基基础：数据库字符集
 
 **常见字符集分类**
 
-* ASCII（American Standard Code for Information Interchange，美国信息互换标准编码）：是基于罗马字母表的一套电脑编码系统，一个字节表示一个字符。
-* LATIN1：ASCII 字符集的扩充，仍然使用一个字节表示一个字符。
-* GB2312（信息交换用汉字编码字符集·基本集）：中国国家标准的简体中文字符集，基本满足了汉字的计算机处理需要，分区表示，双字节表示一个字符。
-* GB18030（信息交换用汉字编码字符集基本集的扩充）：是 GB2312 的扩充，更全面，兼容 Unicode 3.0 和 GB2312。
-* UTF-8（Unicode Tranformation Format）：是 Unicode 的其中一个使用方式，支持所有国家字符集，使用 1-4 个字节表示一个字符。
+- ASCII（American Standard Code for Information Interchange，美国信息互换标准编码）：是基于罗马字母表的一套电脑编码系统，一个字节表示一个字符。
+- LATIN1：ASCII 字符集的扩充，仍然使用一个字节表示一个字符。
+- GB2312（信息交换用汉字编码字符集·基本集）：中国国家标准的简体中文字符集，基本满足了汉字的计算机处理需要，分区表示，双字节表示一个字符。
+- GB18030（信息交换用汉字编码字符集基本集的扩充）：是 GB2312 的扩充，更全面，兼容 Unicode 3.0 和 GB2312。
+- UTF-8（Unicode Tranformation Format）：是 Unicode 的其中一个使用方式，支持所有国家字符集，使用 1-4 个字节表示一个字符。
 
 字符集有很多，这里不一一列举。想要获取全部支持字符集，可以在库中查看，详见下文。
 
 **字符集特点**
 
-* 不同的编码方式，最终解释为不同的机器语言（二进制）
-* 不同的表示方式，使用 1 个或者多个字节表示一个字符
+- 不同的编码方式，最终解释为不同的机器语言（二进制）
+- 不同的表示方式，使用 1 个或者多个字节表示一个字符
 
 ### MySQL 与字符集之间亲密关系
 
@@ -52,19 +51,19 @@ mysql> select * from information_schema.collations;
 
 在客户端和服务器端之期间的数据请求与反馈，会经历一系列的转换，从而保证数据的正确无误无乱码，下面具体说一下这个请求的过程。
 
-\\1. MySQL client 发送请求（字符集为 character\_set\_client） character\_set\_client 就是客户端字符集。
+\\1. MySQL client 发送请求（字符集为 character_set_client） character_set_client 就是客户端字符集。
 
-\\2. MySQL Server 收到请求，将请求数据从 character\_set\_client 转换为 character\_set\_connection 通常情况下 character\_set\_connection 字符集同 character\_set\_client 字符集一致。
+\\2. MySQL Server 收到请求，将请求数据从 character_set_client 转换为 character_set_connection 通常情况下 character_set_connection 字符集同 character_set_client 字符集一致。
 
-\\3. MySQL Server 将请求数据从 character\_set\_connection 转换为内部操作字符集。
+\\3. MySQL Server 将请求数据从 character_set_connection 转换为内部操作字符集。
 
 何为内部操作字符集，其实就是前面说的列字符集、表字符集、数据库字符集、服务器字符集这四个。这一步操作会使用每个数据字段的 CHARACTER SET 设定值：
 
-* 如果 CHARACTER SET 不存在，使用表字符集
-* 如果表字符集不存在，使用数据库字符集
-* 如果数据库字符集不存在，使用服务器字符集
+- 如果 CHARACTER SET 不存在，使用表字符集
+- 如果表字符集不存在，使用数据库字符集
+- 如果数据库字符集不存在，使用服务器字符集
 
-\\4. MySQL Server 将操作结果从内部操作字符集转换为 character\_set\_results character\_set\_results 就是结果内容的字符集。
+\\4. MySQL Server 将操作结果从内部操作字符集转换为 character_set_results character_set_results 就是结果内容的字符集。
 
 ### 字符集与校对规则分析
 
@@ -80,24 +79,24 @@ mysql> show variables like 'character%';
 
 参数解释：
 
-* character\_set\_client：客户端使用的字符集
-* character\_set\_connection：客户端和服务端连接层字符集
-* character\_set\_database：默认数据库字符集 ，如没有默认数据库，会用 character\_set\_server 指定的字符集，建议由系统自动管理
-* character\_set\_filesystem：把 os 上文件名转化成此字符集，把 character\_set\_client 转换 character\_set\_filesystem， 默认 binary 是不做任何转换
-* character\_set\_results：结果字符集
-* character\_set\_server：数据库服务器字符集
-* character\_set\_system：操作系统字符集，无需设置，总是 utf8
+- character_set_client：客户端使用的字符集
+- character_set_connection：客户端和服务端连接层字符集
+- character_set_database：默认数据库字符集 ，如没有默认数据库，会用 character_set_server 指定的字符集，建议由系统自动管理
+- character_set_filesystem：把 os 上文件名转化成此字符集，把 character_set_client 转换 character_set_filesystem， 默认 binary 是不做任何转换
+- character_set_results：结果字符集
+- character_set_server：数据库服务器字符集
+- character_set_system：操作系统字符集，无需设置，总是 utf8
 
 DDL 字符集选择：
 
-* 建库操作，未指定数据库字符集，继承数据库服务器字符集
-* 建表操作，未指定表字符集，继承当前库字符集
-* 新增字段，未指定列字符集，继承表字符集
-* 修改字段，未指定列字符集，继承表字符集
+- 建库操作，未指定数据库字符集，继承数据库服务器字符集
+- 建表操作，未指定表字符集，继承当前库字符集
+- 新增字段，未指定列字符集，继承表字符集
+- 修改字段，未指定列字符集，继承表字符集
 
 DML 字符集选择：
 
-* 插入、更新数据，由 character\_set\_client 转换为 character\_set\_connection 再转换为表字符集
+- 插入、更新数据，由 character_set_client 转换为 character_set_connection 再转换为表字符集
 
 查看字符集校对规则：
 
@@ -109,23 +108,23 @@ mysql> show variables like 'collation%';
 
 参数说明：
 
-* collation\_connection：当前连接的字符集校对规则
-* collation\_database：当前数据库默认校对规则
-* collation\_server：当前数据库服务器默认校对规则
+- collation_connection：当前连接的字符集校对规则
+- collation_database：当前数据库默认校对规则
+- collation_server：当前数据库服务器默认校对规则
 
 字符集和校对规则：
 
-* 每个字符集至少有一个校对规则
-* 每个字符集有一个默认的校对规则
-* 每个校对规则只能属于一个字符集
+- 每个字符集至少有一个校对规则
+- 每个字符集有一个默认的校对规则
+- 每个校对规则只能属于一个字符集
 
 **校对规则命名**
 
-字符集名称\_语言\_后缀，其中后缀有三种写法：
+字符集名称_语言_后缀，其中后缀有三种写法：
 
-* \_ci：不区分大小写
-* \_cs：区分大小写
-* \_bin：二进制
+- \_ci：不区分大小写
+- \_cs：区分大小写
+- \_bin：二进制
 
 ### 如何更改 MySQL 字符集
 
@@ -162,12 +161,12 @@ MySQL 数据库字符集和校对规则有 4 个级别：服务器级、数据�
 
 **方式一**在 MySQL 配置文件 my.cnf 中进行配置设置：
 
-```
+````
 [mysqld]
 default-character-set=gbk
 ```** 方式二 **在启动 MySQL 时设置：
 
-```
+````
 
 mysqld --default-character-set=gbk
 
@@ -270,7 +269,7 @@ create table tab1(column1 varchar(5) character SET utf8);
 
 create table tab1(column1 varchar(5) character set utf8 collate utf8_bin);
 
-```
+````
 
 说明：
 
@@ -288,7 +287,9 @@ create database db1 default charset gbk;
 mysql -uroot -p db1 < createtab.sql
 ```** 第七步：导入数据**
 
-```
+````
 
-mysql -uroot -p db1 < data.sql
+mysql -uroot -p db1 \< data.sql
+
+```
 ```

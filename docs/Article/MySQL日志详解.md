@@ -1,14 +1,12 @@
-MySQL 日志详解
-==========
+# MySQL 日志详解
 
 官方手册:[https://dev.mysql.com/doc/refman/5.7/en/server-logs.html](https://dev.mysql.com/doc/refman/5.7/en/server-logs.html)
 
-不管是哪个数据库产品，一定会有日志文件。在MariaDB/MySQL中，主要有5种日志文件： 1.错误日志(error log)：记录mysql服务的启停时正确和错误的信息，还记录启动、停止、运行过程中的错误信息。 2.查询日志(general log)：记录建立的客户端连接和执行的语句。 3.二进制日志(bin log)：记录所有更改数据的语句，可用于数据复制。 4.慢查询日志(slow log)：记录所有执行时间超过long\_query\_time的所有查询或不使用索引的查询。 5.中继日志(relay log)：主从复制时使用的日志。
+不管是哪个数据库产品，一定会有日志文件。在MariaDB/MySQL中，主要有5种日志文件： 1.错误日志(error log)：记录mysql服务的启停时正确和错误的信息，还记录启动、停止、运行过程中的错误信息。 2.查询日志(general log)：记录建立的客户端连接和执行的语句。 3.二进制日志(bin log)：记录所有更改数据的语句，可用于数据复制。 4.慢查询日志(slow log)：记录所有执行时间超过long_query_time的所有查询或不使用索引的查询。 5.中继日志(relay log)：主从复制时使用的日志。
 
 除了这5种日志，在需要的时候还会创建DDL日志。本文暂先讨论错误日志、一般查询日志、慢查询日志和二进制日志，中继日志和主从复制有关，将在复制的章节中介绍。下一篇文章将介绍innodb事务日志，见：[MySQL的事务日志](https://www.cnblogs.com/f-ck-need-u/p/9010872.html)。
 
-1.日志刷新操作
-========
+# 1.日志刷新操作
 
 以下操作会刷新日志文件，刷新日志文件时会关闭旧的日志文件并重新打开日志文件。对于有些日志类型，如二进制日志，刷新日志会滚动日志文件，而不仅仅是关闭并重新打开。
 
@@ -18,16 +16,15 @@ shell> mysqladmin flush-logs
 shell> mysqladmin refresh
 ```
 
-2.错误日志
-======
+# 2.错误日志
 
 错误日志是最重要的日志之一，它记录了MariaDB/MySQL服务启动和停止正确和错误的信息，还记录了mysqld实例运行过程中发生的错误事件信息。
 
-可以使用" --log-error=\[file\_name\] "来指定mysqld记录的错误日志文件，如果没有指定file\_name，则默认的错误日志文件为datadir目录下的 `hostname`.err ，hostname表示当前的主机名。
+可以使用" --log-error=\[file_name\] "来指定mysqld记录的错误日志文件，如果没有指定file_name，则默认的错误日志文件为datadir目录下的 `hostname`.err ，hostname表示当前的主机名。
 
 也可以在MariaDB/MySQL配置文件中的mysqld配置部分，使用log-error指定错误日志的路径。
 
-如果不知道错误日志的位置，可以查看变量log\_error来查看。
+如果不知道错误日志的位置，可以查看变量log_error来查看。
 
 ```
 mysql> show variables like 'log_error';
@@ -38,7 +35,7 @@ mysql> show variables like 'log_error';
 +---------------+----------------------------------------+
 ```
 
-在MySQL 5.5.7之前，刷新日志操作(如flush logs)会备份旧的错误日志(以\_old结尾)，并创建一个新的错误日志文件并打开，在MySQL 5.5.7之后，执行刷新日志的操作时，错误日志会关闭并重新打开，如果错误日志不存在，则会先创建。
+在MySQL 5.5.7之前，刷新日志操作(如flush logs)会备份旧的错误日志(以_old结尾)，并创建一个新的错误日志文件并打开，在MySQL 5.5.7之后，执行刷新日志的操作时，错误日志会关闭并重新打开，如果错误日志不存在，则会先创建。
 
 在MariaDB/MySQL正在运行状态下删除错误日志后，不会自动创建错误日志，只有在刷新日志的时候才会创建一个新的错误日志文件。
 
@@ -69,12 +66,11 @@ mysql> show variables like 'log_error';
 Version: '5.6.35'  socket: '/mydata/data/mysql.sock'  port: 3306  MySQL Community Server (GPL)
 ```
 
-3.一般查询日志
-========
+# 3.一般查询日志
 
-查询日志分为一般查询日志和慢查询日志，它们是通过查询是否超出变量 long\_query\_time 指定时间的值来判定的。在超时时间内完成的查询是一般查询，可以将其记录到一般查询日志中， **但是建议关闭这种日志（默认是关闭的）** ，超出时间的查询是慢查询，可以将其记录到慢查询日志中。
+查询日志分为一般查询日志和慢查询日志，它们是通过查询是否超出变量 long_query_time 指定时间的值来判定的。在超时时间内完成的查询是一般查询，可以将其记录到一般查询日志中， **但是建议关闭这种日志（默认是关闭的）** ，超出时间的查询是慢查询，可以将其记录到慢查询日志中。
 
-使用" --general\_log={0|1} "来决定是否启用一般查询日志，使用" --general\_log\_file=file\_name "来指定查询日志的路径。不给定路径时默认的文件名以 `hostname`.log 命名。
+使用" --general_log={0|1} "来决定是否启用一般查询日志，使用" --general_log_file=file_name "来指定查询日志的路径。不给定路径时默认的文件名以 `hostname`.log 命名。
 
 和查询日志有关的变量有：
 
@@ -129,10 +125,9 @@ Time                Id Command    Argument
 
 由此可知，一般查询日志查询的不止是select语句，几乎所有的语句都会记录。
 
-4.慢查询日志
-=======
+# 4.慢查询日志
 
-查询超出变量 long\_query\_time 指定时间值的为慢查询。但是查询获取锁(包括锁等待)的时间不计入查询时间内。
+查询超出变量 long_query_time 指定时间值的为慢查询。但是查询获取锁(包括锁等待)的时间不计入查询时间内。
 
 mysql记录慢查询日志是在查询执行完毕且已经完全释放锁之后才记录的，因此慢查询日志记录的顺序和执行的SQL查询语句顺序可能会不一致(例如语句1先执行，查询速度慢，语句2后执行，但查询速度快，则语句2先记录)。
 
@@ -229,11 +224,9 @@ Count: 1  Time=10.00s (10s)  Lock=0.00s (0s)  Rows=1.0 (1), root[root]@localhost
 
 慢查询在SQL语句调优的时候非常有用，应该将它启用起来，且应该让慢查询阈值尽量小，例如1秒甚至低于1秒。就像一天执行上千次的1秒语句，和一天执行几次的20秒语句，显然更值得去优化这个1秒的语句。
 
-5.二进制日志
-=======
+# 5.二进制日志
 
-5.1 二进制日志文件
------------
+## 5.1 二进制日志文件
 
 二进制日志包含了 **引起或可能引起数据库改变**(如delete语句但没有匹配行)的事件信息，但绝不会包括select和show这样的查询语句。语句以"事件"的形式保存，所以包含了时间、事件开始和结束位置等信息。
 
@@ -243,26 +236,25 @@ Count: 1  Time=10.00s (10s)  Lock=0.00s (0s)  Rows=1.0 (1), root[root]@localhost
 
 所以，对于事务表来说，一个事务中可能包含多条二进制日志事件，它们会在提交时一次性写入。而对于非事务表的操作，每次执行完语句就直接写入。
 
-MariaDB/MySQL默认没有启动二进制日志，要启用二进制日志使用 --log-bin=\[on|off|file\_name\] 选项指定，如果没有给定file\_name，则默认为datadir下的主机名加"-bin"，并在后面跟上一串数字表示日志序列号，如果给定的日志文件中包含了后缀(logname.suffix)将忽略后缀部分。
+MariaDB/MySQL默认没有启动二进制日志，要启用二进制日志使用 --log-bin=\[on|off|file_name\] 选项指定，如果没有给定file_name，则默认为datadir下的主机名加"-bin"，并在后面跟上一串数字表示日志序列号，如果给定的日志文件中包含了后缀(logname.suffix)将忽略后缀部分。
 
 ![img](assets/733013-20180507084125816-1681048114.png)
 
-或者在配置文件中的\[mysqld\]部分设置log-bin也可以。注意：对于mysql 5.7，直接启动binlog可能会导致mysql服务启动失败，这时需要在配置文件中的mysqld为mysql实例分配server\_id。
+或者在配置文件中的\[mysqld\]部分设置log-bin也可以。注意：对于mysql 5.7，直接启动binlog可能会导致mysql服务启动失败，这时需要在配置文件中的mysqld为mysql实例分配server_id。
 
 ```
 `[mysqld]``# server_id=1234``log-bin=[on|filename]`
 ```
 
-mysqld还**创建一个二进制日志索引文件**，当二进制日志文件滚动的时候会向该文件中写入对应的信息。所以该文件包含所有使用的二进制日志文件的文件名。默认情况下该文件与二进制日志文件的文件名相同，扩展名为'.index'。要指定该文件的文件名使用 --log-bin-index\[=file\_name\] 选项。当mysqld在运行时不应手动编辑该文件，免得mysqld变得混乱。
+mysqld还**创建一个二进制日志索引文件**，当二进制日志文件滚动的时候会向该文件中写入对应的信息。所以该文件包含所有使用的二进制日志文件的文件名。默认情况下该文件与二进制日志文件的文件名相同，扩展名为'.index'。要指定该文件的文件名使用 --log-bin-index\[=file_name\] 选项。当mysqld在运行时不应手动编辑该文件，免得mysqld变得混乱。
 
 当重启mysql服务或刷新日志或者达到日志最大值时，将滚动二进制日志文件，滚动日志时只修改日志文件名的数字序列部分。
 
-二进制日志文件的最大值通过变量 max\_binlog\_size 设置(默认值为1G)。但由于二进制日志可能是基于事务来记录的(如innodb表类型)，而事务是绝对不可能也不应该跨文件记录的，如果正好二进制日志文件达到了最大值但事务还没有提交则不会滚动日志，而是继续增大日志，所以 max\_binlog\_size 指定的值和实际的二进制日志大小不一定相等。
+二进制日志文件的最大值通过变量 max_binlog_size 设置(默认值为1G)。但由于二进制日志可能是基于事务来记录的(如innodb表类型)，而事务是绝对不可能也不应该跨文件记录的，如果正好二进制日志文件达到了最大值但事务还没有提交则不会滚动日志，而是继续增大日志，所以 max_binlog_size 指定的值和实际的二进制日志大小不一定相等。
 
 因为二进制日志文件增长迅速，但官方说明因此而损耗的性能小于1%，且二进制目的是为了恢复定点数据库和主从复制，所以出于安全和功能考虑，**极不建议将二进制日志和****datadir****放在同一磁盘上**。
 
-5.2 查看二进制日志
------------
+## 5.2 查看二进制日志
 
 MySQL中查看二进制日志的方法主要有几种。
 
@@ -389,13 +381,13 @@ ROLLBACK /* added by mysqlbinlog */;
 
 ![img](assets/733013-20180507085958196.png)
 
-* 位置0-120记录的是二进制日志的一些固定信息。
-* 位置120-305记录的是use和create table语句，语句的记录时间为5:20:00。但注意，这里的use不是执行的use语句，而是MySQL发现要操作的数据库为test，而自动进行的操作并记录下来。人为的use语句是不会记录的。
-* 位置305-441记录的是alter table语句，语句的记录时间为5:20:21。
-* 位置441-702记录的是insert操作，因为该操作是DML语句，因此记录了事务的开始BEGIN和提交COMMIT。
-  * begin的起止位置为441-520；
-  * insert into语句的起止位置为520-671，记录的时间和自动开启事务的begin时间是一样的；
-  * commit的起止位置为671-702。
+- 位置0-120记录的是二进制日志的一些固定信息。
+- 位置120-305记录的是use和create table语句，语句的记录时间为5:20:00。但注意，这里的use不是执行的use语句，而是MySQL发现要操作的数据库为test，而自动进行的操作并记录下来。人为的use语句是不会记录的。
+- 位置305-441记录的是alter table语句，语句的记录时间为5:20:21。
+- 位置441-702记录的是insert操作，因为该操作是DML语句，因此记录了事务的开始BEGIN和提交COMMIT。
+  - begin的起止位置为441-520；
+  - insert into语句的起止位置为520-671，记录的时间和自动开启事务的begin时间是一样的；
+  - commit的起止位置为671-702。
 
 使用-r命令将日志文件导入到指定文件中，使用重定向也可以实现同样的结果。并使用-s查看简化的日志文件。
 
@@ -612,12 +604,11 @@ mysql> show master status;
 
 可以查看到当前正在使用的日志及下一事件记录的开始位置，还能查看到哪些数据库需要记录二进制日志，哪些数据库不记录二进制日志。
 
-5.3 删除二进制日志
------------
+## 5.3 删除二进制日志
 
 删除二进制日志有几种方法。不管哪种方法，都会将删除后的信息同步到二进制index文件中。
 
-**1.reset master****将会删除所有日志，并让日志文件重新从000001****开始。**```
+**1.reset master****将会删除所有日志，并让日志文件重新从000001****开始。**\`\`\`
 mysql> reset master;
 
 ```** 2.PURGE { BINARY | MASTER } LOGS { TO 'log\_name' | BEFORE datetime\_expr }**purge master logs to "binlog\_name.00000X" 将会清空00000X之前的所有日志文件。例如删除000006之前的日志文件。
@@ -661,7 +652,7 @@ mysql> show warnings;
 mysql> alter table student add birthday datetime default  now();
 mysql> flush logs;
 mysql> set binlog_format='row';
-mysql> insert into student values(7,'xiaowoniu','female',now());  
+mysql> insert into student values(7,'xiaowoniu','female',now());
 
 ```
 
@@ -669,7 +660,7 @@ mysql> insert into student values(7,'xiaowoniu','female',now());
 
 ```
 
-[[email protected] data]# mysqlbinlog mysql-bin.000005
+\[\[email protected\] data\]# mysqlbinlog mysql-bin.000005
 ...前面固定部分省略...
 '/*!*/;
 
@@ -682,7 +673,7 @@ SET @@session.pseudo_thread_id=1/*!*/;
 SET @@session.foreign_key_checks=1, @@session.sql_auto_is_null=0, @@session.unique_checks=1, @@session.autocommit=1/*!*/;
 SET @@session.sql_mode=1075838976/*!*/;
 SET @@session.auto_increment_increment=1, @@session.auto_increment_offset=1/*!*/;
-/*!\C utf8 *//*!*/;
+/*!\\C utf8 *//*!*/;
 SET @@session.character_set_client=33,@@session.collation_connection=33,@@session.collation_server=8/*!*/;
 SET @@session.time_zone='SYSTEM'/*!*/;
 SET @@session.lc_time_names=0/*!*/;
@@ -718,7 +709,7 @@ DELIMITER ;
 
 ```
 
-[[email protected] data]# mysqlbinlog mysql-bin.000005 -vv
+\[\[email protected\] data\]# mysqlbinlog mysql-bin.000005 -vv
 ...前面省略...
 BINLOG '
 gPraWBMBAAAAOgAAAAIBAAAAAF4AAAAAAAEABHRlc3QAB3N0dWRlbnQABAMP/hIFHgD3AQAMCf3N
@@ -790,7 +781,7 @@ mysqlbinlog --stop-datetime="2014-7-2 15:27:48" /tmp/mysql-bin.000008 | mysql -u
 
 ```
 
-mysqlbinlog mysql-bin.[*] | mysql -uroot -p password
+mysqlbinlog mysql-bin.\[\*\] | mysql -uroot -p password
 
 ```
 
@@ -801,4 +792,6 @@ mysqlbinlog mysql-bin.[*] | mysql -uroot -p password
 mysqlbinlog mysql-bin.000001 > /tmp/a.sql
 mysqlbinlog mysql-bin.000002 >>/tmp/a.sql
 mysql -u root -p password -e "source /tmp/a.sql"
+
+```
 ```

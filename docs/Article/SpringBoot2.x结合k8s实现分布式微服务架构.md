@@ -1,5 +1,4 @@
-Spring Boot 2.x 结合 k8s 实现分布式微服务架构
-=================================
+# Spring Boot 2.x 结合 k8s 实现分布式微服务架构
 
 ### Spring Boot 1.x 与 2.x 的区别
 
@@ -36,12 +35,12 @@ server:
 
 ```
 
-* 应用的 ContextPath 配置属性改动，跟上面的 session 一样，加上了一个 servlet。
-* Spring Boot 2.x 基于 Spring 5，而 Spring Boot 1.x 基于 Spring 4 或较低。
-* 统一错误处理的基类 AbstarctErrorController 的改动。
-* 配置文件的中文可以直接读取，不需要转码。
-* Acutator 变化很大，默认情况不再启用所有监控，需要定制化编写监控信息，完全需要重写，HealthIndicator,EndPoint 同理。
-* 从 Spring Boot 2.x 开始，可以与 K8s 结合来实现服务的配置管理、负载均衡等，这是与 1.x 所不同的。
+- 应用的 ContextPath 配置属性改动，跟上面的 session 一样，加上了一个 servlet。
+- Spring Boot 2.x 基于 Spring 5，而 Spring Boot 1.x 基于 Spring 4 或较低。
+- 统一错误处理的基类 AbstarctErrorController 的改动。
+- 配置文件的中文可以直接读取，不需要转码。
+- Acutator 变化很大，默认情况不再启用所有监控，需要定制化编写监控信息，完全需要重写，HealthIndicator,EndPoint 同理。
+- 从 Spring Boot 2.x 开始，可以与 K8s 结合来实现服务的配置管理、负载均衡等，这是与 1.x 所不同的。
 
 ### K8s 的一些资源的介绍
 
@@ -51,7 +50,7 @@ ConfigMap，看到这个名字可以理解：它是用于保存配置信息的�
 
 创建一个 ConfigMap 有多种方式如下。
 
-**1\. key-value 字符串创建**```
+**1. key-value 字符串创建**\`\`\`
 kubectl create configmap test-config --from-literal=baseDir=/usr
 
 ```
@@ -66,11 +65,11 @@ kind: ConfigMap
 
 metadata:
 
-  name: test-config
+name: test-config
 
 data:
 
-  baseDir: /usr
+baseDir: /usr
 
 ```
 
@@ -84,41 +83,43 @@ apiVersion: v1
 
 metadata:
 
-  name: cas-server
+name: cas-server
 
 data:
 
-  application.yaml: |-
+application.yaml: |-
 
-    greeting:
+```
+greeting:
 
-      message: Say Hello to the World
+  message: Say Hello to the World
 
-    ---
+---
 
-    spring:
+spring:
 
-      profiles: dev
+  profiles: dev
 
-    greeting:
+greeting:
 
-      message: Say Hello to the Dev
+  message: Say Hello to the Dev
 
-    spring:
+spring:
 
-      profiles: test
+  profiles: test
 
-    greeting:
+greeting:
 
-      message: Say Hello to the Test
+  message: Say Hello to the Test
 
-    spring:
+spring:
 
-      profiles: prod
+  profiles: prod
 
-    greeting:
+greeting:
 
-      message: Say Hello to the Prod
+  message: Say Hello to the Prod
+```
 
 ```
 
@@ -161,23 +162,23 @@ kind: Service
 
 metadata:
 
-  name: cas-server-service
+name: cas-server-service
 
-  namespace: default
+namespace: default
 
 spec:
 
-  ports:
+ports:
 
-* name: cas-server01
+- name: cas-server01
 
-    port: 2000
+  port: 2000
 
-    targetPort: cas-server01
+  targetPort: cas-server01
 
   selector:
 
-    app: cas-server
+  app: cas-server
 
 ```
 
@@ -185,7 +186,7 @@ spec:
 
 ```
 
-[email protected]:~$ kubectl get svc
+\[email protected\]:~$ kubectl get svc
 
 NAME                          TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)              AGE
 
@@ -213,41 +214,43 @@ apiVersion: v1
 
 metadata:
 
-  name: cas-server
+name: cas-server
 
 data:
 
-  application.yaml: |-
+application.yaml: |-
 
-    greeting:
+```
+greeting:
 
-      message: Say Hello to the World
+  message: Say Hello to the World
 
-    ---
+---
 
-    spring:
+spring:
 
-      profiles: dev
+  profiles: dev
 
-    greeting:
+greeting:
 
-      message: Say Hello to the Dev
+  message: Say Hello to the Dev
 
-    spring:
+spring:
 
-      profiles: test
+  profiles: test
 
-    greeting:
+greeting:
 
-      message: Say Hello to the Test
+  message: Say Hello to the Test
 
-    spring:
+spring:
 
-      profiles: prod
+  profiles: prod
 
-    greeting:
+greeting:
 
-      message: Say Hello to the Prod
+  message: Say Hello to the Prod
+```
 
 ```
 
@@ -263,7 +266,30 @@ kind: Deployment
 
 metadata:
 
-  name: cas-server-deployment
+name: cas-server-deployment
+
+labels:
+
+```
+app: cas-server
+```
+
+spec:
+
+replicas: 1
+
+selector:
+
+```
+matchLabels:
+
+  app: cas-server
+```
+
+template:
+
+```
+metadata:
 
   labels:
 
@@ -271,71 +297,54 @@ metadata:
 
 spec:
 
-  replicas: 1
+  nodeSelector:
 
-  selector:
+    cas-server: "true"
 
-    matchLabels:
+  containers:
 
-      app: cas-server
+  - name: cas-server
 
-  template:
+    image: {{ cluster_cfg['cluster']['docker-registry']['prefix'] }}cas-server
 
-    metadata:
+    imagePullPolicy: Always
 
-      labels:
+    ports:
 
-        app: cas-server
+      - name: cas-server01
 
-    spec:
+        containerPort: 2000
 
-      nodeSelector:
+    volumeMounts:
 
-        cas-server: "true"
+    - mountPath: /home/cas-server
 
-      containers:
+      name: cas-server-path
 
-      - name: cas-server
+    args: ["sh", "-c", "nohup java $JAVA_OPTS -jar -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=128m -Xms1024m -Xmx1024m -Xmn256m -Xss256k -XX:SurvivorRatio=8 -XX:+UseConcMarkSweepGC cas-server.jar --spring.profiles.active=dev", "&"]
 
-        image: {{ cluster_cfg['cluster']['docker-registry']['prefix'] }}cas-server
+  hostAliases:
 
-        imagePullPolicy: Always
+  - ip: "127.0.0.1"
 
-        ports:
+    hostnames:
 
-          - name: cas-server01
+    - "gemantic.localhost"
 
-            containerPort: 2000
+  - ip: "0.0.0.0"
 
-        volumeMounts:
+    hostnames:
 
-        - mountPath: /home/cas-server
+    - "gemantic.all"
 
-          name: cas-server-path
+  volumes:
 
-        args: ["sh", "-c", "nohup java $JAVA_OPTS -jar -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=128m -Xms1024m -Xmx1024m -Xmn256m -Xss256k -XX:SurvivorRatio=8 -XX:+UseConcMarkSweepGC cas-server.jar --spring.profiles.active=dev", "&"]
+  - name: cas-server-path
 
-      hostAliases:
+    hostPath:
 
-      - ip: "127.0.0.1"
-
-        hostnames:
-
-        - "gemantic.localhost"
-
-      - ip: "0.0.0.0"
-
-        hostnames:
-
-        - "gemantic.all"
-
-      volumes:
-
-      - name: cas-server-path
-
-        hostPath:
-
-          path: /var/pai/cas-server
+      path: /var/pai/cas-server
+```
 
 ```
 
@@ -351,33 +360,37 @@ spec:
 
 spring:
 
-  application:
+application:
 
-    name: cas-server
+```
+name: cas-server
+```
 
-  cloud:
+cloud:
 
-    kubernetes:
+```
+kubernetes:
 
-      config:
+  config:
 
-        sources:
+    sources:
 
-         - name: ${spring.application.name}
+     - name: ${spring.application.name}
 
-           namespace: default
+       namespace: default
 
-      discovery:
+  discovery:
 
-        all-namespaces: true
+    all-namespaces: true
 
-      reload:
+  reload:
 
-        enabled: true
+    enabled: true
 
-        mode: polling
+    mode: polling
 
-        period: 500
+    period: 500
+```
 
 ```
 
@@ -389,16 +402,16 @@ spring:
 
 <dependency>
 
-  <groupId>org.springframework.cloud</groupId>
+<groupId>org.springframework.cloud</groupId>
 
-  <artifactId>spring-cloud-kubernetes-core</artifactId>
+<artifactId>spring-cloud-kubernetes-core</artifactId>
 
 </dependency>
 <dependency>
 
-  <groupId>org.springframework.cloud</groupId>
+<groupId>org.springframework.cloud</groupId>
 
-  <artifactId>spring-cloud-kubernetes-discovery</artifactId>
+<artifactId>spring-cloud-kubernetes-discovery</artifactId>
 
 </dependency>
 
@@ -410,13 +423,15 @@ spring:
 
 spring:
 
-  cloud:
+cloud:
 
-    kubernetes:
+```
+kubernetes:
 
-      discovery:
+  discovery:
 
-        all-namespaces: true
+    all-namespaces: true
+```
 
 ```
 
@@ -434,47 +449,55 @@ kubectl scale --replicas=2 deployment admin-web-deployment
 
 client:
 
-  http:
+http:
 
-    request:
+```
+request:
 
-      connectTimeout: 8000
+  connectTimeout: 8000
 
-      readTimeout: 3000
+  readTimeout: 3000
+```
+
 backend:
 
-  ribbon:
-
-    eureka:
-
-      enabled: false
-
-    client:
-
-      enabled: true
-
-    ServerListRefreshInterval: 5000
 ribbon:
 
-  ConnectTimeout: 8000
+```
+eureka:
 
-  ReadTimeout: 3000
+  enabled: false
 
-  eager-load:
+client:
 
-    enabled: true
+  enabled: true
 
-    clients: cas-server-service,admin-web-service
+ServerListRefreshInterval: 5000
+```
 
-  MaxAutoRetries: 1 #对第一次请求的服务的重试次数
+ribbon:
 
-  MaxAutoRetriesNextServer: 1 #要重试的下一个服务的最大数量（不包括第一个服务）
+ConnectTimeout: 8000
 
-  #ServerListRefreshInterval: 2000
+ReadTimeout: 3000
 
-  OkToRetryOnAllOperations: true
+eager-load:
 
-  NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RoundRobinRule #com.damon.config.RibbonConfiguration #分布式负载均衡策略
+```
+enabled: true
+
+clients: cas-server-service,admin-web-service
+```
+
+MaxAutoRetries: 1 #对第一次请求的服务的重试次数
+
+MaxAutoRetriesNextServer: 1 #要重试的下一个服务的最大数量（不包括第一个服务）
+
+#ServerListRefreshInterval: 2000
+
+OkToRetryOnAllOperations: true
+
+NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RoundRobinRule #com.damon.config.RibbonConfiguration #分布式负载均衡策略
 
 ```
 
@@ -486,17 +509,19 @@ ribbon:
 
 feign:
 
-  client:
+client:
 
-    config:
+```
+config:
 
-      default: #provider-service
+  default: #provider-service
 
-        connectTimeout: 8000 #客户端连接超时时间
+    connectTimeout: 8000 #客户端连接超时时间
 
-        readTimeout: 3000 #客户端读超时设置
+    readTimeout: 3000 #客户端读超时设置
 
-        loggerLevel: full
+    loggerLevel: full
+```
 
 ```
 
@@ -512,243 +537,248 @@ feign:
 
 <parent>
 
-        <groupId>org.springframework.boot</groupId>
+```
+    <groupId>org.springframework.boot</groupId>
 
-        <artifactId>spring-boot-starter-parent</artifactId>
+    <artifactId>spring-boot-starter-parent</artifactId>
 
-        <version>2.1.13.RELEASE</version>
+    <version>2.1.13.RELEASE</version>
 
-        <relativePath/>
+    <relativePath/>
 
-    </parent>
-    <properties>
+</parent>
+<properties>
 
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <java.version>1.8</java.version>
+    <java.version>1.8</java.version>
 
-        <swagger.version>2.6.1</swagger.version>
+    <swagger.version>2.6.1</swagger.version>
 
-        <xstream.version>1.4.7</xstream.version>
+    <xstream.version>1.4.7</xstream.version>
 
-        <pageHelper.version>4.1.6</pageHelper.version>
+    <pageHelper.version>4.1.6</pageHelper.version>
 
-        <fastjson.version>1.2.51</fastjson.version>
+    <fastjson.version>1.2.51</fastjson.version>
 
-        <springcloud.version>Greenwich.SR3</springcloud.version>
+    <springcloud.version>Greenwich.SR3</springcloud.version>
 
-        <springcloud.kubernetes.version>1.1.1.RELEASE</springcloud.kubernetes.version>
+    <springcloud.kubernetes.version>1.1.1.RELEASE</springcloud.kubernetes.version>
 
-        <mysql.version>5.1.46</mysql.version>
+    <mysql.version>5.1.46</mysql.version>
 
-    </properties>
-    <dependencyManagement>
+</properties>
+<dependencyManagement>
 
-        <dependencies>
+    <dependencies>
 
-            <dependency>
-
-                <groupId>org.springframework.cloud</groupId>
-
-                <artifactId>spring-cloud-dependencies</artifactId>
-
-                <version>${springcloud.version}</version>
-
-                <type>pom</type>
-
-                <scope>import</scope>
-
-            </dependency>
-
-        </dependencies>
-
-    </dependencyManagement>
-  <dependencies>
-
-          <dependency>
-
-            <groupId>org.springframework.boot</groupId>
-
-            <artifactId>spring-boot-starter-web</artifactId>
-
-            <exclusions>
-
-                <exclusion>
-
-                    <groupId>org.springframework.boot</groupId>
-
-                    <artifactId>spring-boot-starter-tomcat</artifactId>
-
-                </exclusion>
-
-            </exclusions>
-
-        </dependency>
-
-        <dependency>
-
-            <groupId>org.springframework.boot</groupId>
-
-            <artifactId>spring-boot-starter-undertow</artifactId>
-
-        </dependency>
-    <!-- 配置加载依赖 -->
-
-        <dependency>
-
-            <groupId>org.springframework.boot</groupId>
-
-            <artifactId>spring-boot-actuator</artifactId>
-
-        </dependency>
-        <dependency>
-
-            <groupId>org.springframework.boot</groupId>
-
-            <artifactId>spring-boot-actuator-autoconfigure</artifactId>
-
-        </dependency>
         <dependency>
 
             <groupId>org.springframework.cloud</groupId>
 
-            <artifactId>spring-cloud-starter-kubernetes-config</artifactId>
+            <artifactId>spring-cloud-dependencies</artifactId>
 
-        </dependency>
-        <dependency>
+            <version>${springcloud.version}</version>
 
-            <groupId>org.springframework.boot</groupId>
+            <type>pom</type>
 
-            <artifactId>spring-boot-starter-test</artifactId>
-
-            <scope>test</scope>
-
-        </dependency>
-        <dependency>
-
-            <groupId>io.jsonwebtoken</groupId>
-
-            <artifactId>jjwt</artifactId>
-
-            <version>0.9.0</version>
+            <scope>import</scope>
 
         </dependency>
 
-        <dependency>
-
-            <groupId>cn.hutool</groupId>
-
-            <artifactId>hutool-all</artifactId>
-
-            <version>4.6.3</version>
-
-        </dependency>
-        <dependency>
-
-            <groupId>com.google.guava</groupId>
-
-            <artifactId>guava</artifactId>
-
-            <version>19.0</version>
-
-        </dependency>
-        <dependency>
-
-            <groupId>org.apache.commons</groupId>
-
-            <artifactId>commons-lang3</artifactId>
-
-            </dependency>
-        <dependency>
-
-            <groupId>commons-collections</groupId>
-
-            <artifactId>commons-collections</artifactId>
-
-            <version>3.2.2</version>
-
-        </dependency>
-        <dependency>
-
-            <groupId>io.springfox</groupId>
-
-            <artifactId>springfox-swagger2</artifactId>
-
-            <version>${swagger.version}</version>
-
-        </dependency>
-
-        <dependency>
-
-            <groupId>io.springfox</groupId>
-
-            <artifactId>springfox-swagger-ui</artifactId>
-
-            <version>${swagger.version}</version>
-
-        </dependency>
-    <!-- 数据库分页依赖 -->
-
-        <dependency>
-
-          <groupId>com.github.pagehelper</groupId>
-
-          <artifactId>pagehelper</artifactId>
-
-          <version>${pageHelper.version}</version>
-
-        </dependency>
-        <dependency>
-
-            <groupId>org.mybatis.spring.boot</groupId>
-
-            <artifactId>mybatis-spring-boot-starter</artifactId>
-
-            <version>1.1.1</version>
-
-        </dependency>
-
-        <dependency>
-
-            <groupId>mysql</groupId>
-
-            <artifactId>mysql-connector-java</artifactId>
-
-            <version>${mysql.version}</version>
-
-        </dependency>
-    <!-- 数据库驱动 -->
-
-        <dependency>
-
-            <groupId>com.alibaba</groupId>
-
-            <artifactId>druid</artifactId>
-
-            <version>1.1.3</version>
-
-        </dependency>
-        <dependency>
-
-            <groupId>com.alibaba</groupId>
-
-            <artifactId>fastjson</artifactId>
-
-            <version>${fastjson.version}</version>
-
-        </dependency>
-        <dependency>
-
-          <groupId>org.jsoup</groupId>
-
-          <artifactId>jsoup</artifactId>
-
-          <version>1.11.3</version>
-
-        </dependency>
     </dependencies>
+
+</dependencyManagement>
+```
+
+<dependencies>
+
+```
+      <dependency>
+
+        <groupId>org.springframework.boot</groupId>
+
+        <artifactId>spring-boot-starter-web</artifactId>
+
+        <exclusions>
+
+            <exclusion>
+
+                <groupId>org.springframework.boot</groupId>
+
+                <artifactId>spring-boot-starter-tomcat</artifactId>
+
+            </exclusion>
+
+        </exclusions>
+
+    </dependency>
+
+    <dependency>
+
+        <groupId>org.springframework.boot</groupId>
+
+        <artifactId>spring-boot-starter-undertow</artifactId>
+
+    </dependency>
+<!-- 配置加载依赖 -->
+
+    <dependency>
+
+        <groupId>org.springframework.boot</groupId>
+
+        <artifactId>spring-boot-actuator</artifactId>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.springframework.boot</groupId>
+
+        <artifactId>spring-boot-actuator-autoconfigure</artifactId>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.springframework.cloud</groupId>
+
+        <artifactId>spring-cloud-starter-kubernetes-config</artifactId>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.springframework.boot</groupId>
+
+        <artifactId>spring-boot-starter-test</artifactId>
+
+        <scope>test</scope>
+
+    </dependency>
+    <dependency>
+
+        <groupId>io.jsonwebtoken</groupId>
+
+        <artifactId>jjwt</artifactId>
+
+        <version>0.9.0</version>
+
+    </dependency>
+
+    <dependency>
+
+        <groupId>cn.hutool</groupId>
+
+        <artifactId>hutool-all</artifactId>
+
+        <version>4.6.3</version>
+
+    </dependency>
+    <dependency>
+
+        <groupId>com.google.guava</groupId>
+
+        <artifactId>guava</artifactId>
+
+        <version>19.0</version>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.apache.commons</groupId>
+
+        <artifactId>commons-lang3</artifactId>
+
+        </dependency>
+    <dependency>
+
+        <groupId>commons-collections</groupId>
+
+        <artifactId>commons-collections</artifactId>
+
+        <version>3.2.2</version>
+
+    </dependency>
+    <dependency>
+
+        <groupId>io.springfox</groupId>
+
+        <artifactId>springfox-swagger2</artifactId>
+
+        <version>${swagger.version}</version>
+
+    </dependency>
+
+    <dependency>
+
+        <groupId>io.springfox</groupId>
+
+        <artifactId>springfox-swagger-ui</artifactId>
+
+        <version>${swagger.version}</version>
+
+    </dependency>
+<!-- 数据库分页依赖 -->
+
+    <dependency>
+
+      <groupId>com.github.pagehelper</groupId>
+
+      <artifactId>pagehelper</artifactId>
+
+      <version>${pageHelper.version}</version>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.mybatis.spring.boot</groupId>
+
+        <artifactId>mybatis-spring-boot-starter</artifactId>
+
+        <version>1.1.1</version>
+
+    </dependency>
+
+    <dependency>
+
+        <groupId>mysql</groupId>
+
+        <artifactId>mysql-connector-java</artifactId>
+
+        <version>${mysql.version}</version>
+
+    </dependency>
+<!-- 数据库驱动 -->
+
+    <dependency>
+
+        <groupId>com.alibaba</groupId>
+
+        <artifactId>druid</artifactId>
+
+        <version>1.1.3</version>
+
+    </dependency>
+    <dependency>
+
+        <groupId>com.alibaba</groupId>
+
+        <artifactId>fastjson</artifactId>
+
+        <version>${fastjson.version}</version>
+
+    </dependency>
+    <dependency>
+
+      <groupId>org.jsoup</groupId>
+
+      <artifactId>jsoup</artifactId>
+
+      <version>1.11.3</version>
+
+    </dependency>
+</dependencies>
+```
 
 ```
 
@@ -760,36 +790,41 @@ feign:
 
 spring:
 
-  application:
+application:
 
-    name: cas-server
+```
+name: cas-server
+```
 
-  cloud:
+cloud:
 
-    kubernetes:
+```
+kubernetes:
 
-      config:
+  config:
 
-        sources:
+    sources:
 
-         - name: ${spring.application.name}
+     - name: ${spring.application.name}
 
-           namespace: default
+       namespace: default
 
-      discovery:
+  discovery:
 
-        all-namespaces: true #发现所有的命令空间的服务
+    all-namespaces: true #发现所有的命令空间的服务
 
-      reload:
+  reload:
 
-        enabled: true
+    enabled: true
 
-        mode: polling #自动刷新模式为拉取模式，也可以是事件模式 event
+    mode: polling #自动刷新模式为拉取模式，也可以是事件模式 event
 
-        period: 500 #拉取模式下的频率
+    period: 500 #拉取模式下的频率
+```
+
 logging: #日志路径设置
 
-  path: /data/${spring.application.name}/logs
+path: /data/${spring.application.name}/logs
 
 ```
 
@@ -799,40 +834,51 @@ logging: #日志路径设置
 
 spring:
 
-  profiles:
+profiles:
 
-    active: dev
+```
+active: dev
+```
+
 server:
 
-  port: 2000
+port: 2000
 
-  undertow:
+undertow:
 
-    accesslog:
+```
+accesslog:
 
-      enabled: false
+  enabled: false
 
-      pattern: combined
+  pattern: combined
+```
 
-  servlet:
+servlet:
 
-    session:
+```
+session:
 
-      timeout: PT120M #session 超时时间
+  timeout: PT120M #session 超时时间
+```
+
 client:
 
-  http:
+http:
 
-    request:
+```
+request:
 
-      connectTimeout: 8000
+  connectTimeout: 8000
 
-      readTimeout: 30000
+  readTimeout: 30000
+```
+
 mybatis: #持久层配置
 
-  mapperLocations: classpath:mapper/*.xml
+mapperLocations: classpath:mapper/\*.xml
 
-  typeAliasesPackage: com.damon.*.model
+typeAliasesPackage: com.damon.\*.model
 
 ```
 
@@ -840,17 +886,17 @@ mybatis: #持久层配置
 
 ```
 
-/**
+/\*\*
 
-*
+-
 
-* @author Damon
+- @author Damon
 
-* @date 2020 年 1 月 13 日 下午 8:29:42
+- @date 2020 年 1 月 13 日 下午 8:29:42
 
-*
+-
 
- */
+\*/
 
 @Configuration
 
@@ -864,11 +910,13 @@ mybatis: #持久层配置
 
 public class CasApp {
 
-    public static void main(String[] args) {
+```
+public static void main(String[] args) {
 
-        SpringApplication.run(CasApp.class, args);
+    SpringApplication.run(CasApp.class, args);
 
-    }
+}
+```
 
 }
 
@@ -880,33 +928,35 @@ public class CasApp {
 
 ```
 
-/**
+/\*\*
 
-* @author Damon
+- @author Damon
 
-* @date 2019 年 10 月 25 日 下午 8:54:01
+- @date 2019 年 10 月 25 日 下午 8:54:01
 
-*
+-
 
- */
+\*/
 @Configuration
 
 @ConfigurationProperties(prefix = "greeting")
 
 public class EnvConfig {
-    private String message = "This is a dummy message";
-    public String getMessage() {
-
-        return this.message;
-
-    }
-    public void setMessage(String message) {
-
-        this.message = message;
-
-    }
+private String message = "This is a dummy message";
+public String getMessage() {
 
 ```
+    return this.message;
+
+}
+public void setMessage(String message) {
+
+    this.message = message;
+
+}
+```
+
+````
 
 这就是配置 ConfigMap 中的属性的类。剩下的可以自己定义一个接口类，来实现服务生产者。
 
@@ -955,16 +1005,39 @@ data:
 
       message: Say Hello to the Prod
 
-```
+````
 
-设置了不同环境的配置，注意，这里的 namespace 需要与服务部署的 namespace 一致，这里默认的是 default，而且在创建服务之前，先得创建这个。**2\. 创建服务部署脚本**```
+设置了不同环境的配置，注意，这里的 namespace 需要与服务部署的 namespace 一致，这里默认的是 default，而且在创建服务之前，先得创建这个。**2. 创建服务部署脚本**\`\`\`
 apiVersion: apps/v1
 
 kind: Deployment
 
 metadata:
 
-  name: cas-server-deployment
+name: cas-server-deployment
+
+labels:
+
+```
+app: cas-server
+```
+
+spec:
+
+replicas: 3
+
+selector:
+
+```
+matchLabels:
+
+  app: cas-server
+```
+
+template:
+
+```
+metadata:
 
   labels:
 
@@ -972,77 +1045,60 @@ metadata:
 
 spec:
 
-  replicas: 3
+  nodeSelector:
 
-  selector:
+    cas-server: "true"
 
-    matchLabels:
+  containers:
 
-      app: cas-server
+  - name: cas-server
 
-  template:
+    image: cas-server
 
-    metadata:
+    imagePullPolicy: Always
 
-      labels:
+    ports:
 
-        app: cas-server
+      - name: cas-server01
 
-    spec:
+        containerPort: 2000
 
-      nodeSelector:
+    volumeMounts:
 
-        cas-server: "true"
+    - mountPath: /home/cas-server
 
-      containers:
+      name: cas-server-path
 
-      - name: cas-server
+    - mountPath: /data/cas-server
 
-        image: cas-server
+      name: cas-server-log-path
 
-        imagePullPolicy: Always
+    - mountPath: /etc/kubernetes
 
-        ports:
+      name: kube-config-path
 
-          - name: cas-server01
+    args: ["sh", "-c", "nohup java JAVA_OPTS -jar -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=128m -Xms1024m -Xmx1024m -Xmn256m -Xss256k -XX:SurvivorRatio=8 -XX:+UseConcMarkSweepGC cas-server.jar --spring.profiles.active=dev", "&"]
 
-            containerPort: 2000
+  volumes:
 
-        volumeMounts:
+  - name: cas-server-path
 
-        - mountPath: /home/cas-server
+    hostPath:
 
-          name: cas-server-path
+      path: /var/pai/cas-server
 
-        - mountPath: /data/cas-server
+  - name: cas-server-log-path
 
-          name: cas-server-log-path
+    hostPath:
 
-        - mountPath: /etc/kubernetes
+      path: /data/cas-server
 
-          name: kube-config-path
+  - name: kube-config-path
 
-        args: ["sh", "-c", "nohup java JAVA_OPTS -jar -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=128m -Xms1024m -Xmx1024m -Xmn256m -Xss256k -XX:SurvivorRatio=8 -XX:+UseConcMarkSweepGC cas-server.jar --spring.profiles.active=dev", "&"]
+    hostPath:
 
-      volumes:
-
-      - name: cas-server-path
-
-        hostPath:
-
-          path: /var/pai/cas-server
-
-      - name: cas-server-log-path
-
-        hostPath:
-
-          path: /data/cas-server
-
-      - name: kube-config-path
-
-        hostPath:
-
-          path: /etc/kubernetes
+      path: /etc/kubernetes
+```
 
 ```
 
@@ -1068,23 +1124,23 @@ kind: Service
 
 metadata:
 
-  name: cas-server-service
+name: cas-server-service
 
-  namespace: default
+namespace: default
 
 spec:
 
-  ports:
+ports:
 
-* name: cas-server01
+- name: cas-server01
 
-    port: 2000
+  port: 2000
 
-    targetPort: cas-server01
+  targetPort: cas-server01
 
   selector:
 
-    app: cas-server
+  app: cas-server
 
 ```
 
@@ -1096,273 +1152,278 @@ spec:
 
 <parent>
 
-        <groupId>org.springframework.boot</groupId>
+```
+    <groupId>org.springframework.boot</groupId>
 
-        <artifactId>spring-boot-starter-parent</artifactId>
+    <artifactId>spring-boot-starter-parent</artifactId>
 
-        <version>2.1.13.RELEASE</version>
+    <version>2.1.13.RELEASE</version>
 
-        <relativePath/>
+    <relativePath/>
 
-    </parent>
-    <properties>
+</parent>
+<properties>
 
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <java.version>1.8</java.version>
+    <java.version>1.8</java.version>
 
-        <swagger.version>2.6.1</swagger.version>
+    <swagger.version>2.6.1</swagger.version>
 
-        <xstream.version>1.4.7</xstream.version>
+    <xstream.version>1.4.7</xstream.version>
 
-        <pageHelper.version>4.1.6</pageHelper.version>
+    <pageHelper.version>4.1.6</pageHelper.version>
 
-        <fastjson.version>1.2.51</fastjson.version>
+    <fastjson.version>1.2.51</fastjson.version>
 
-        <springcloud.version>Greenwich.SR3</springcloud.version>
+    <springcloud.version>Greenwich.SR3</springcloud.version>
 
-        <!-- <springcloud.version>2.1.8.RELEASE</springcloud.version> -->
+    <!-- <springcloud.version>2.1.8.RELEASE</springcloud.version> -->
 
-        <springcloud.kubernetes.version>1.1.1.RELEASE</springcloud.kubernetes.version>
+    <springcloud.kubernetes.version>1.1.1.RELEASE</springcloud.kubernetes.version>
 
-        <mysql.version>5.1.46</mysql.version>
+    <mysql.version>5.1.46</mysql.version>
 
-    </properties>
-    <dependencyManagement>
+</properties>
+<dependencyManagement>
 
-        <dependencies>
-
-            <dependency>
-
-                <groupId>org.springframework.cloud</groupId>
-
-                <artifactId>spring-cloud-dependencies</artifactId>
-
-                <version>${springcloud.version}</version>
-
-                <type>pom</type>
-
-                <scope>import</scope>
-
-            </dependency>
-
-        </dependencies>
-
-    </dependencyManagement>
     <dependencies>
 
         <dependency>
 
-            <groupId>org.springframework.boot</groupId>
-
-            <artifactId>spring-boot-starter-web</artifactId>
-
-            <exclusions>
-
-                <exclusion>
-
-                    <groupId>org.springframework.boot</groupId>
-
-                    <artifactId>spring-boot-starter-tomcat</artifactId>
-
-                </exclusion>
-
-            </exclusions>
-
-        </dependency>
-
-        <dependency>
-
-            <groupId>org.springframework.boot</groupId>
-
-            <artifactId>spring-boot-starter-undertow</artifactId>
-
-        </dependency>
-        <dependency>
-
-            <groupId>org.springframework.boot</groupId>
-
-            <artifactId>spring-boot-starter-test</artifactId>
-
-            <scope>test</scope>
-
-        </dependency>
-   <!-- 配置加载依赖 -->
-
-        <dependency>
-
-            <groupId>org.springframework.boot</groupId>
-
-            <artifactId>spring-boot-actuator</artifactId>
-
-        </dependency>
-        <dependency>
-
-            <groupId>org.springframework.boot</groupId>
-
-            <artifactId>spring-boot-actuator-autoconfigure</artifactId>
-
-        </dependency>
-        <dependency>
-
             <groupId>org.springframework.cloud</groupId>
 
-            <artifactId>spring-cloud-starter-kubernetes-config</artifactId>
+            <artifactId>spring-cloud-dependencies</artifactId>
 
-            </dependency>
-        <dependency>
+            <version>${springcloud.version}</version>
 
-            <groupId>org.springframework.cloud</groupId>
+            <type>pom</type>
 
-            <artifactId>spring-cloud-commons</artifactId>
-
-        </dependency>
-    <!-- 结合 k8s 实现服务发现 -->
-
-        <dependency>
-
-            <groupId>org.springframework.cloud</groupId>
-
-            <artifactId>spring-cloud-kubernetes-core</artifactId>
-
-        </dependency>
-        <dependency>
-
-            <groupId>org.springframework.cloud</groupId>
-
-            <artifactId>spring-cloud-kubernetes-discovery</artifactId>
-
-        </dependency>
-    <!-- 负载均衡策略 -->
-
-        <dependency>
-
-            <groupId>org.springframework.cloud</groupId>
-
-            <artifactId>spring-cloud-starter-kubernetes-ribbon</artifactId>
-
-        </dependency>
-        <dependency>
-
-            <groupId>org.springframework.cloud</groupId>
-
-            <artifactId>spring-cloud-starter-netflix-ribbon</artifactId>
-
-        </dependency>
-    <!-- 熔断机制 -->
-
-        <dependency>
-
-            <groupId>org.springframework.cloud</groupId>
-
-            <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
-
-        </dependency>
-        <dependency>
-
-            <groupId>cn.hutool</groupId>
-
-            <artifactId>hutool-all</artifactId>
-
-            <version>4.6.3</version>
-
-        </dependency>
-        <dependency>
-
-            <groupId>com.alibaba</groupId>
-
-            <artifactId>fastjson</artifactId>
-
-            <version>${fastjson.version}</version>
-
-        </dependency>
-        <dependency>
-
-          <groupId>org.jsoup</groupId>
-
-          <artifactId>jsoup</artifactId>
-
-          <version>1.11.3</version>
-
-        </dependency>
-        <dependency>
-
-            <groupId>io.springfox</groupId>
-
-            <artifactId>springfox-swagger2</artifactId>
-
-            <version>${swagger.version}</version>
+            <scope>import</scope>
 
         </dependency>
 
-        <dependency>
-
-            <groupId>io.springfox</groupId>
-
-            <artifactId>springfox-swagger-ui</artifactId>
-
-            <version>${swagger.version}</version>
-
-        </dependency>
-        <dependency>
-
-            <groupId>org.apache.commons</groupId>
-
-            <artifactId>commons-lang3</artifactId>
-
-            </dependency>
-        <dependency>
-
-            <groupId>commons-collections</groupId>
-
-            <artifactId>commons-collections</artifactId>
-
-            <version>3.2.2</version>
-
-        </dependency>
-        <!-- 数据库分页 -->
-
-        <dependency>
-
-          <groupId>com.github.pagehelper</groupId>
-
-          <artifactId>pagehelper</artifactId>
-
-          <version>${pageHelper.version}</version>
-
-        </dependency>
-        <dependency>
-
-            <groupId>org.mybatis.spring.boot</groupId>
-
-            <artifactId>mybatis-spring-boot-starter</artifactId>
-
-            <version>1.1.1</version>
-
-        </dependency>
-        <dependency>
-
-            <groupId>mysql</groupId>
-
-            <artifactId>mysql-connector-java</artifactId>
-
-            <version>${mysql.version}</version>
-
-        </dependency>
-    <!-- 数据库驱动 -->
-
-        <dependency>
-
-            <groupId>com.alibaba</groupId>
-
-            <artifactId>druid</artifactId>
-
-            <version>1.1.3</version>
-
-        </dependency>
     </dependencies>
+
+</dependencyManagement>
+<dependencies>
+
+    <dependency>
+
+        <groupId>org.springframework.boot</groupId>
+
+        <artifactId>spring-boot-starter-web</artifactId>
+
+        <exclusions>
+
+            <exclusion>
+
+                <groupId>org.springframework.boot</groupId>
+
+                <artifactId>spring-boot-starter-tomcat</artifactId>
+
+            </exclusion>
+
+        </exclusions>
+
+    </dependency>
+
+    <dependency>
+
+        <groupId>org.springframework.boot</groupId>
+
+        <artifactId>spring-boot-starter-undertow</artifactId>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.springframework.boot</groupId>
+
+        <artifactId>spring-boot-starter-test</artifactId>
+
+        <scope>test</scope>
+
+    </dependency>
+```
+
+<!-- 配置加载依赖 -->
+
+```
+    <dependency>
+
+        <groupId>org.springframework.boot</groupId>
+
+        <artifactId>spring-boot-actuator</artifactId>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.springframework.boot</groupId>
+
+        <artifactId>spring-boot-actuator-autoconfigure</artifactId>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.springframework.cloud</groupId>
+
+        <artifactId>spring-cloud-starter-kubernetes-config</artifactId>
+
+        </dependency>
+    <dependency>
+
+        <groupId>org.springframework.cloud</groupId>
+
+        <artifactId>spring-cloud-commons</artifactId>
+
+    </dependency>
+<!-- 结合 k8s 实现服务发现 -->
+
+    <dependency>
+
+        <groupId>org.springframework.cloud</groupId>
+
+        <artifactId>spring-cloud-kubernetes-core</artifactId>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.springframework.cloud</groupId>
+
+        <artifactId>spring-cloud-kubernetes-discovery</artifactId>
+
+    </dependency>
+<!-- 负载均衡策略 -->
+
+    <dependency>
+
+        <groupId>org.springframework.cloud</groupId>
+
+        <artifactId>spring-cloud-starter-kubernetes-ribbon</artifactId>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.springframework.cloud</groupId>
+
+        <artifactId>spring-cloud-starter-netflix-ribbon</artifactId>
+
+    </dependency>
+<!-- 熔断机制 -->
+
+    <dependency>
+
+        <groupId>org.springframework.cloud</groupId>
+
+        <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+
+    </dependency>
+    <dependency>
+
+        <groupId>cn.hutool</groupId>
+
+        <artifactId>hutool-all</artifactId>
+
+        <version>4.6.3</version>
+
+    </dependency>
+    <dependency>
+
+        <groupId>com.alibaba</groupId>
+
+        <artifactId>fastjson</artifactId>
+
+        <version>${fastjson.version}</version>
+
+    </dependency>
+    <dependency>
+
+      <groupId>org.jsoup</groupId>
+
+      <artifactId>jsoup</artifactId>
+
+      <version>1.11.3</version>
+
+    </dependency>
+    <dependency>
+
+        <groupId>io.springfox</groupId>
+
+        <artifactId>springfox-swagger2</artifactId>
+
+        <version>${swagger.version}</version>
+
+    </dependency>
+
+    <dependency>
+
+        <groupId>io.springfox</groupId>
+
+        <artifactId>springfox-swagger-ui</artifactId>
+
+        <version>${swagger.version}</version>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.apache.commons</groupId>
+
+        <artifactId>commons-lang3</artifactId>
+
+        </dependency>
+    <dependency>
+
+        <groupId>commons-collections</groupId>
+
+        <artifactId>commons-collections</artifactId>
+
+        <version>3.2.2</version>
+
+    </dependency>
+    <!-- 数据库分页 -->
+
+    <dependency>
+
+      <groupId>com.github.pagehelper</groupId>
+
+      <artifactId>pagehelper</artifactId>
+
+      <version>${pageHelper.version}</version>
+
+    </dependency>
+    <dependency>
+
+        <groupId>org.mybatis.spring.boot</groupId>
+
+        <artifactId>mybatis-spring-boot-starter</artifactId>
+
+        <version>1.1.1</version>
+
+    </dependency>
+    <dependency>
+
+        <groupId>mysql</groupId>
+
+        <artifactId>mysql-connector-java</artifactId>
+
+        <version>${mysql.version}</version>
+
+    </dependency>
+<!-- 数据库驱动 -->
+
+    <dependency>
+
+        <groupId>com.alibaba</groupId>
+
+        <artifactId>druid</artifactId>
+
+        <version>1.1.3</version>
+
+    </dependency>
+</dependencies>
+```
 
 ```
 
@@ -1374,55 +1435,64 @@ spec:
 
 backend:
 
-  ribbon:
-
-    eureka:
-
-      enabled: false
-
-    client:
-
-      enabled: true
-
-    ServerListRefreshInterval: 5000
 ribbon:
 
-  ConnectTimeout: 3000
+```
+eureka:
 
-  ReadTimeout: 1000
+  enabled: false
 
-  eager-load:
+client:
 
-    enabled: true
+  enabled: true
 
-    clients: cas-server-service,edge-cas-service,admin-web-service #负载均衡发现的服务列表
+ServerListRefreshInterval: 5000
+```
 
-  MaxAutoRetries: 1 #对第一次请求的服务的重试次数
+ribbon:
 
-  MaxAutoRetriesNextServer: 1 #要重试的下一个服务的最大数量（不包括第一个服务）
+ConnectTimeout: 3000
 
-  OkToRetryOnAllOperations: true
+ReadTimeout: 1000
 
-  NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RoundRobinRule #负载均衡策略
+eager-load:
+
+```
+enabled: true
+
+clients: cas-server-service,edge-cas-service,admin-web-service #负载均衡发现的服务列表
+```
+
+MaxAutoRetries: 1 #对第一次请求的服务的重试次数
+
+MaxAutoRetriesNextServer: 1 #要重试的下一个服务的最大数量（不包括第一个服务）
+
+OkToRetryOnAllOperations: true
+
+NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RoundRobinRule #负载均衡策略
 hystrix:
 
-  command:
+command:
 
-    BackendCall:
+```
+BackendCall:
 
-      execution:
+  execution:
 
-        isolation:
+    isolation:
 
-          thread:
+      thread:
 
-            timeoutInMilliseconds: 5000 #熔断机制设置的超时时间
+        timeoutInMilliseconds: 5000 #熔断机制设置的超时时间
+```
 
-  threadpool:
+threadpool:
 
-    BackendCallThread:
+```
+BackendCallThread:
 
-      coreSize: 5
+  coreSize: 5
+```
 
 ```
 
@@ -1432,15 +1502,15 @@ hystrix:
 
 ```
 
-/**
+/\*\*
 
-* @author Damon
+- @author Damon
 
-* @date 2020 年 1 月 13 日 下午 9:23:06
+- @date 2020 年 1 月 13 日 下午 9:23:06
 
-*
+-
 
- */
+\*/
 @Configuration
 
 @EnableAutoConfiguration
@@ -1452,11 +1522,14 @@ hystrix:
 @EnableDiscoveryClient
 
 public class AdminApp {
-    public static void main(String[] args) {
+public static void main(String\[\] args) {
 
-        SpringApplication.run(AdminApp.class, args);
+```
+    SpringApplication.run(AdminApp.class, args);
 
-    }
+}
+```
+
 }
 
 ```
@@ -1477,23 +1550,25 @@ public class AdminApp {
 
 @LoadBalanced
 
-    @Bean
-
-    public RestTemplate restTemplate() {
-
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-
-        requestFactory.setReadTimeout(env.getProperty("client.http.request.readTimeout", Integer.class, 15000));
-
-        requestFactory.setConnectTimeout(env.getProperty("client.http.request.connectTimeout", Integer.class, 3000));
-
-        RestTemplate rt = new RestTemplate(requestFactory);
-
-        return rt;
-
-    }
-
 ```
+@Bean
+
+public RestTemplate restTemplate() {
+
+    SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+
+    requestFactory.setReadTimeout(env.getProperty("client.http.request.readTimeout", Integer.class, 15000));
+
+    requestFactory.setConnectTimeout(env.getProperty("client.http.request.connectTimeout", Integer.class, 3000));
+
+    RestTemplate rt = new RestTemplate(requestFactory);
+
+    return rt;
+
+}
+```
+
+````
 
 可以看到，这种方式的分布式负载均衡实现起来很简单，直接注入一个初始化 Bean，加上一个注解 @LoadBalanced 即可。
 
@@ -1502,7 +1577,7 @@ public class AdminApp {
 ```java
 ResponseEntity<String> forEntity = restTemplate.getForEntity("http://cas-server/api/getUser", String.class);
 
-```
+````
 
 其中，URL 中 必须要加上 `"http://"`，这样即可实现服务的发现以及负载均衡，其中，LB 的策略，可以采用 Ribbon 的几种方式，也可以自定义一种。
 
@@ -1551,9 +1626,9 @@ private Response<Object> admin_service_fallBack(HttpServletRequest req, HttpServ
 
 开源几个微服务的架构设计项目：
 
-* [https://github.com/damon008/spring-cloud-oauth2](https://github.com/damon008/spring-cloud-oauth2)
-* [https://github.com/damon008/spring-cloud-k8s](https://github.com/damon008/spring-cloud-k8s)
-* [https://gitee.com/damon\_one/spring-cloud-k8s](https://gitee.com/damon_one/spring-cloud-k8s)
-* [https://gitee.com/damon\_one/spring-cloud-oauth2](https://gitee.com/damon_one/spring-cloud-oauth2)
+- [https://github.com/damon008/spring-cloud-oauth2](https://github.com/damon008/spring-cloud-oauth2)
+- [https://github.com/damon008/spring-cloud-k8s](https://github.com/damon008/spring-cloud-k8s)
+- [https://gitee.com/damon_one/spring-cloud-k8s](https://gitee.com/damon_one/spring-cloud-k8s)
+- [https://gitee.com/damon_one/spring-cloud-oauth2](https://gitee.com/damon_one/spring-cloud-oauth2)
 
 欢迎大家 star，多多指教。

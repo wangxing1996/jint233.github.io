@@ -1,34 +1,32 @@
-MySQL 主从复制
-==========
+# MySQL 主从复制
 
 本文非常详细地介绍MySQL复制相关的内容，包括基本概念、复制原理、如何配置不同类型的复制(传统复制)等等。在此文章之后，还有几篇文章分别介绍GTID复制、半同步复制、实现MySQL的动静分离，以及MySQL 5.7.17引入的革命性功能：组复制(MGR)。
 
 本文是MySQL Replication的基础，但却非常重要。对于MySQL复制，如何搭建它不是重点(因为简单，网上资源非常多)，如何维护它才是重点(网上资源不集中)。以下几个知识点是掌握MySQL复制所必备的：
 
 1. 复制的原理
-2. 将master上已存在的数据恢复到slave上作为基准数据
-3. 获取 **正确的** binlog坐标
-4. **深入理解**`show slave status`中的一些状态信息
+1. 将master上已存在的数据恢复到slave上作为基准数据
+1. 获取 **正确的** binlog坐标
+1. **深入理解**`show slave status`中的一些状态信息
 
 本文对以上内容都做了非常详细的说明。希望对各位初学、深入MySQL复制有所帮助。
 
-mysql replication官方手册：[https://dev.mysql.com/doc/refman/5.7/en/replication.html。](https://dev.mysql.com/doc/refman/5.7/en/replication.html。)
+mysql replication官方手册：[https://dev.mysql.com/doc/refman/5.7/en/replication.html。](https://dev.mysql.com/doc/refman/5.7/en/replication.html%E3%80%82)
 
-1.复制的基本概念和原理
-============
+# 1.复制的基本概念和原理
 
 mysql复制是指从一个mysql服务器(MASTER)将数据**通过日志的方式经过网络传送**到另一台或多台mysql服务器(SLAVE)，然后在slave上重放(replay或redo)传送过来的日志，以达到和master数据同步的目的。
 
 它的工作原理很简单。首先**确保master数据库上开启了二进制日志，这是复制的前提**。
 
-* 在slave准备开始复制时，首先 **要执行change master to语句设置连接到master服务器的连接参数** ，在执行该语句的时候要提供一些信息，包括如何连接和要从哪复制binlog，这些信息在连接的时候会记录到slave的datadir下的master.info文件中，以后再连接master的时候将不用再提供这新信息而是直接读取该文件进行连接。
+- 在slave准备开始复制时，首先 **要执行change master to语句设置连接到master服务器的连接参数** ，在执行该语句的时候要提供一些信息，包括如何连接和要从哪复制binlog，这些信息在连接的时候会记录到slave的datadir下的master.info文件中，以后再连接master的时候将不用再提供这新信息而是直接读取该文件进行连接。
 
-* 在slave上有两种线程，
+- 在slave上有两种线程，
 
-    分别是IO线程和SQL线程
+  分别是IO线程和SQL线程
 
-  * IO线程用于连接master，监控和接受master的binlog。当启动IO线程成功连接master时， **master会同时启动一个dump线程** ，该线程将slave请求要复制的binlog给dump出来，之后IO线程负责监控并接收master上dump出来的二进制日志，当master上binlog有变化的时候，IO线程就将其复制过来并写入到自己的中继日志(relay log)文件中。
-  * slave上的另一个线程SQL线程用于监控、读取并重放relay log中的日志，将数据写入到自己的数据库中。如下图所示。
+  - IO线程用于连接master，监控和接受master的binlog。当启动IO线程成功连接master时， **master会同时启动一个dump线程** ，该线程将slave请求要复制的binlog给dump出来，之后IO线程负责监控并接收master上dump出来的二进制日志，当master上binlog有变化的时候，IO线程就将其复制过来并写入到自己的中继日志(relay log)文件中。
+  - slave上的另一个线程SQL线程用于监控、读取并重放relay log中的日志，将数据写入到自己的数据库中。如下图所示。
 
 站在slave的角度上看，过程如下：
 
@@ -41,46 +39,43 @@ mysql复制是指从一个mysql服务器(MASTER)将数据**通过日志的方式
 所以，可以认为复制大致有三个步骤：
 
 1. 数据修改写入master数据库的binlog中。
-2. slave的IO线程复制这些变动的binlog到自己的relay log中。
-3. slave的SQL线程读取并重新应用relay log到自己的数据库上，让其和master数据库保持一致。
+1. slave的IO线程复制这些变动的binlog到自己的relay log中。
+1. slave的SQL线程读取并重新应用relay log到自己的数据库上，让其和master数据库保持一致。
 
 从复制的机制上可以知道，在复制进行前，slave上必须具有master上部分完整内容作为复制基准数据。例如，master上有数据库A，二进制日志已经写到了pos1位置，那么在复制进行前，slave上必须要有数据库A，且如果要从pos1位置开始复制的话，还必须有和master上pos1之前完全一致的数据。如果不满足这样的一致性条件，那么在replay中继日志的时候将不知道如何进行应用而导致数据混乱。 **也就是说，复制是基于binlog的position进行的，复制之前必须保证position一致。**(注：这是传统的复制方式所要求的)
 
-可以选择对哪些数据库甚至数据库中的哪些表进行复制。**默认情况下，MySQL的复制是异步的。slave可以不用一直连着master，即使中间断开了也能从断开的position处继续进行复制。**MySQL 5.6对比MySQL 5.5在复制上进行了很大的改进，主要包括支持GTID(Global Transaction ID,全局事务ID)复制和多SQL线程并行重放。GTID的复制方式和传统的复制方式不一样，通过全局事务ID，它不要求复制前slave有基准数据，也不要求binlog的position一致。
+可以选择对哪些数据库甚至数据库中的哪些表进行复制。\*\*默认情况下，MySQL的复制是异步的。slave可以不用一直连着master，即使中间断开了也能从断开的position处继续进行复制。\*\*MySQL 5.6对比MySQL 5.5在复制上进行了很大的改进，主要包括支持GTID(Global Transaction ID,全局事务ID)复制和多SQL线程并行重放。GTID的复制方式和传统的复制方式不一样，通过全局事务ID，它不要求复制前slave有基准数据，也不要求binlog的position一致。
 
 MySQL 5.7.17则提出了组复制(MySQL Group Replication,MGR)的概念。像数据库这样的产品，必须要尽可能完美地设计一致性问题，特别是在集群、分布式环境下。Galera就是一个MySQL集群产品，它支持多主模型(多个master)，但是当MySQL 5.7.17引入了MGR功能后，Galera的优势不再明显，甚至MGR可以取而代之。MGR为MySQL集群中多主复制的很多问题提供了很好的方案，可谓是一项革命性的功能。
 
 复制和二进制日志息息相关，所以学习本章必须先有二进制日志的相关知识。
 
-2.复制的好处
-=======
+# 2.复制的好处
 
 围绕下面的拓扑图来分析：
 
 ![img](assets/733013-20180524173723814-389803553.png)
 
-主要有以下几点好处：**1.提供了读写分离的能力。**replication让所有的slave都和master保持数据一致，因此外界客户端可以从各个slave中读取数据，而写数据则从master上操作。也就是实现了读写分离。
+主要有以下几点好处：\*\*1.提供了读写分离的能力。\*\*replication让所有的slave都和master保持数据一致，因此外界客户端可以从各个slave中读取数据，而写数据则从master上操作。也就是实现了读写分离。
 
 需要注意的是，为了保证数据一致性，**写操作必须在master上进行**。
 
-通常说到读写分离这个词，立刻就能意识到它会分散压力、提高性能。**2.为MySQL服务器提供了良好的伸缩(scale-out)能力。**由于各个slave服务器上只提供数据检索而没有写操作，因此"随意地"增加slave服务器数量来提升整个MySQL群的性能，而不会对当前业务产生任何影响。
+通常说到读写分离这个词，立刻就能意识到它会分散压力、提高性能。\*\*2.为MySQL服务器提供了良好的伸缩(scale-out)能力。\*\*由于各个slave服务器上只提供数据检索而没有写操作，因此"随意地"增加slave服务器数量来提升整个MySQL群的性能，而不会对当前业务产生任何影响。
 
 之所以"随意地"要加上双引号，是因为每个slave都要和master建立连接，传输数据。如果slave数量巨多，master的压力就会增大，网络带宽的压力也会增大。**3.数据库备份时，对业务影响降到最低。 **由于MySQL服务器群中所有数据都是一致的(至少几乎是一致的)，所以在需要备份数据库的时候可以任意停止某一台slave的复制功能(甚至停止整个mysql服务)，然后从这台主机上进行备份，这样几乎不会影响整个业务(除非只有一台slave，但既然只有一台slave，说明业务压力并不大，短期内将这个压力分配给master也不会有什么影响)。** 4.能提升数据的安全性。 **这是显然的，任意一台mysql服务器断开，都不会丢失数据。即使是master宕机，也只是丢失了那部分还没有传送的数据(异步复制时才会丢失这部分数据)。** 5.数据分析不再影响业务。**
 
 需要进行数据分析的时候，直接划分一台或多台slave出来专门用于数据分析。这样OLTP和OLAP可以共存，且几乎不会影响业务处理性能。
 
-3.复制分类和它们的特性
-============
+# 3.复制分类和它们的特性
 
 MySQL支持两种不同的复制方法：传统的复制方式和GTID复制。MySQL 5.7.17之后还支持组复制(MGR)。
 
-* (1).传统的复制方法要求复制之前，slave上必须有基准数据，且binlog的position一致。
-* (2).GTID复制方法不要求基准数据和binlog的position一致性。GTID复制时，master上只要一提交，就会立即应用到slave上。这极大地简化了复制的复杂性，且更好地保证master上和各slave上的数据一致性。
+- (1).传统的复制方法要求复制之前，slave上必须有基准数据，且binlog的position一致。
+- (2).GTID复制方法不要求基准数据和binlog的position一致性。GTID复制时，master上只要一提交，就会立即应用到slave上。这极大地简化了复制的复杂性，且更好地保证master上和各slave上的数据一致性。
 
 从数据同步方式的角度考虑，MySQL支持4种不同的同步方式：同步(synchronous)、半同步(semisynchronous)、异步(asynchronous)、延迟(delayed)。所以对于复制来说，就分为同步复制、半同步复制、异步复制和延迟复制。
 
-3.1 同步复制
---------
+## 3.1 同步复制
 
 客户端发送DDL/DML语句给master，master执行完毕后还需要 **等待所有的slave都写完了relay log才认为此次DDL/DML成功，然后才会返回成功信息给客户端** 。同步复制的问题是master必须等待，所以延迟较大，在MySQL中不使用这种复制方式。
 
@@ -88,8 +83,7 @@ MySQL支持两种不同的复制方法：传统的复制方式和GTID复制。My
 
 例如上图中描述的，只有3个slave全都写完relay log并返回ACK给master后，master才会判断此次DDL/DML成功。
 
-3.2 半同步复制
----------
+## 3.2 半同步复制
 
 客户端发送DDL/DML语句给master，master执行完毕后 **还要等待一个slave写完relay log并返回确认信息给master，master才认为此次DDL/DML语句是成功的，然后才会发送成功信息给客户端** 。半同步复制只需等待一个slave的回应，且等待的超时时间可以设置，超时后会自动降级为异步复制，所以在局域网内(网络延迟很小)使用半同步复制是可行的。
 
@@ -97,18 +91,15 @@ MySQL支持两种不同的复制方法：传统的复制方式和GTID复制。My
 
 例如上图中，只有第一个slave返回成功，master就判断此次DDL/DML成功，其他的slave无论复制进行到哪一个阶段都无关紧要。
 
-3.3 异步复制
---------
+## 3.3 异步复制
 
 客户端发送DDL/DML语句给master， **master执行完毕立即返回成功信息给客户端，而不管slave是否已经开始复制** 。这样的复制方式导致的问题是，当master写完了binlog，而slave还没有开始复制或者复制还没完成时，**slave上和master上的数据暂时不一致，且此时master突然宕机，slave将会丢失一部分数据。如果此时把slave提升为新的master，那么整个数据库就永久丢失这部分数据。**![img](assets/733013-20180524205215240-203795747.png)
 
-3.4 延迟复制
---------
+## 3.4 延迟复制
 
 顾名思义，延迟复制就是故意让slave延迟一段时间再从master上进行复制。
 
-4.配置一主一从
-========
+# 4.配置一主一从
 
 此处先配置默认的异步复制模式。由于复制和binlog息息相关，如果对binlog还不熟悉，请先了解binlog，见：[详细分析二进制日志](https://www.cnblogs.com/f-ck-need-u/p/9001061.html#blog5)。
 
@@ -119,31 +110,30 @@ mysql支持一主一从和一主多从。但是每个slave必须只能是一个m
 在开始传统的复制(非GTID复制)前，需要完成以下几个关键点，**这几个关键点指导后续复制的所有步骤**。
 
 1. 为master和slave设定不同的`server-id`，这是主从复制结构中非常关键的标识号。到了MySQL 5.7，似乎不设置server id就无法开启binlog。设置server id需要重启MySQL实例。
-2. 开启master的binlog。刚安装并初始化的MySQL默认未开启binlog，建议手动设置binlog且为其设定文件名，否则默认以主机名为基名时修改主机名后会找不到日志文件。
-3. 最好设置master上的变量`sync_binlog=1`(MySQL 5.7.7之后默认为1，之前的版本默认为0)，这样每写一次二进制日志都将其刷新到磁盘，让slave服务器可以尽快地复制。防止万一master的二进制日志还在缓存中就宕机时，slave无法复制这部分丢失的数据。
-4. 最好设置master上的redo log的刷盘变量`innodb_flush_log_at_trx_commit=1`(默认值为1)，这样每次提交事务都会立即将事务刷盘保证持久性和一致性。
-5. 在slave上开启中继日志relay log。这个是默认开启的，同样建议手动设置其文件名。
-6. 建议在master上专门创建一个用于复制的用户，它只需要有复制权限`replication slave`用来读取binlog。
-7. 确保slave上的数据和master上的数据在"复制的起始position之前"是完全一致的。如果master和slave上数据不一致，复制会失败。
-8. 记下master开始复制前binlog的position，因为在slave连接master时需要指定从master的哪个position开始复制。
-9. 考虑是否将slave设置为只读，也就是开启`read_only`选项。这种情况下，除了具有super权限(mysql 5.7.16还提供了`super_read_only`禁止super的写操作)和SQL线程能写数据库，其他用户都不能进行写操作。这种禁写对于slave来说，绝大多数场景都非常适合。
+1. 开启master的binlog。刚安装并初始化的MySQL默认未开启binlog，建议手动设置binlog且为其设定文件名，否则默认以主机名为基名时修改主机名后会找不到日志文件。
+1. 最好设置master上的变量`sync_binlog=1`(MySQL 5.7.7之后默认为1，之前的版本默认为0)，这样每写一次二进制日志都将其刷新到磁盘，让slave服务器可以尽快地复制。防止万一master的二进制日志还在缓存中就宕机时，slave无法复制这部分丢失的数据。
+1. 最好设置master上的redo log的刷盘变量`innodb_flush_log_at_trx_commit=1`(默认值为1)，这样每次提交事务都会立即将事务刷盘保证持久性和一致性。
+1. 在slave上开启中继日志relay log。这个是默认开启的，同样建议手动设置其文件名。
+1. 建议在master上专门创建一个用于复制的用户，它只需要有复制权限`replication slave`用来读取binlog。
+1. 确保slave上的数据和master上的数据在"复制的起始position之前"是完全一致的。如果master和slave上数据不一致，复制会失败。
+1. 记下master开始复制前binlog的position，因为在slave连接master时需要指定从master的哪个position开始复制。
+1. 考虑是否将slave设置为只读，也就是开启`read_only`选项。这种情况下，除了具有super权限(mysql 5.7.16还提供了`super_read_only`禁止super的写操作)和SQL线程能写数据库，其他用户都不能进行写操作。这种禁写对于slave来说，绝大多数场景都非常适合。
 
-4.1 一主一从
---------
+## 4.1 一主一从
 
 一主一从是最简单的主从复制结构。本节实验环境如下：
 
 ![img](assets/733013-20180528194339716-360937433.png)
 
-1.**配置master和slave的配置文件。**```
+1.**配置master和slave的配置文件。**\`\`\`
 
-[mysqld]          # master
+\[mysqld\]          # master
 datadir=/data
 socket=/data/mysql.sock
 log-bin=master-bin
 sync-binlog=1
 server-id=100
-[mysqld]       # slave
+\[mysqld\]       # slave
 datadir=/data
 socket=/data/mysql.sock
 relay-log=slave-bin
@@ -163,7 +153,7 @@ service mysqld restart
 
 ```
 
-create user 'repl'@'192.168.100.%' identified by '[email protected]!';
+create user 'repl'@'192.168.100.%' identified by '\[email protected\]!';
 grant REPLICATION SLAVE on *.* to 'repl'@'192.168.100.%';
 
 ```
@@ -195,43 +185,45 @@ DROP PROCEDURE IF EXISTS proc_num1;
 DELIMITER $$
 CREATE PROCEDURE proc_num1 (num INT)
 BEGIN
-    DECLARE rn INT DEFAULT 1 ;
-    TRUNCATE TABLE backuptest.num_isam ;
-    INSERT INTO backuptest.num_isam VALUES(1) ;
-    dd: WHILE rn *2 < num DO
-        BEGIN
-            INSERT INTO backuptest.num_isam
-            SELECT rn + n FROM backuptest.num_isam;
-            SET rn = rn* 2 ;
-        END ;
-    END WHILE dd;
-    INSERT INTO backuptest.num_isam
-    SELECT n + rn
-    FROM backuptest.num_isam
-    WHERE n + rn <= num;
+DECLARE rn INT DEFAULT 1 ;
+TRUNCATE TABLE backuptest.num_isam ;
+INSERT INTO backuptest.num_isam VALUES(1) ;
+dd: WHILE rn *2 \< num DO
+BEGIN
+INSERT INTO backuptest.num_isam
+SELECT rn + n FROM backuptest.num_isam;
+SET rn = rn* 2 ;
+END ;
+END WHILE dd;
+INSERT INTO backuptest.num_isam
+SELECT n + rn
+FROM backuptest.num_isam
+WHERE n + rn \<= num;
 END ;
 $$
 DELIMITER ;
+
 # 创建innodb类型的数值辅助表和插入数据的存储过程
+
 CREATE TABLE num_innodb (n INT NOT NULL PRIMARY KEY) ENGINE = INNODB ;
 DROP PROCEDURE IF EXISTS proc_num2;
 DELIMITER $$
 CREATE PROCEDURE proc_num2 (num INT)
 BEGIN
-    DECLARE rn INT DEFAULT 1 ;
-    TRUNCATE TABLE backuptest.num_innodb ;
-    INSERT INTO backuptest.num_innodb VALUES(1) ;
-    dd: WHILE rn * 2 < num DO
-        BEGIN
-            INSERT INTO backuptest.num_innodb
-            SELECT rn + n FROM backuptest.num_innodb;
-            SET rn = rn * 2 ;
-        END ;
-    END WHILE dd;
-    INSERT INTO backuptest.num_innodb
-    SELECT n + rn
-    FROM backuptest.num_innodb
-    WHERE n + rn <= num ;
+DECLARE rn INT DEFAULT 1 ;
+TRUNCATE TABLE backuptest.num_innodb ;
+INSERT INTO backuptest.num_innodb VALUES(1) ;
+dd: WHILE rn * 2 \< num DO
+BEGIN
+INSERT INTO backuptest.num_innodb
+SELECT rn + n FROM backuptest.num_innodb;
+SET rn = rn * 2 ;
+END ;
+END WHILE dd;
+INSERT INTO backuptest.num_innodb
+SELECT n + rn
+FROM backuptest.num_innodb
+WHERE n + rn \<= num ;
 END ;
 $$
 DELIMITER ;
@@ -263,7 +255,7 @@ mysql> select * from backuptest.num_isam limit 10;
 | 10 |
 +----+
 
-```
+````
 
 ### 4.2.1 获取master binlog的坐标
 
@@ -271,7 +263,7 @@ mysql> select * from backuptest.num_isam limit 10;
 
 如果master已有数据，或者说master以前就开启了binlog并写过数据库，那么需要手动获取position。** 为了安全以及没有后续写操作，必须先锁表。 **```
 mysql> flush tables with read lock;
-```
+````
 
 注意，这次的**锁表会导致写阻塞以及innodb的commit操作。**
 
@@ -292,12 +284,12 @@ mysql> show master status;   # 为了排版，简化了输出结果
 
 下面给出3种备份方式以及对应slave的恢复方法。建议备份所有库到slave上，如果要筛选一部分数据库或表进行复制，应该在slave上筛选(筛选方式见后文[筛选要复制的库和表](https://www.cnblogs.com/f-ck-need-u/p/9155003.html#blog6.1))，而不应该在master的备份过程中指定。
 
-* **方式一：冷备份直接cp。这种情况只适用于没有新写入操作。严谨一点，只适合拷贝完成前master不能有写入操作。**1.  如果要复制所有库，那么直接拷贝整个datadir。
+- \*\*方式一：冷备份直接cp。这种情况只适用于没有新写入操作。严谨一点，只适合拷贝完成前master不能有写入操作。\*\*1.  如果要复制所有库，那么直接拷贝整个datadir。
 
 2. 如果要复制的是某个或某几个库，直接拷贝相关目录即可。但注意，这种冷备份的方式只适合MyISAM表和开启了`innodb_file_per_table=ON`的InnoDB表。如果没有开启该变量，innodb表使用公共表空间，无法直接冷备份。
-3. 如果要冷备份innodb表，最安全的方法是先关闭master上的mysql，而不是通过表锁。
+1. 如果要冷备份innodb表，最安全的方法是先关闭master上的mysql，而不是通过表锁。
 
-所以，**如果没有涉及到innodb表，那么在锁表之后，可以直接冷拷贝。最后释放锁。**```
+所以，**如果没有涉及到innodb表，那么在锁表之后，可以直接冷拷贝。最后释放锁。**\`\`\`
 mysql> flush tables with read lock;
 mysql> show master status;   # 为了排版，简化了输出结果
 +-------------------+----------+--------------+--------+--------+
@@ -348,7 +340,7 @@ shell> mysqldump -uroot -p --all-databases --master-data=2 >dump.db
 
 ```
 
-[[email protected] ~]# grep -i -m 1 'change master to' dump.db
+\[\[email protected\] ~\]# grep -i -m 1 'change master to' dump.db
 -- CHANGE MASTER TO MASTER_LOG_FILE='master-bin.000002', MASTER_LOG_POS=154;
 
 ```
@@ -379,7 +371,7 @@ innobackupex -u root -p /backup
 
 ```
 
-[[email protected] ~]# ll /backup/2018-05-29_04-12-15
+\[\[email protected\] ~\]# ll /backup/2018-05-29_04-12-15
 total 77872
 -rw-r----- 1 root root      489 May 29 04:12 backup-my.cnf
 drwxr-x--- 2 root root     4096 May 29 04:12 backuptest
@@ -399,7 +391,7 @@ drwxr-x--- 2 root root    12288 May 29 04:12 sys
 
 ```
 
-[[email protected] ~]# cat /backup/2018-05-29_04-12-15/xtrabackup_binlog_info
+\[\[email protected\] ~\]# cat /backup/2018-05-29_04-12-15/xtrabackup_binlog_info
 master-bin.000002       154
 
 ```
@@ -416,11 +408,11 @@ innobackupex --apply-log /backup/2018-05-29_04-12-15
 
 ```
 
-[[email protected] ~]# innobackupex --copy-back /backup/2018-05-29_04-12-15/
+\[\[email protected\] ~\]# innobackupex --copy-back /backup/2018-05-29_04-12-15/
 180529 23:54:27 innobackupex: Starting the copy-back operation
 IMPORTANT: Please check that the copy-back run completes successfully.
-           At the end of a successful copy-back run innobackupex
-           prints "completed OK!".
+At the end of a successful copy-back run innobackupex
+prints "completed OK!".
 innobackupex version 2.4.11 based on MySQL server 5.7.19 Linux (x86_64) (revision id: b4e0db5)
 Original data directory /data is not empty!
 
@@ -431,7 +423,7 @@ Original data directory /data is not empty!
 ```
 
 service mysqld stop
-rm -rf /data/*
+rm -rf /data/\*
 
 ```
 
@@ -441,7 +433,7 @@ rm -rf /data/*
 
 1
 2
-[[email protected] ~]# innobackupex --copy-back /backup/2018-05-29_04-12-15/
+\[\[email protected\] ~\]# innobackupex --copy-back /backup/2018-05-29_04-12-15/
 180529 23:55:53 completed OK!
 
 ```
@@ -487,12 +479,12 @@ shell> mysql -uroot -p -e 'select * from backuptest.num_isam limit 10;'
 ```
 
 mysql> change master to
-        master_host='192.168.100.20',
-        master_port=3306,
-        master_user='repl',
-        master_password='[email protected]!',
-        master_log_file='master-bin.000002',
-        master_log_pos=154;
+master_host='192.168.100.20',
+master_port=3306,
+master_user='repl',
+master_password='\[email protected\]!',
+master_log_file='master-bin.000002',
+master_log_pos=154;
 
 ```
 
@@ -500,26 +492,26 @@ mysql> change master to
 
 ```
 
-CHANGE MASTER TO option [, option] ...
+CHANGE MASTER TO option \[, option\] ...
 option:
-  | MASTER_HOST = 'host_name'
-  | MASTER_USER = 'user_name'
-  | MASTER_PASSWORD = 'password'
-  | MASTER_PORT = port_num
-  | MASTER_LOG_FILE = 'master_log_name'
-  | MASTER_LOG_POS = master_log_pos
-  | MASTER_AUTO_POSITION = {0|1}
-  | RELAY_LOG_FILE = 'relay_log_name'
-  | RELAY_LOG_POS = relay_log_pos
-  | MASTER_SSL = {0|1}
-  | MASTER_SSL_CA = 'ca_file_name'
-  | MASTER_SSL_CAPATH = 'ca_directory_name'
-  | MASTER_SSL_CERT = 'cert_file_name'
-  | MASTER_SSL_CRL = 'crl_file_name'
-  | MASTER_SSL_CRLPATH = 'crl_directory_name'
-  | MASTER_SSL_KEY = 'key_file_name'
-  | MASTER_SSL_CIPHER = 'cipher_list'
-  | MASTER_SSL_VERIFY_SERVER_CERT = {0|1}
+| MASTER_HOST = 'host_name'
+| MASTER_USER = 'user_name'
+| MASTER_PASSWORD = 'password'
+| MASTER_PORT = port_num
+| MASTER_LOG_FILE = 'master_log_name'
+| MASTER_LOG_POS = master_log_pos
+| MASTER_AUTO_POSITION = {0|1}
+| RELAY_LOG_FILE = 'relay_log_name'
+| RELAY_LOG_POS = relay_log_pos
+| MASTER_SSL = {0|1}
+| MASTER_SSL_CA = 'ca_file_name'
+| MASTER_SSL_CAPATH = 'ca_directory_name'
+| MASTER_SSL_CERT = 'cert_file_name'
+| MASTER_SSL_CRL = 'crl_file_name'
+| MASTER_SSL_CRLPATH = 'crl_directory_name'
+| MASTER_SSL_KEY = 'key_file_name'
+| MASTER_SSL_CIPHER = 'cipher_list'
+| MASTER_SSL_VERIFY_SERVER_CERT = {0|1}
 
 ```
 
@@ -556,13 +548,13 @@ master.info文件记录的是 **IO线程相关的信息** ，也就是连接mast
 
 ```
 
-[[email protected] ~]# cat /data/master.info
+\[\[email protected\] ~\]# cat /data/master.info
 25                        # 本文件的行数
 master-bin.000002         # IO线程正从哪个master binlog读取日志
 154                       # IO线程读取到master binlog的位置
 192.168.100.20            # master_host
 repl                      # master_user
-[email protected]!                # master_password
+\[email protected\]!                # master_password
 3306                      # master_port
 60                        # master_retry，slave重连master的超时时间(单位秒)
 0
@@ -580,7 +572,7 @@ relay-log.info文件中记录的是 **SQL线程相关的信息** 。以下是rel
 
 ```
 
-[[email protected] ~]# cat /data/relay-log.info
+\[\[email protected\] ~\]# cat /data/relay-log.info
 7                   # 本文件的行数
 ./slave-bin.000001  # 当前SQL线程正在读取的relay-log文件
 4                   # SQL线程已执行到的relay log位置
@@ -598,66 +590,66 @@ master-bin.000002   # SQL线程最近执行的操作对应的是哪个master bin
 
 ```
 
-mysql> show slave status\G
+mysql> show slave status\\G
 ***************************1. row***************************
-               Slave_IO_State:        # slave上IO线程的状态，来源于show processlist
-                  Master_Host: 192.168.100.20
-                  Master_User: repl
-                  Master_Port: 3306
-                Connect_Retry: 60
-              Master_Log_File: master-bin.000002
-          Read_Master_Log_Pos: 154
-               Relay_Log_File: slave-bin.000001
-                Relay_Log_Pos: 4
-        Relay_Master_Log_File: master-bin.000002
-             Slave_IO_Running: No          # IO线程的状态，此处为未运行且未连接状态
-            Slave_SQL_Running: No          # SQL线程的状态，此处为未运行状态
-              Replicate_Do_DB:             # 显式指定要复制的数据库
-          Replicate_Ignore_DB:             # 显式指定要忽略的数据库
-           Replicate_Do_Table:
-       Replicate_Ignore_Table:
-      Replicate_Wild_Do_Table:          # 以通配符方式指定要复制的表
-  Replicate_Wild_Ignore_Table:
-                   Last_Errno: 0
-                   Last_Error:
-                 Skip_Counter: 0
-          Exec_Master_Log_Pos: 154
-              Relay_Log_Space: 154
-              Until_Condition: None     # start slave语句中指定的until条件，
-                                        # 例如，读取到哪个binlog位置就停止
-               Until_Log_File:
-                Until_Log_Pos: 0
-           Master_SSL_Allowed: No
-           Master_SSL_CA_File:
-           Master_SSL_CA_Path:
-              Master_SSL_Cert:
-            Master_SSL_Cipher:
-               Master_SSL_Key:
-        Seconds_Behind_Master: NULL    # SQL线程执行过的位置比IO线程慢多少
+Slave_IO_State:        # slave上IO线程的状态，来源于show processlist
+Master_Host: 192.168.100.20
+Master_User: repl
+Master_Port: 3306
+Connect_Retry: 60
+Master_Log_File: master-bin.000002
+Read_Master_Log_Pos: 154
+Relay_Log_File: slave-bin.000001
+Relay_Log_Pos: 4
+Relay_Master_Log_File: master-bin.000002
+Slave_IO_Running: No          # IO线程的状态，此处为未运行且未连接状态
+Slave_SQL_Running: No          # SQL线程的状态，此处为未运行状态
+Replicate_Do_DB:             # 显式指定要复制的数据库
+Replicate_Ignore_DB:             # 显式指定要忽略的数据库
+Replicate_Do_Table:
+Replicate_Ignore_Table:
+Replicate_Wild_Do_Table:          # 以通配符方式指定要复制的表
+Replicate_Wild_Ignore_Table:
+Last_Errno: 0
+Last_Error:
+Skip_Counter: 0
+Exec_Master_Log_Pos: 154
+Relay_Log_Space: 154
+Until_Condition: None     # start slave语句中指定的until条件，
+\# 例如，读取到哪个binlog位置就停止
+Until_Log_File:
+Until_Log_Pos: 0
+Master_SSL_Allowed: No
+Master_SSL_CA_File:
+Master_SSL_CA_Path:
+Master_SSL_Cert:
+Master_SSL_Cipher:
+Master_SSL_Key:
+Seconds_Behind_Master: NULL    # SQL线程执行过的位置比IO线程慢多少
 Master_SSL_Verify_Server_Cert: No
-                Last_IO_Errno: 0
-                Last_IO_Error:
-               Last_SQL_Errno: 0
-               Last_SQL_Error:
-  Replicate_Ignore_Server_Ids:
-             Master_Server_Id: 0      # master的server id
-                  Master_UUID:
-             Master_Info_File: /data/master.info
-                    SQL_Delay: 0
-          SQL_Remaining_Delay: NULL
-      Slave_SQL_Running_State:             # slave SQL线程的状态
-           Master_Retry_Count: 86400
-                  Master_Bind:
-      Last_IO_Error_Timestamp:
-     Last_SQL_Error_Timestamp:
-               Master_SSL_Crl:
-           Master_SSL_Crlpath:
-           Retrieved_Gtid_Set:
-            Executed_Gtid_Set:
-                Auto_Position: 0
-         Replicate_Rewrite_DB:
-                 Channel_Name:
-           Master_TLS_Version:
+Last_IO_Errno: 0
+Last_IO_Error:
+Last_SQL_Errno: 0
+Last_SQL_Error:
+Replicate_Ignore_Server_Ids:
+Master_Server_Id: 0      # master的server id
+Master_UUID:
+Master_Info_File: /data/master.info
+SQL_Delay: 0
+SQL_Remaining_Delay: NULL
+Slave_SQL_Running_State:             # slave SQL线程的状态
+Master_Retry_Count: 86400
+Master_Bind:
+Last_IO_Error_Timestamp:
+Last_SQL_Error_Timestamp:
+Master_SSL_Crl:
+Master_SSL_Crlpath:
+Retrieved_Gtid_Set:
+Executed_Gtid_Set:
+Auto_Position: 0
+Replicate_Rewrite_DB:
+Channel_Name:
+Master_TLS_Version:
 1 row in set (0.01 sec)
 
 ```
@@ -668,12 +660,15 @@ Master_SSL_Verify_Server_Cert: No
 
 ```
 
-      Master_Log_File: master-bin.000002
-  Read_Master_Log_Pos: 154
-       Relay_Log_File: slave-bin.000001
-        Relay_Log_Pos: 4
+```
+  Master_Log_File: master-bin.000002
+```
+
+Read_Master_Log_Pos: 154
+Relay_Log_File: slave-bin.000001
+Relay_Log_Pos: 4
 Relay_Master_Log_File: master-bin.000002
-  Exec_Master_Log_Pos: 154
+Exec_Master_Log_Pos: 154
 
 ```
 
@@ -726,11 +721,12 @@ mysql> show processlist;        # master上的信息，为了排版，经过了�
 +----+------+-----------------------+-------------+--------------------------------------+
 | Id | User | Host                  | Command     | State                                |
 +----+------+-----------------------+-------------+--------------------------------------+
-|  4 | root | localhost             | Query       | starting                             |
-|----|------|-----------------------|-------------|--------------------------------------|
-| 16 | repl | 192.168.100.150:39556 | Binlog Dump | Master has sent all binlog to slave; |
-|    |      |                       |             | waiting for more updates             |
-+----+------+-----------------------+-------------+--------------------------------------+
+
+| 4                                                                                          | root | localhost             | Query       | starting                             |
+| ------------------------------------------------------------------------------------------ | ---- | --------------------- | ----------- | ------------------------------------ |
+| 16                                                                                         | repl | 192.168.100.150:39556 | Binlog Dump | Master has sent all binlog to slave; |
+|                                                                                            |      |                       |             | waiting for more updates             |
+| +----+------+-----------------------+-------------+--------------------------------------+ |      |                       |             |                                      |
 
 ```
 
@@ -751,23 +747,23 @@ call proc_num2(100000000);
 
 ```
 
-mysql> show slave status\G
-mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql> show slave status\\G
+mysql: \[Warning\] Using a password on the command line interface can be insecure.
 ***************************1. row***************************
-               Slave_IO_State: Waiting for master to send event
-                  Master_Host: 192.168.100.20
-                  Master_User: repl
-                  Master_Port: 3306
-                Connect_Retry: 60
-              Master_Log_File: master-bin.000003
-          Read_Master_Log_Pos: 512685413
-               Relay_Log_File: slave-bin.000003
-                Relay_Log_Pos: 336989434
-        Relay_Master_Log_File: master-bin.000003
-             Slave_IO_Running: Yes
-            Slave_SQL_Running: Yes
-          Exec_Master_Log_Pos: 336989219
-      Slave_SQL_Running_State: Reading event from the relay log
+Slave_IO_State: Waiting for master to send event
+Master_Host: 192.168.100.20
+Master_User: repl
+Master_Port: 3306
+Connect_Retry: 60
+Master_Log_File: master-bin.000003
+Read_Master_Log_Pos: 512685413
+Relay_Log_File: slave-bin.000003
+Relay_Log_Pos: 336989434
+Relay_Master_Log_File: master-bin.000003
+Slave_IO_Running: Yes
+Slave_SQL_Running: Yes
+Exec_Master_Log_Pos: 336989219
+Slave_SQL_Running_State: Reading event from the relay log
 
 ```
 
@@ -798,7 +794,7 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 
 ```
 
-[mysqld]
+\[mysqld\]
 skip-slave-start
 
 ```
@@ -886,7 +882,7 @@ mysql> show variables like "read_only";
 
 # master上的配置
 
-[mysqld]
+\[mysqld\]
 datadir=/data
 socket=/data/mysql.sock
 server_id=100
@@ -897,7 +893,7 @@ pid-file=/data/mysqld.pid
 
 # slave1上的配置
 
-[mysqld]
+\[mysqld\]
 datadir=/data
 socket=/data/mysql.sock
 server_id=111
@@ -910,7 +906,7 @@ read-only=ON               # 新增配置
 
 # slave2上的配置
 
-[mysqld]
+\[mysqld\]
 datadir=/data
 socket=/data/mysql.sock
 server_id=123
@@ -961,7 +957,7 @@ shell> ls /data
 auto.cnf    ib_buffer_pool  ib_logfile1  performance_schema  slave-bin.000005
 backuptest  ibdata1         master.info  relay-log.info      slave-bin.index
 err.log     ib_logfile0     mysql        slave-bin.000004    sys
-shell> rm -f /data/{master.info,relay-log.info,auto.conf,slave-bin*}
+shell> rm -f /data/{master.info,relay-log.info,auto.conf,slave-bin\*}
 shell> service mysqld start
 
 ```
@@ -972,14 +968,14 @@ shell> service mysqld start
 
 shell> mysql -uroot -p
 mysql> change master to
-        master_host='192.168.100.150',
-        master_port=3306,
-        master_user='repl',
-        master_password='[email protected]!',
-        master_log_file='master-slave-bin.000001',
-        master_log_pos=4;
+master_host='192.168.100.150',
+master_port=3306,
+master_user='repl',
+master_password='\[email protected\]!',
+master_log_file='master-slave-bin.000001',
+master_log_pos=4;
 mysql> start slave;
-mysql> show slave status\G
+mysql> show slave status\\G
 
 ```
 
@@ -993,11 +989,14 @@ mysql> show slave status\G
 
 ```
 
-            Replicate_Do_DB: 要复制的数据库
-        Replicate_Ignore_DB: 不复制的数据库
-         Replicate_Do_Table: 要复制的表
-     Replicate_Ignore_Table: 不复制的表
-    Replicate_Wild_Do_Table: 通配符方式指定要复制的表
+```
+        Replicate_Do_DB: 要复制的数据库
+    Replicate_Ignore_DB: 不复制的数据库
+     Replicate_Do_Table: 要复制的表
+ Replicate_Ignore_Table: 不复制的表
+Replicate_Wild_Do_Table: 通配符方式指定要复制的表
+```
+
 Replicate_Wild_Ignore_Table: 通配符方式指定不复制的表
 
 ```
@@ -1044,7 +1043,7 @@ mysql> show slave hosts;
 
 ```
 
-[mysqld]
+\[mysqld\]
 report_host=192.168.100.19
 
 ```
@@ -1231,8 +1230,8 @@ mysql> start slave;
 ```
 
 mysql> set sql_log_bin=0;
-mysql> create user [email protected]'%' identified by '[email protected]!';
-mysql> grant replication slave on *.* to [email protected]'%';
+mysql> create user \[email protected\]'%' identified by '\[email protected\]!';
+mysql> grant replication slave on *.* to \[email protected\]'%';
 mysql> set sql_log_bin=1;
 
 ```
@@ -1259,3 +1258,4 @@ slave通过IO线程获取master的binlog，并通过SQL线程来应用获取到�
 4.使用组复制或者Galera/PXC的多写节点，此外还可以设置相关参数，让它们对延迟自行调整。但一般都不需要调整，因为有默认设置。
 
 还有比较细致的方面可以降低延迟，比如设置为row格式的Binlog要比statement要好，因为不需要额外执行语句，直接修改数据即可。比如master设置保证数据一致性的日志刷盘规则(sync\_binlog/innodb\_flush\_log\_at\_trx\_commit设置为1)，而slave关闭binlog或者设置性能优先于数据一致性的binlog刷盘规则。再比如设置slave的隔离级别使得slave的锁粒度放大，不会轻易锁表(多线程复制时避免使用此方法)。还有很多方面，选择好的磁盘，设计好分库分表的结构等等，这些都是直接全局的，实在没什么必要在这里多做解释。
+```

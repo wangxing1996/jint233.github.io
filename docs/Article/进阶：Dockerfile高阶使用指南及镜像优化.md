@@ -1,5 +1,4 @@
-进阶：Dockerfile 高阶使用指南及镜像优化
-=========================
+# 进阶：Dockerfile 高阶使用指南及镜像优化
 
 ### Dockerfile 高阶使用及新特性解读
 
@@ -62,11 +61,11 @@ builder 其实很早就存在于 Docker 当中了，我们之前在使用或者�
 
 BuildKit 的产生主要是由于 v1 版本的 builder 的性能，存储管理和扩展性方面都有不足（毕竟它已经产生了很久，而且近些年 Docker 火热，问题也就逐步暴露出来了）, 所以它的重点也在于解决这些问题，关键的功能列在下面：
 
-* 支持自动化的垃圾回收
-* 可扩展的构建格式
-* 并发依赖解决
-* 高效的缓存系统
-* 插件化的架构
+- 支持自动化的垃圾回收
+- 可扩展的构建格式
+- 并发依赖解决
+- 高效的缓存系统
+- 插件化的架构
 
 这些功能我们暂且略过，先回到我们的主线上来。
 
@@ -87,10 +86,10 @@ BuildKit 在 Docker v18.06 版本之后可通过 `export DOCKER_BUILDKIT=1` 环�
 
 #### 小结
 
-* 在上面的内容中，我们知道了 Docker 是 C/S 架构，而我们通常使用的 `docker` 命令便是它的 CLI 客户端，服务端是 dockerd 通常由 systemd 进行管理；
-* 我们介绍了一个概念 builder，它是 Docker 构建系统中的实际执行者；用于将构建的上下文 context 按照 Dockerfile 的描述最终生成 Docker 镜像（image）;
-* BuildKit 是 v2 版本的 builder ；
-* 我们可以通过增加 `export DOCKER_BUILDKIT=1` 的环境变量，或是修改 dockerd 的配置文件来临时启用或者默认启用 BuildKit 作为 builder。
+- 在上面的内容中，我们知道了 Docker 是 C/S 架构，而我们通常使用的 `docker` 命令便是它的 CLI 客户端，服务端是 dockerd 通常由 systemd 进行管理；
+- 我们介绍了一个概念 builder，它是 Docker 构建系统中的实际执行者；用于将构建的上下文 context 按照 Dockerfile 的描述最终生成 Docker 镜像（image）;
+- BuildKit 是 v2 版本的 builder ；
+- 我们可以通过增加 `export DOCKER_BUILDKIT=1` 的环境变量，或是修改 dockerd 的配置文件来临时启用或者默认启用 BuildKit 作为 builder。
 
 我们来体验一下开启 BuildKit 的镜像构建：
 
@@ -199,8 +198,8 @@ CMD [ "java", "-jar", "/gs-spring-boot-0.1.0.jar" ]
 
 假如，我们的项目在构建过程当中，需要连接远端的数据库获取对应的信息（比如：获取某个特定的配置），之后才可以进行构建，我们通常情况下会如何去做呢？
 
-* 将密码硬编码写入代码中，如果使用此方法，当密码变更的时候，便需要修改代码才能支持，并且镜像分发的时候，会造成信息泄漏，导致安全问题；
-* 通过环境变量的方式构建，相对灵活，比较容易满足需求。
+- 将密码硬编码写入代码中，如果使用此方法，当密码变更的时候，便需要修改代码才能支持，并且镜像分发的时候，会造成信息泄漏，导致安全问题；
+- 通过环境变量的方式构建，相对灵活，比较容易满足需求。
 
 这里我们对 Dockerfile 做一点小改变，比如：我们使用 ENV 将密码通过环境变量的方式注入到镜像中。
 
@@ -261,7 +260,7 @@ b5fcff644568        292 years ago       CMD ["java" "-jar" "/gs-spring-boot-0.1.
 
 对于这种情况，我们也可以使用高阶特性, （这里就不在上面例子的基础上来写了，写了一个新的 Dockerfile）。
 
-```
+````
 # syntax = docker/dockerfile:experimental
 FROM alpine
 # 安装必要的包
@@ -277,7 +276,7 @@ RUN --mount=type=ssh,required git clone [email protected]:tao12345666333/moe.gi
 
 构建方式如下：
 
-```
+````
 
 (MoeLove) ➜  d eval $(ssh-agent)
 Agent pid 28184
@@ -285,22 +284,22 @@ Agent pid 28184
 Enter passphrase for /home/tao/.ssh/id_rsa:
 Identity added: /home/tao/.ssh/id_rsa (/home/tao/.ssh/id_rsa)
 (MoeLove) ➜  d docker build --ssh=default -t local/ssh .
-[+] Building 0.5s (10/10) FINISHED
- => [internal] load build definition from Dockerfile                                                 0.1s
- => => transferring dockerfile: 96B                                                                  0.0s
- => [internal] load .dockerignore                                                                    0.1s
- => => transferring context: 2B                                                                      0.0s
- => resolve image config for docker.io/docker/dockerfile:experimental                                0.0s
- => CACHED docker-image://docker.io/docker/dockerfile:experimental                                   0.0s
- => [internal] load metadata for docker.io/library/alpine:latest                                     0.0s
- => [1/4] FROM docker.io/library/alpine                                                              0.0s
- => CACHED [2/4] RUN apk add --no-cache git openssh-client                                           0.0s
- => CACHED [3/4] RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts         0.0s
- => CACHED [4/4] RUN --mount=type=ssh,required git clone [email protected]:tao12345666333/moe.git       0.0s
- => exporting to image                                                                               0.0s
- => => exporting layers                                                                              0.0s
- => => writing image sha256:35d3ded5595a48de50054121feed13ebadf9b5e73b6cefeeba4215e1a20a20fd         0.0s
- => => naming to docker.io/local/ssh
+\[+\] Building 0.5s (10/10) FINISHED
+=> \[internal\] load build definition from Dockerfile                                                 0.1s
+=> => transferring dockerfile: 96B                                                                  0.0s
+=> \[internal\] load .dockerignore                                                                    0.1s
+=> => transferring context: 2B                                                                      0.0s
+=> resolve image config for docker.io/docker/dockerfile:experimental                                0.0s
+=> CACHED docker-image://docker.io/docker/dockerfile:experimental                                   0.0s
+=> \[internal\] load metadata for docker.io/library/alpine:latest                                     0.0s
+=> \[1/4\] FROM docker.io/library/alpine                                                              0.0s
+=> CACHED \[2/4\] RUN apk add --no-cache git openssh-client                                           0.0s
+=> CACHED \[3/4\] RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts         0.0s
+=> CACHED \[4/4\] RUN --mount=type=ssh,required git clone \[email protected\]:tao12345666333/moe.git       0.0s
+=> exporting to image                                                                               0.0s
+=> => exporting layers                                                                              0.0s
+=> => writing image sha256:35d3ded5595a48de50054121feed13ebadf9b5e73b6cefeeba4215e1a20a20fd         0.0s
+=> => naming to docker.io/local/ssh
 
 ```
 
@@ -311,7 +310,7 @@ Identity added: /home/tao/.ssh/id_rsa (/home/tao/.ssh/id_rsa)
 (MoeLove) ➜  d docker run --rm -it local/ssh
 / # du -sh moe/
 108.0K  moe/
-/ # ls -al ~/.ssh/*
+/ # ls -al ~/.ssh/\*
 -rw-r--r--    1 root     root           788 May 30 06:35 /root/.ssh/known_hosts
 
 ```
@@ -322,10 +321,10 @@ Identity added: /home/tao/.ssh/id_rsa (/home/tao/.ssh/id_rsa)
 
 (MoeLove) ➜  d docker history local/ssh
 IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
-35d3ded5595a        35 minutes ago      RUN /bin/sh -c git clone [email protected]:tao1…   16.9kB              buildkit.dockerfile.v0
+35d3ded5595a        35 minutes ago      RUN /bin/sh -c git clone \[email protected\]:tao1…   16.9kB              buildkit.dockerfile.v0
 <missing>           35 minutes ago      RUN /bin/sh -c mkdir -p -m 0700 ~/.ssh && ss…   392B                buildkit.dockerfile.v0
 <missing>           36 minutes ago      RUN /bin/sh -c apk add --no-cache git openss…   20.8MB              buildkit.dockerfile.v0
-<missing>           2 weeks ago         /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B
+<missing>           2 weeks ago         /bin/sh -c #(nop)  CMD \["/bin/sh"\]              0B
 <missing>           2 weeks ago         /bin/sh -c #(nop) ADD file:a86aea1f3a7d68f6a…   5.53MB
 
 ```
@@ -336,28 +335,15 @@ IMAGE               CREATED             CREATED BY                              
 
 ```
 
-(MoeLove) ➜  d docker build --no-cache --ssh=default -t local/ssh .
-[+] Building 11.9s (9/9) FINISHED
- => [internal] load .dockerignore                                                                    0.1s
- => => transferring context: 2B                                                                      0.0s
- => [internal] load build definition from Dockerfile                                                 0.1s
- => => transferring dockerfile: 96B                                                                  0.0s
- => resolve image config for docker.io/docker/dockerfile:experimental                                0.0s
- => CACHED docker-image://docker.io/docker/dockerfile:experimental                                   0.0s
- => [internal] load metadata for docker.io/library/alpine:latest                                     0.0s
- => CACHED [1/4] FROM docker.io/library/alpine                                                       0.0s
- => [2/4] RUN apk add --no-cache git openssh-client                                                  5.5s
- => [3/4] RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts                3.0s
- => ERROR [4/4] RUN --mount=type=ssh,required git clone [email protected]:tao12345666333/moe.git        2.9s
-------
- >
- > [4/4] RUN --mount=type=ssh,required git clone [email protected]:tao12345666333/moe.git         && cd moe         && git checkout -b release:
- >
+## (MoeLove) ➜  d docker build --no-cache --ssh=default -t local/ssh . \[+\] Building 11.9s (9/9) FINISHED => \[internal\] load .dockerignore                                                                    0.1s => => transferring context: 2B                                                                      0.0s => \[internal\] load build definition from Dockerfile                                                 0.1s => => transferring dockerfile: 96B                                                                  0.0s => resolve image config for docker.io/docker/dockerfile:experimental                                0.0s => CACHED docker-image://docker.io/docker/dockerfile:experimental                                   0.0s => \[internal\] load metadata for docker.io/library/alpine:latest                                     0.0s => CACHED \[1/4\] FROM docker.io/library/alpine                                                       0.0s => \[2/4\] RUN apk add --no-cache git openssh-client                                                  5.5s => \[3/4\] RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts                3.0s => ERROR \[4/4\] RUN --mount=type=ssh,required git clone \[email protected\]:tao12345666333/moe.git        2.9s
+
+> \[4/4\] RUN --mount=type=ssh,required git clone \[email protected\]:tao12345666333/moe.git         && cd moe         && git checkout -b release:
+
 # 9 0.691 Cloning into 'moe'
 
 # 9 1.923 Warning: Permanently added the RSA host key for IP address '192.30.253.112' to the list of known hosts
 
-# 9 2.842 [email protected]: Permission denied (publickey)
+# 9 2.842 \[email protected\]: Permission denied (publickey)
 
 # 9 2.843 fatal: Could not read from remote repository
 
@@ -367,8 +353,9 @@ IMAGE               CREATED             CREATED BY                              
 
 # 9 2.843 and the repository exists
 
-------
-rpc error: code = Unknown desc = executor failed running [/bin/sh -c git clone [email protected]:tao12345666333/moe.git         && cd moe         && git checkout -b release]: exit code: 128
+______________________________________________________________________
+
+rpc error: code = Unknown desc = executor failed running \[/bin/sh -c git clone \[email protected\]:tao12345666333/moe.git         && cd moe         && git checkout -b release\]: exit code: 128
 
 ```
 
@@ -401,16 +388,16 @@ Docker 19.03 在（2019/05/30 发布了 beta5 版本）正式版也将在不久�
 ```
 
 {
-  "experimental": true,
-  "features": {
-    "buildkit": true
-  },
-  "builder": {
-    "gc": {
-      "enabled": true,
-      "defaultKeepStorage": "20GB"
-    }
-  }
+"experimental": true,
+"features": {
+"buildkit": true
+},
+"builder": {
+"gc": {
+"enabled": true,
+"defaultKeepStorage": "20GB"
+}
+}
 }
 
 ```
@@ -442,17 +429,17 @@ Docker 19.03 会提供两个主要的插件 app 和 buildx；buildx 就是这一
 Usage:  docker buildx COMMAND
 Build with BuildKit
 Management Commands:
-  imagetools  Commands to work on images in registry
+imagetools  Commands to work on images in registry
 Commands:
-  bake        Build from a file
-  build       Start a build
-  create      Create a new builder instance
-  inspect     Inspect current builder instance
-  ls          List builder instances
-  rm          Remove a builder instance
-  stop        Stop builder instance
-  use         Set the current builder instance
-  version     Show buildx version information
+bake        Build from a file
+build       Start a build
+create      Create a new builder instance
+inspect     Inspect current builder instance
+ls          List builder instances
+rm          Remove a builder instance
+stop        Stop builder instance
+use         Set the current builder instance
+version     Show buildx version information
 Run 'docker buildx COMMAND --help' for more information on a command.
 
 ```
@@ -470,11 +457,11 @@ d1809
 (MoeLove) ➜  docker buildx ls
 NAME/NODE DRIVER/ENDPOINT       STATUS   PLATFORMS
 d1809     docker-container
-  d18090  tcp://172.17.0.3:2375 inactive
+d18090  tcp://172.17.0.3:2375 inactive
 d1903 *   docker-container
-  d19030  tcp://172.17.0.2:2375 running  linux/amd64
+d19030  tcp://172.17.0.2:2375 running  linux/amd64
 default   docker
-  default default               running  linux/amd64
+default default               running  linux/amd64
 
 ```
 
@@ -488,11 +475,11 @@ default   docker
 (MoeLove) ➜  ~ docker buildx ls
 NAME/NODE DRIVER/ENDPOINT       STATUS   PLATFORMS
 d1809 *   docker-container
-  d18090  tcp://172.17.0.3:2375 inactive
+d18090  tcp://172.17.0.3:2375 inactive
 d1903     docker-container
-  d19030  tcp://172.17.0.2:2375 running  linux/amd64
+d19030  tcp://172.17.0.2:2375 running  linux/amd64
 default   docker
-  default default               running  linux/amd64
+default default               running  linux/amd64
 
 ```
 
@@ -501,24 +488,24 @@ default   docker
 ```
 
 (MoeLove) ➜  spring-boot-hello-world git:(master) docker buildx build --load -t remote/spring-boot:1 .
-[+] Building 31.1s (6/14)
-[+] Building 686.6s (16/16) FINISHED
- => [internal] booting buildkit                                                                            21.2s
- => => pulling image moby/buildkit:master                                                                  20.7s
- => => creating container buildx_buildkit_d18090                                                            0.5s
- => => unpacking docker.io/library/openjdk:[email protected]:f362b165b870ef129cbe730f29065ff37399c0aa8bc  2.2s
- => [builder 2/6] WORKDIR /app                                                                              0.0s
- => [builder 3/6] COPY pom.xml /app/                                                                        0.1s
- => [builder 4/6] RUN mvn dependency:go-offline                                                           596.4s
- => [builder 5/6] COPY src /app/src                                                                         0.2s
- => [builder 6/6] RUN mvn -e -B package                                                                    25.3s
- => [stage-2 2/2] COPY --from=builder /app/target/gs-spring-boot-0.1.0.jar /                                0.2s
- => exporting to oci image format                                                                           2.3s
- => => exporting layers                                                                                     1.3s
- => => exporting manifest sha256:f5af6ad923434c4d7d2d6f94f095ccacfe6983cec592de6b8a0a3af37206686a           0.0s
- => => exporting config sha256:644867602b8a4a5162dee8534378e3dab28807f593759c6b25bcf16492d807bc             0.0s
- => => sending tarball                                                                                      0.9s
- => importing to docker                                                                                     0.3s
+\[+\] Building 31.1s (6/14)
+\[+\] Building 686.6s (16/16) FINISHED
+=> \[internal\] booting buildkit                                                                            21.2s
+=> => pulling image moby/buildkit:master                                                                  20.7s
+=> => creating container buildx_buildkit_d18090                                                            0.5s
+=> => unpacking docker.io/library/openjdk:\[email protected\]:f362b165b870ef129cbe730f29065ff37399c0aa8bc  2.2s
+=> \[builder 2/6\] WORKDIR /app                                                                              0.0s
+=> \[builder 3/6\] COPY pom.xml /app/                                                                        0.1s
+=> \[builder 4/6\] RUN mvn dependency:go-offline                                                           596.4s
+=> \[builder 5/6\] COPY src /app/src                                                                         0.2s
+=> \[builder 6/6\] RUN mvn -e -B package                                                                    25.3s
+=> \[stage-2 2/2\] COPY --from=builder /app/target/gs-spring-boot-0.1.0.jar /                                0.2s
+=> exporting to oci image format                                                                           2.3s
+=> => exporting layers                                                                                     1.3s
+=> => exporting manifest sha256:f5af6ad923434c4d7d2d6f94f095ccacfe6983cec592de6b8a0a3af37206686a           0.0s
+=> => exporting config sha256:644867602b8a4a5162dee8534378e3dab28807f593759c6b25bcf16492d807bc             0.0s
+=> => sending tarball                                                                                      0.9s
+=> importing to docker                                                                                     0.3s
 (MoeLove) ➜  spring-boot-hello-world git:(master) docker image ls remote/spring-boot
 REPOSITORY           TAG                 IMAGE ID            CREATED              SIZE
 remote/spring-boot   1                   644867602b8a        About a minute ago   103MB
@@ -534,11 +521,11 @@ remote/spring-boot   1                   644867602b8a        About a minute ago 
 (MoeLove) ➜  spring-boot-hello-world git:(master) docker buildx ls
 NAME/NODE DRIVER/ENDPOINT       STATUS  PLATFORMS
 d1809 *   docker-container
-  d18090  tcp://172.17.0.3:2375 running linux/amd64
+d18090  tcp://172.17.0.3:2375 running linux/amd64
 d1903     docker-container
-  d19030  tcp://172.17.0.2:2375 running linux/amd64
+d19030  tcp://172.17.0.2:2375 running linux/amd64
 default   docker
-  default default               running linux/amd64
+default default               running linux/amd64
 
 ```
 
@@ -599,7 +586,7 @@ COPY --from=builder /app/target/gs-spring-boot-0.1.0.jar /
 
 COPY --from=builder /app/target/gs-spring-boot-0.1.0.jar /tmp/
 RUN rm /tmp/gs-spring-boot-0.1.0.jar
-CMD [ "java", "-jar", "/gs-spring-boot-0.1.0.jar" ]
+CMD \[ "java", "-jar", "/gs-spring-boot-0.1.0.jar" \]
 
 ```
 
@@ -607,7 +594,7 @@ CMD [ "java", "-jar", "/gs-spring-boot-0.1.0.jar" ]
 
 ```
 
-(MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker image ls remote/spring-boot  
+(MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker image ls remote/spring-boot\
 REPOSITORY           TAG                 IMAGE ID            CREATED             SIZE
 remote/spring-boot   2                   11559170c3fd        7 minutes ago       121MB
 remote/spring-boot   1                   644867602b8a        About an hour ago   103MB
@@ -621,12 +608,12 @@ remote/spring-boot   1                   644867602b8a        About an hour ago  
 ```
 
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker build --squash -t remote/spring-boot:3 .
-[+] Building 2.5s (16/16) FINISHED
+\[+\] Building 2.5s (16/16) FINISHED
 ...
- => exporting to image                                                                                      0.0s
- => => exporting layers                                                                                     0.0s
- => => writing image sha256:2d5ba7eb86d2ad5594f82a896637c91137d150dab61fe8dc3acbdfcd164f6686                0.0s
- => => naming to docker.io/remote/spring-boot:3                                                             0.0s
+=> exporting to image                                                                                      0.0s
+=> => exporting layers                                                                                     0.0s
+=> => writing image sha256:2d5ba7eb86d2ad5594f82a896637c91137d150dab61fe8dc3acbdfcd164f6686                0.0s
+=> => naming to docker.io/remote/spring-boot:3                                                             0.0s
 
 ```
 
@@ -649,7 +636,7 @@ remote/spring-boot   1                   644867602b8a        About an hour ago  
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker image history remote/spring-boot:3
 IMAGE               CREATED              CREATED BY                                      SIZE                COMMENT
 a2c1e139697b        About a minute ago                                                   103MB               create new from sha256:2d5ba7eb86d2ad5594f82a896637c91137d150dab61fe8dc3acbdfcd164f6686
-<missing>           292 years ago        CMD ["java" "-jar" "/gs-spring-boot-0.1.0.ja…   0B                  buildkit.dockerfile.v0
+<missing>           292 years ago        CMD \["java" "-jar" "/gs-spring-boot-0.1.0.ja…   0B                  buildkit.dockerfile.v0
 <missing>           About a minute ago   RUN /bin/sh -c rm /tmp/gs-spring-boot-0.1.0.…   0B                  buildkit.dockerfile.v0
 <missing>           About a minute ago   COPY /app/target/gs-spring-boot-0.1.0.jar /t…   0B                  buildkit.dockerfile.v0
 <missing>           3 days ago           COPY /app/target/gs-spring-boot-0.1.0.jar / …   0B                  buildkit.dockerfile.v0
@@ -660,7 +647,7 @@ a2c1e139697b        About a minute ago                                          
 <missing>           2 weeks ago          /bin/sh -c #(nop)  ENV JAVA_HOME=/usr/lib/jv…   0B
 <missing>           2 weeks ago          /bin/sh -c {   echo '#!/bin/sh';   echo 'set…   0B
 <missing>           2 weeks ago          /bin/sh -c #(nop)  ENV LANG=C.UTF-8             0B
-<missing>           2 weeks ago          /bin/sh -c #(nop)  CMD ["/bin/sh"]              0B
+<missing>           2 weeks ago          /bin/sh -c #(nop)  CMD \["/bin/sh"\]              0B
 <missing>           2 weeks ago          /bin/sh -c #(nop) ADD file:a86aea1f3a7d68f6a…   0B
 
 ```
@@ -674,3 +661,4 @@ a2c1e139697b        About a minute ago                                          
 通过本次 Chat 我们学习到了关于 Docker builder 的概念，以及了解到了下一代版本的 BuildKit；学习了 Docker 19.03 中多实例的构建，以及对构建缓存的垃圾回收配置等；学习了 Dockerfile 的高阶特性，并通过这些特性来管理密码和密钥等信息；学习了如何发现并优化镜像的体积。
 
 以上内容中虽然没有具体到它们的全部功能，也没有深入到源码级的分析，但已经涵盖了 Docker 构建系统的最新特性，希望能对你有所帮助。
+```

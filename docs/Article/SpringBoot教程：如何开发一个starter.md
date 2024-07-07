@@ -1,22 +1,18 @@
-Spring Boot 教程：如何开发一个 starter
-=============================
+# Spring Boot 教程：如何开发一个 starter
 
-导语
-==
+# 导语
 
 熟悉 Spring Boot 的同学都知道，Spring Boot 提供了很多开箱即用的 starter，比如 spring-boot-starter-mail、spring-boot-starter-data-redis 等等，使用这些 starter 非常简单，引入依赖，再在配置文件中配置相关属性即可。本课程教您自己开发一个 starter，具备了这个技能后，您可以在工作中封装自己业务相关的各种 starter。
 
-如何开发一个自定义的 starter
-==================
+# 如何开发一个自定义的 starter
 
 开发一个 starter 简单来说以下几步即可：
 
-* 一个/多个自定义配置的属性配置类（可选）
-* 一个/多个自动配置类
-* 自动配置类写入到 Spring Boot 的 SPI 机制配置文件：spring.factories
+- 一个/多个自定义配置的属性配置类（可选）
+- 一个/多个自动配置类
+- 自动配置类写入到 Spring Boot 的 SPI 机制配置文件：spring.factories
 
-Java SPI 机制简介
-=============
+# Java SPI 机制简介
 
 Spring Boot 的 starter 的核心其实就是通过 SPI 机制自动注入配置类，不过是它自己实现的一套 SPI 机制，我们先了解一下 Java 的 SPI 机制。
 
@@ -32,20 +28,18 @@ SPI 的大概流程是：
 
 ![jdbc spi](assets/11407670-2dd6-11ea-ae71-51b925ab66e0.jpg)
 
-Java SPI 机制示例
-=============
+# Java SPI 机制示例
 
 一个简单的 Java SPI 开发步骤：
 
-* 定义一个业务接口
-* 编写接口实现类
-* 创建 SPI 的配置文件，实现类路径写入配置文件中
-* 通过 Java SPI 机制调用
+- 定义一个业务接口
+- 编写接口实现类
+- 创建 SPI 的配置文件，实现类路径写入配置文件中
+- 通过 Java SPI 机制调用
 
 ![java spi例子](assets/ae6a1320-2dd6-11ea-83f2-fb971dbe5ef6.jpg)
 
-Spring Boot SPI 机制底层实现
-======================
+# Spring Boot SPI 机制底层实现
 
 了解了 Java 的 SPI 机制后，基本也能猜出 Spring Boot 的 SPI 实现了，基本流程是一样的：
 
@@ -105,9 +99,9 @@ public @interface EnableAutoConfiguration {
 
 继续跟踪源码：
 
-> getAutoConfigurationEntry –> getCandidateConfigurations –>SpringFactoriesLoader.loadFactoryNames –> loadSpringFactories –> classLoader.getResources (FACTORIES\_RESOURCE\_LOCATION)
+> getAutoConfigurationEntry –> getCandidateConfigurations –>SpringFactoriesLoader.loadFactoryNames –> loadSpringFactories –> classLoader.getResources (FACTORIES_RESOURCE_LOCATION)
 
-终于找到了 SPI 的配置文件：FACTORIES\_RESOURCE\_LOCATION。
+终于找到了 SPI 的配置文件：FACTORIES_RESOURCE_LOCATION。
 
 ```java
 public static final String FACTORIES_RESOURCE_LOCATION = "META-INF/spring.factories";
@@ -115,8 +109,7 @@ public static final String FACTORIES_RESOURCE_LOCATION = "META-INF/spring.factor
 
 到这基本就可以看到 Spring Boot 的装载流程了，在 META-INF/spring.factories 下定义的配置类会自动装配到 Spring Boot 的上下文。
 
-开发一个自定义 starter
-===============
+# 开发一个自定义 starter
 
 了解了上面 Spring Boot 的 SPI 加载机制后，我们来开发一个自定义的 starter，我这里写个简单的邮件发送的 starter，为简化代码，这里我还是依赖 Spring Boot 提供的 mail-starter， 在这个基础上进行一层封装：
 
@@ -328,8 +321,7 @@ dragon.boot.email.enable=true
 
 这只是一个最简单的例子，如果严格按规范，可以将所有的 autoconfig 类，包括 Property 属性配置类和逻辑配置类都放到一个独立的模块中，再另起一个 starter 模块，引入这个独立的 autoconfig 模块。
 
-自定义 starter 优化
-==============
+# 自定义 starter 优化
 
 属性配置自动提示功能：使用 Spring Boot 官方提供的 starter 的时候，在 application.properties 中编写属性配置是有自动提示功能的，要实现这个也很简单，引入一下依赖即可，该插件引入后，打包时会检查 @ConfigurationProperties 下的类，自动生成 spring-configuration-metadata.json 文件用于编写属性提示：
 
@@ -341,7 +333,7 @@ dragon.boot.email.enable=true
 </dependency>
 ```
 
-* 启动优化：前面有提到 Spring Boot 的 SPI 加载流程，会先加载自动配置元数据配置文件，引入以下依赖，该插件会自动生成 META-INF/spring-autoconfigure-metadata.properties，供 AutoConfigurationImportSelector 过滤加载，提升启动性能：
+- 启动优化：前面有提到 Spring Boot 的 SPI 加载流程，会先加载自动配置元数据配置文件，引入以下依赖，该插件会自动生成 META-INF/spring-autoconfigure-metadata.properties，供 AutoConfigurationImportSelector 过滤加载，提升启动性能：
 
 ```xml
 <dependency>
@@ -351,7 +343,6 @@ dragon.boot.email.enable=true
 </dependency>
 ```
 
-总结
-==
+# 总结
 
 依托 Spring Boot 强大的 AutoConfig 能力，我们可以封装各种自定义 starter，做到开箱即用，降低业务耦合，提高开发效率！

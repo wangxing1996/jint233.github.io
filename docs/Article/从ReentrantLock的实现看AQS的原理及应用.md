@@ -1,8 +1,6 @@
-从ReentrantLock的实现看AQS的原理及应用
-===========================
+# 从ReentrantLock的实现看AQS的原理及应用
 
-前言
---
+## 前言
 
 Java中的大部分同步类（Lock、Semaphore、ReentrantLock等）都是基于AbstractQueuedSynchronizer（简称为AQS）实现的。AQS是一种提供了原子式管理同步状态、阻塞和唤醒线程功能以及队列模型的简单框架。本文会从应用层逐渐深入到原理层，并通过ReentrantLock的基本特性和ReentrantLock与AQS的关联，来深入解读AQS相关独占锁的知识点，同时采取问答的模式来帮助大家理解AQS。由于篇幅原因，本篇文章主要阐述AQS中独占锁的逻辑和Sync Queue，不讲述包含共享锁和Condition Queue的部分（本篇文章核心为AQS原理剖析，只是简单介绍了ReentrantLock，感兴趣同学可以阅读一下ReentrantLock的源码）。
 
@@ -10,8 +8,7 @@ Java中的大部分同步类（Lock、Semaphore、ReentrantLock等）都是基�
 
 ![img](assets/9d182d944e0889c304ef529ba50a4fcd205214.png)
 
-1 ReentrantLock
----------------
+## 1 ReentrantLock
 
 ### 1.1 ReentrantLock特性概览
 
@@ -114,20 +111,20 @@ static final class NonfairSync extends Sync {
 
 这块代码的含义为：
 
-* 若通过CAS设置变量State（同步状态）成功，也就是获取锁成功，则将当前线程设置为独占线程。
-* 若通过CAS设置变量State（同步状态）失败，也就是获取锁失败，则进入Acquire方法进行后续处理。
+- 若通过CAS设置变量State（同步状态）成功，也就是获取锁成功，则将当前线程设置为独占线程。
+- 若通过CAS设置变量State（同步状态）失败，也就是获取锁失败，则进入Acquire方法进行后续处理。
 
 第一步很好理解，但第二步获取锁失败后，后续的处理策略是怎么样的呢？这块可能会有以下思考：
 
-* 某个线程获取锁失败的后续流程是什么呢？有以下两种可能：
+- 某个线程获取锁失败的后续流程是什么呢？有以下两种可能：
 
 (1) 将当前线程获锁结果设置为失败，获取锁流程结束。这种设计会极大降低系统的并发度，并不满足我们实际的需求。所以就需要下面这种流程，也就是AQS框架的处理流程。
 
 (2) 存在某种排队等候机制，线程继续等待，仍然保留获取锁的可能，获取锁流程仍在继续。
 
-* 对于问题1的第二种情况，既然说到了排队等候机制，那么就一定会有某种队列形成，这样的队列是什么数据结构呢？
-* 处于排队等候机制中的线程，什么时候可以有机会获取锁呢？
-* 如果处于排队等候机制中的线程一直无法获取锁，还是需要一直等待吗，还是有别的策略来解决这一问题？
+- 对于问题1的第二种情况，既然说到了排队等候机制，那么就一定会有某种队列形成，这样的队列是什么数据结构呢？
+- 处于排队等候机制中的线程，什么时候可以有机会获取锁呢？
+- 如果处于排队等候机制中的线程一直无法获取锁，还是需要一直等待吗，还是有别的策略来解决这一问题？
 
 带着非公平锁的这些问题，再看下公平锁源码中获锁的方式：
 
@@ -155,16 +152,15 @@ static final class FairSync extends Sync {
 
 对于上边提到的问题，其实在ReentrantLock类源码中都无法解答，而这些问题的答案，都是位于Acquire方法所在的类AbstractQueuedSynchronizer中，也就是本文的核心——AQS。下面我们会对AQS以及ReentrantLock和AQS的关联做详细介绍（相关问题答案会在2.3.5小节中解答）。
 
-2 AQS
------
+## 2 AQS
 
 首先，我们通过下面的架构图来整体了解一下AQS框架：
 
 ![img](assets/82077ccf14127a87b77cefd1ccf562d3253591.png)
 
-* 上图中有颜色的为Method，无颜色的为Attribution。
-* 总的来说，AQS框架共分为五层，自上而下由浅入深，从AQS对外暴露的API到底层基础数据。
-* 当有自定义同步器接入时，只需重写第一层所需要的部分方法即可，不需要关注底层具体的实现流程。当自定义同步器进行加锁或者解锁操作时，先经过第一层的API进入AQS内部方法，然后经过第二层进行锁的获取，接着对于获取锁失败的流程，进入第三层和第四层的等待队列处理，而这些处理方式均依赖于第五层的基础数据提供层。
+- 上图中有颜色的为Method，无颜色的为Attribution。
+- 总的来说，AQS框架共分为五层，自上而下由浅入深，从AQS对外暴露的API到底层基础数据。
+- 当有自定义同步器接入时，只需重写第一层所需要的部分方法即可，不需要关注底层具体的实现流程。当自定义同步器进行加锁或者解锁操作时，先经过第一层的API进入AQS内部方法，然后经过第二层进行锁的获取，接着对于获取锁失败的流程，进入第三层和第四层的等待队列处理，而这些处理方式均依赖于第五层的基础数据提供层。
 
 下面我们会从整体到细节，从流程到方法逐一剖析AQS框架，主要分析过程如下：
 
@@ -292,8 +288,7 @@ protected final boolean compareAndSetState(int expect, int update)
 
 对于我们自定义的同步工具，需要自定义获取同步状态和释放状态的方式，也就是AQS架构图中的第一层：API层。
 
-2.2 AQS重要方法与ReentrantLock的关联
-----------------------------
+## 2.2 AQS重要方法与ReentrantLock的关联
 
 从架构图中可以得知，AQS提供了大量用于自定义同步器实现的Protected方法。自定义同步器实现的相关方法也只是为了通过修改State字段来实现多线程的独占模式或者共享模式。自定义同步器需要实现以下方法（ReentrantLock需要实现的方法如下，并不是全部）：
 
@@ -333,24 +328,23 @@ protected boolean tryReleaseShared(int arg)
 
 加锁：
 
-* 通过ReentrantLock的加锁方法Lock进行加锁操作。
-* 会调用到内部类Sync的Lock方法，由于Sync#lock是抽象方法，根据ReentrantLock初始化选择的公平锁和非公平锁，执行相关内部类的Lock方法，本质上都会执行AQS的Acquire方法。
-* AQS的Acquire方法会执行tryAcquire方法，但是由于tryAcquire需要自定义同步器实现，因此执行了ReentrantLock中的tryAcquire方法，由于ReentrantLock是通过公平锁和非公平锁内部类实现的tryAcquire方法，因此会根据锁类型不同，执行不同的tryAcquire。
-* tryAcquire是获取锁逻辑，获取失败后，会执行框架AQS的后续逻辑，跟ReentrantLock自定义同步器无关。
+- 通过ReentrantLock的加锁方法Lock进行加锁操作。
+- 会调用到内部类Sync的Lock方法，由于Sync#lock是抽象方法，根据ReentrantLock初始化选择的公平锁和非公平锁，执行相关内部类的Lock方法，本质上都会执行AQS的Acquire方法。
+- AQS的Acquire方法会执行tryAcquire方法，但是由于tryAcquire需要自定义同步器实现，因此执行了ReentrantLock中的tryAcquire方法，由于ReentrantLock是通过公平锁和非公平锁内部类实现的tryAcquire方法，因此会根据锁类型不同，执行不同的tryAcquire。
+- tryAcquire是获取锁逻辑，获取失败后，会执行框架AQS的后续逻辑，跟ReentrantLock自定义同步器无关。
 
 解锁：
 
-* 通过ReentrantLock的解锁方法Unlock进行解锁。
-* Unlock会调用内部类Sync的Release方法，该方法继承于AQS。
-* Release中会调用tryRelease方法，tryRelease需要自定义同步器实现，tryRelease只在ReentrantLock中的Sync实现，因此可以看出，释放锁的过程，并不区分是否为公平锁。
-* 释放成功后，所有处理由AQS框架完成，与自定义同步器无关。
+- 通过ReentrantLock的解锁方法Unlock进行解锁。
+- Unlock会调用内部类Sync的Release方法，该方法继承于AQS。
+- Release中会调用tryRelease方法，tryRelease需要自定义同步器实现，tryRelease只在ReentrantLock中的Sync实现，因此可以看出，释放锁的过程，并不区分是否为公平锁。
+- 释放成功后，所有处理由AQS框架完成，与自定义同步器无关。
 
 通过上面的描述，大概可以总结出ReentrantLock加锁解锁时API层核心方法的映射关系。
 
 ![img](assets/f30c631c8ebbf820d3e8fcb6eee3c0ef18748.png)
 
-2.3 通过ReentrantLock理解AQS
-------------------------
+## 2.3 通过ReentrantLock理解AQS
 
 ReentrantLock中公平锁和非公平锁在底层是相同的，这里以非公平锁为例进行分析。
 
@@ -458,10 +452,10 @@ private final boolean compareAndSetTail(Node expect, Node update) {
 
 主要的流程如下：
 
-* 通过当前的线程和锁模式新建一个节点。
-* Pred指针指向尾节点Tail。
-* 将New中Node的Prev指针指向Pred。
-* 通过compareAndSetTail方法，完成尾节点的设置。这个方法主要是对tailOffset和Expect进行比较，如果tailOffset的Node和Expect的Node地址是相同的，那么设置Tail的值为Update的值。
+- 通过当前的线程和锁模式新建一个节点。
+- Pred指针指向尾节点Tail。
+- 将New中Node的Prev指针指向Pred。
+- 通过compareAndSetTail方法，完成尾节点的设置。这个方法主要是对tailOffset和Expect进行比较，如果tailOffset的Node和Expect的Node地址是相同的，那么设置Tail的值为Update的值。
 
 ```java
 // java.util.concurrent.locks.AbstractQueuedSynchronizer
@@ -491,7 +485,7 @@ static {
 
 从AQS的静态代码块可以看出，都是获取一个对象的属性相对于该对象在内存当中的偏移量，这样我们就可以根据这个偏移量在对象内存当中找到这个属性。tailOffset指的是tail对应的偏移量，所以这个时候会将new出来的Node置为当前队列的尾节点。同时，由于是双向链表，也需要将前一个节点指向尾节点。
 
-* 如果Pred指针是Null（说明等待队列中没有元素），或者当前Pred指针和Tail指向的位置不同（说明被别的线程已经修改），就需要看一下Enq的方法。
+- 如果Pred指针是Null（说明等待队列中没有元素），或者当前Pred指针和Tail指向的位置不同（说明被别的线程已经修改），就需要看一下Enq的方法。
 
 ```java
 // java.util.concurrent.locks.AbstractQueuedSynchronizer
@@ -532,7 +526,7 @@ private Node enq(final Node node) {
 总结一下，线程获取锁的时候，过程大体如下：
 
 1. 当没有线程获取到锁时，线程1获取锁成功。
-2. 线程2申请锁，但是锁被线程1占有。
+1. 线程2申请锁，但是锁被线程1占有。
 
 ![img](assets/e9e385c3c68f62c67c8d62ab0adb613921117.png)
 
@@ -752,8 +746,8 @@ private final boolean parkAndCheckInterrupt() {
 
 从队列中释放节点的疑虑打消了，那么又有新问题了：
 
-* shouldParkAfterFailedAcquire中取消节点是怎么生成的呢？什么时候会把一个节点的waitStatus设置为-1？
-* 是在什么时间释放节点通知到被挂起的线程呢？
+- shouldParkAfterFailedAcquire中取消节点是怎么生成的呢？什么时候会把一个节点的waitStatus设置为-1？
+- 是在什么时间释放节点通知到被挂起的线程呢？
 
 ### 2.3.2 CANCELLED状态节点生成
 
@@ -873,8 +867,8 @@ private void cancelAcquire(Node node) {
 
 当前的流程：
 
-* 获取当前节点的前驱节点，如果前驱节点的状态是CANCELLED，那就一直往前遍历，找到第一个waitStatus <= 0的节点，将找到的Pred节点和当前Node关联，将当前Node设置为CANCELLED。
-* 根据当前节点的位置，考虑以下三种情况：
+- 获取当前节点的前驱节点，如果前驱节点的状态是CANCELLED，那就一直往前遍历，找到第一个waitStatus \<= 0的节点，将找到的Pred节点和当前Node关联，将当前Node设置为CANCELLED。
+- 根据当前节点的位置，考虑以下三种情况：
 
 (1) 当前节点是尾节点。
 
@@ -902,11 +896,11 @@ private void cancelAcquire(Node node) {
 >
 > ```java
 > do {
-> 
+>
 >  node.prev = pred = pred.prev;
-> 
+>
 > } while (pred.waitStatus > 0);
-> 
+>
 > ```
 
 ### 2.3.3 如何解锁
@@ -1021,7 +1015,7 @@ public final boolean release(int arg) {
 >
 > h != null && waitStatus == 0 表明后继节点对应的线程仍在运行中，不需要唤醒。
 >
-> h != null && waitStatus < 0 表明后继节点可能被阻塞了，需要唤醒。
+> h != null && waitStatus \< 0 表明后继节点可能被阻塞了，需要唤醒。
 
 再看一下unparkSuccessor方法：
 
@@ -1184,7 +1178,7 @@ static void selfInterrupt() {
 该方法其实是为了中断线程。但为什么获取了锁以后还要中断线程呢？这部分属于Java提供的协作式中断知识内容，感兴趣同学可以查阅一下。这里简单介绍一下：
 
 1. 当中断线程被唤醒时，并不知道被唤醒的原因，可能是当前线程在等待中被中断，也可能是释放了锁以后被唤醒。因此我们通过Thread.interrupted()方法检查中断标记（该方法返回了当前线程的中断状态，并将当前线程的中断标识设置为False），并记录下来，如果发现该线程被中断过，就再中断一次。
-2. 线程在等待资源的过程中被唤醒，唤醒后还是会不断地去尝试获取锁，直到抢到锁为止。也就是说，在整个流程中，并不响应中断，只是记录中断记录。最后抢到锁返回了，那么如果被中断过的话，就需要补充一次中断。
+1. 线程在等待资源的过程中被唤醒，唤醒后还是会不断地去尝试获取锁，直到抢到锁为止。也就是说，在整个流程中，并不响应中断，只是记录中断记录。最后抢到锁返回了，那么如果被中断过的话，就需要补充一次中断。
 
 这里的处理方式主要是运用线程池中基本运作单元Worder中的runWorker，通过Thread.interrupted()进行额外的判断处理，感兴趣的同学可以看下ThreadPoolExecutor源码。
 
@@ -1212,8 +1206,7 @@ static void selfInterrupt() {
 >
 > A：AQS的Acquire会调用tryAcquire方法，tryAcquire由各个自定义同步器实现，通过tryAcquire完成加锁过程。
 
-3 AQS应用
--------
+## 3 AQS应用
 
 ### 3.1 ReentrantLock的可重入应用
 
@@ -1294,8 +1287,8 @@ private volatile int state;
 接下来看State这个字段主要的过程：
 
 1. State初始化的时候为0，表示没有任何线程持有锁。
-2. 当有线程持有该锁时，值就会在原来的基础上+1，同一个线程多次获得锁是，就会多次+1，这里就是可重入的概念。
-3. 解锁也是对这个字段-1，一直到0，此线程对锁释放。
+1. 当有线程持有该锁时，值就会在原来的基础上+1，同一个线程多次获得锁是，就会多次+1，这里就是可重入的概念。
+1. 解锁也是对这个字段-1，一直到0，此线程对锁释放。
 
 ### 3.2 JUC中的应用场景
 
@@ -1442,14 +1435,12 @@ public class LeeMain {
 
 上述代码每次运行结果都会是20000。通过简单的几行代码就能实现同步功能，这就是AQS的强大之处。
 
-总结
---
+## 总结
 
 我们日常开发中使用并发的场景太多，但是对并发内部的基本框架原理了解的人却不多。由于篇幅原因，本文仅介绍了可重入锁ReentrantLock的原理和AQS原理，希望能够成为大家了解AQS和ReentrantLock等同步器的“敲门砖”。
 
-参考资料
-----
+## 参考资料
 
-* Lea D. The java. util. concurrent synchronizer framework\[J\]. Science of Computer Programming, 2005, 58(3): 293-309.
-* 《Java并发编程实战》
-* [不可不说的Java“锁”事](https://tech.meituan.com/2018/11/15/java-lock.html)
+- Lea D. The java. util. concurrent synchronizer framework\[J\]. Science of Computer Programming, 2005, 58(3): 293-309.
+- 《Java并发编程实战》
+- [不可不说的Java“锁”事](https://tech.meituan.com/2018/11/15/java-lock.html)

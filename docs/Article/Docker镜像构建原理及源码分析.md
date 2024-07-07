@@ -1,5 +1,4 @@
-Docker 镜像构建原理及源码分析
-==================
+# Docker 镜像构建原理及源码分析
 
 ### Docker 架构
 
@@ -152,7 +151,7 @@ func BuildKitEnabled(si ServerInfo) (bool, error) {
 
 当然，从这里可以得到两个信息：
 
-* 通过 `dockerd` 的配置可开启 `buildkit` 。在 `/etc/docker/daemon.json` 中添加如下内容，并重启 `dockerd` 即可：
+- 通过 `dockerd` 的配置可开启 `buildkit` 。在 `/etc/docker/daemon.json` 中添加如下内容，并重启 `dockerd` 即可：
 
 ```json
 {
@@ -162,7 +161,7 @@ func BuildKitEnabled(si ServerInfo) (bool, error) {
 }
 ```
 
-* 在 `docker` CLI 上也可开启 `buildkit` 的支持，并且 CLI 的配置可覆盖服务端配置:
+- 在 `docker` CLI 上也可开启 `buildkit` 的支持，并且 CLI 的配置可覆盖服务端配置:
 
 通过 `export DOCKER_BUILDKIT=1` 即可开启 `buildkit` 的支持，设置为 0 则关闭（0/false/f/F 之类的也都是相同的结果）
 
@@ -176,13 +175,13 @@ func BuildKitEnabled(si ServerInfo) (bool, error) {
 
 最开始的部分是一些对参数的处理和校验。
 
-* **stream 和 compress 不可同时使用。**
+- **stream 和 compress 不可同时使用。**
 
 因为如果我们指定了 `compress` 的话，则 CLI 会使用 `gzip` 将构建上下文进行压缩，这样也就没法很好的通过 `stream` 的模式来处理构建的上下文了。
 
 当然你也可能会想，从技术上来讲，压缩和流式没有什么必然的冲突，是可实现的。事实的确如此，如果从技术的角度上来讲两者并非完全不能一起存在，无非就是增加解压缩的动作。但是当开启 `stream` 模式，对每个文件都进行压缩和解压的操作那将会是很大的资源浪费，同时也增加了其复杂度，所以在 CLI 中便直接进行了限制，不允许同时使用 `compress` 和 `stream`
 
-* **不可同时使用 stdin 读取 Dockerfile 和 build context。**在进行构建时，如果我们将 `Dockerfile` 的名字传递为 `-` 时，表示从 `stdin` 读取其内容。
+- \*\*不可同时使用 stdin 读取 Dockerfile 和 build context。\*\*在进行构建时，如果我们将 `Dockerfile` 的名字传递为 `-` 时，表示从 `stdin` 读取其内容。
 
 例如，某个目录下有三个文件 `foo` `bar` 和 `Dockerfile`，通过管道将 `Dockerfile` 的内容通过 `stdin` 传递给 `docker build`
 
@@ -229,21 +228,21 @@ invalid argument: can't use stdin for both build context and dockerfile
 
 就会报错了。所以，**不能同时使用 stdin 读取 Dockerfile 和 build context** 。
 
-* **build context 支持四种行为。**```go
-switch {
-case options.contextFromStdin():
-    // 省略
-case isLocalDir(specifiedContext):
-    // 省略
-case urlutil.IsGitURL(specifiedContext):
-    // 省略
-case urlutil.IsURL(specifiedContext):
-    // 省略
-default:
-    return errors.Errorf("unable to prepare context: path %q not found", specifiedContext)
-}
+- **build context 支持四种行为。**\`\`\`go
+  switch {
+  case options.contextFromStdin():
+  // 省略
+  case isLocalDir(specifiedContext):
+  // 省略
+  case urlutil.IsGitURL(specifiedContext):
+  // 省略
+  case urlutil.IsURL(specifiedContext):
+  // 省略
+  default:
+  return errors.Errorf("unable to prepare context: path %q not found", specifiedContext)
+  }
 
-```
+````
 
 从 `stdin` 传入，上文已经演示过了，传递给 `stdin` 的是 `tar` 归档文件；
 
@@ -273,21 +272,21 @@ func ReadDockerignore(contextDir string) ([]string, error) {
     defer f.Close()
     return dockerignore.ReadAll(f)
 }
-```
+````
 
-* `.dockerignore` 是一个固定的文件名，并且需要放在 `build context` 的根目录下。类似前面提到的，使用一个 `Dockerfile` 文件的 URL 地址作为 `build context` 传入的方式，便无法使用 `.dockerignore` 。
-* `.dockerignore` 文件可以不存在，但在读取的时候如果遇到错误，便会抛出错误。
-* 通过 `.dockerignore` 将会过滤掉不希望加入到镜像内，或者过滤掉与镜像无关的内容。
+- `.dockerignore` 是一个固定的文件名，并且需要放在 `build context` 的根目录下。类似前面提到的，使用一个 `Dockerfile` 文件的 URL 地址作为 `build context` 传入的方式，便无法使用 `.dockerignore` 。
+- `.dockerignore` 文件可以不存在，但在读取的时候如果遇到错误，便会抛出错误。
+- 通过 `.dockerignore` 将会过滤掉不希望加入到镜像内，或者过滤掉与镜像无关的内容。
 
 最后 CLI 会将 `build context` 中的内容经过 `.dockerignore` 过滤后，打包成为真正的 `build context` 即真正的构建上下文。这也是为什么有时候你发现自己明明在 `Dockerfile` 里面写了 `COPY xx xx` 但是最后没有发现该文件的情况。 很可能就是被 `.dockerignore` 给忽略掉了。
 
 这样有利于优化 CLI 与 `dockerd` 之间的传输压力之类的。
 
-* `docker` CLI 还会去读取 `~/.docker/config.json` 中的内容。
+- `docker` CLI 还会去读取 `~/.docker/config.json` 中的内容。
 
 这与前面 API 部分所描述的内容基本是一致的。将认证信息通过 `X-Registry-Config` 头传递给 `dockerd` 用于在需要拉取镜像时进行身份校验。
 
-* **调用 API 进行实际构建任务**
+- **调用 API 进行实际构建任务**
 
 当一切所需的校验和信息都准备就绪之后，则开始调用 `dockerCli.Client` 封装的 API 接口，将请求发送至 `dockerd`，进行实际的构建任务。
 
@@ -462,7 +461,7 @@ s.Allow(authprovider.NewDockerAuthProvider(os.Stderr))
 
 这里的行为与上面提到的 `builder` 的行为基本一致，这里主要有两个需要注意的点：
 
-* Allow() 函数
+- Allow() 函数
 
 ```go
 func (s *Session) Allow(a Attachable) {
@@ -472,7 +471,7 @@ func (s *Session) Allow(a Attachable) {
 
 这个 `Allow` 函数就是允许通过上面提到的 grpc 会话访问给定的服务。
 
-* `authprovider`
+- `authprovider`
 
 `authprovider` 是 `buildkit` 提供的一组抽象接口集合，通过它们可以访问到机器上的配置文件，进而拿到认证信息，行为与 `builder` 基本一致。
 
@@ -522,7 +521,7 @@ func parseSSHSpecs(sl []string) (session.Attachable, error) {
 
 这里主要有两种情况。
 
-* 当 `build context` 是从 `stdin` 读，并且是一个 `tar` 文件时
+- 当 `build context` 是从 `stdin` 读，并且是一个 `tar` 文件时
 
 ```go
 buildID := stringid.GenerateRandomID()
@@ -544,7 +543,7 @@ if body != nil {
 
 它会执行这部分逻辑，但同时也要注意，这是使用的是 Golang 的 `goroutine`，到这里也并不是结束，这部分代码之后的代码也同样会被执行。这就说到了另一种情况了(通常情况)。
 
-* 使用 `doBuild` 完成逻辑
+- 使用 `doBuild` 完成逻辑
 
 ```go
 eg.Go(func() error {
@@ -654,19 +653,17 @@ if err != nil {
 }
 ```
 
-**newImageBuildOptions 函数就是构造构建参数的，将通过 API 提交过来的参数转换为构建动作实际需要的参数形式。 **```go
-buildOptions.AuthConfigs = getAuthConfigs(r.Header)
-```** getAuthConfigs 函数用于从请求头拿到认证信息**```go
+**newImageBuildOptions 函数就是构造构建参数的，将通过 API 提交过来的参数转换为构建动作实际需要的参数形式。 **`go buildOptions.AuthConfigs = getAuthConfigs(r.Header) `** getAuthConfigs 函数用于从请求头拿到认证信息**\`\`\`go
 imgID, err := br.backend.Build(ctx, backend.BuildConfig{
-    Source:         body,
-    Options:        buildOptions,
-    ProgressWriter: buildProgressWriter(out, wantAux, createProgressReader),
+Source:         body,
+Options:        buildOptions,
+ProgressWriter: buildProgressWriter(out, wantAux, createProgressReader),
 })
 if err != nil {
-    return errf(err)
+return errf(err)
 }
 
-```
+````
 
 这里就需要注意了: 真正的构建过程要开始了。** 使用 backend 的 Build 函数来完成真正的构建过程**
 
@@ -714,12 +711,12 @@ func (b *Backend) Build(ctx context.Context, config backend.BuildConfig) (string
     }
     return imageID, err
 }
-```
+````
 
 这个函数看着比较长，但主要功能就以下三点：
 
-* `NewTagger` 是用于给镜像打标签，也就是我们的 `-t` 参数相关的内容，这里不做展开。
-* 通过判断是否使用了 `buildkit` 来调用不同的构建后端。
+- `NewTagger` 是用于给镜像打标签，也就是我们的 `-t` 参数相关的内容，这里不做展开。
+- 通过判断是否使用了 `buildkit` 来调用不同的构建后端。
 
 ```go
 useBuildKit := options.Version == types.BuilderBuildKit
@@ -737,7 +734,7 @@ if useBuildKit {
 }
 ```
 
-* 处理构建完成后的动作。
+- 处理构建完成后的动作。
 
 到这个函数之后，就分别是 v1 `builder` 与 `buildkit` 对 `Dockerfile` 的解析，以及对 `build context` 的操作了。
 

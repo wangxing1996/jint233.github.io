@@ -1,11 +1,10 @@
-高效构建 Docker 镜像的最佳实践
-===================
+# 高效构建 Docker 镜像的最佳实践
 
 在真正实践之前，我们需要先搞明白几个问题：
 
-* Docker 镜像是什么
-* Docker 镜像的作用
-* 容器和镜像的区别及联系
+- Docker 镜像是什么
+- Docker 镜像的作用
+- 容器和镜像的区别及联系
 
 ### Docker 镜像是什么
 
@@ -94,8 +93,8 @@ debian-image/
 
 `RepoTags` 表示镜像的名称和 tag ，这里简要的对此进行说明：`RepoTags` 其实分为两部分：
 
-* `Repo`: Docker 镜像可以存储在本地或者远端镜像仓库内，Repo 其实就是镜像的名称。 Docker 默认提供了大量的官方镜像存储在 [Docker Hub](https://hub.docker.com/u/library) 上，对于我们现在在用的这个 Docker 官方的 debian 镜像而言，完整的存储形式其实是 `docker.io/library/debian`，只不过 docker 自动帮我们省略掉了前缀。
-* `Tag`: 我们可以通过 `repo:tag` 的方式来引用一个镜像，默认情况下，如果没有指定 tag （像我们上面操作的那样），则会 pull 下来最新的镜像（即：latest）
+- `Repo`: Docker 镜像可以存储在本地或者远端镜像仓库内，Repo 其实就是镜像的名称。 Docker 默认提供了大量的官方镜像存储在 [Docker Hub](https://hub.docker.com/u/library) 上，对于我们现在在用的这个 Docker 官方的 debian 镜像而言，完整的存储形式其实是 `docker.io/library/debian`，只不过 docker 自动帮我们省略掉了前缀。
+- `Tag`: 我们可以通过 `repo:tag` 的方式来引用一个镜像，默认情况下，如果没有指定 tag （像我们上面操作的那样），则会 pull 下来最新的镜像（即：latest）
 
 ### Config
 
@@ -182,11 +181,11 @@ debian-image/
 
 以上是配置文件的全部内容。其含义如下：
 
-* `architecture` 和 `os` : 表示架构及系统不再展开；
-* `docker_version` : 构建镜像时所用 docker 的版本；
-* `created`：镜像构建完成的时间；
-* `history`: 镜像构建的历史记录，后面内容中再详细介绍；
-* `rootfs`: 镜像的根文件系统;
+- `architecture` 和 `os` : 表示架构及系统不再展开；
+- `docker_version` : 构建镜像时所用 docker 的版本；
+- `created`：镜像构建完成的时间；
+- `history`: 镜像构建的历史记录，后面内容中再详细介绍；
+- `rootfs`: 镜像的根文件系统;
 
 重点介绍下 `rootfs`：我们知道 `rootfs` 其实是指 `/` 下一系列文件目录的组织结构；虽然 Docker 容器与我们的主机（或者称之为宿主机）共享同一个 Linux 内核，但它也有自己完整的 `rootfs`; 我们继续回到一开始的实验环境中即我们刚才创建的这个容器内看看 `/` 下有什么：
 
@@ -248,9 +247,9 @@ boot   etc    lib    media  opt    root   sbin   sys    usr
 
 其实根据前面的介绍，我们已经大致看到，Docker 镜像是分层的模式，将一系列层按顺序组织起来加上配置文件等共同构成完整的镜像。这样做的好处主要有：
 
-* 相同内容可以复用, 减轻存储负担；
-* 可以比较容易的得到各层所做操作/操作后结果的记录；
-* 后续操作不影响前一层的内容。
+- 相同内容可以复用, 减轻存储负担；
+- 可以比较容易的得到各层所做操作/操作后结果的记录；
+- 后续操作不影响前一层的内容。
 
 通过 `manifest.json` 的内容，和前面对 `rootfs` 的解释，不难看出此镜像只包含了一层，即 `b50334e3be68f82d0b94bb7d3cfe1789119c040c6c159759f57a19ad34547af3/layer.tar` 。
 
@@ -267,8 +266,8 @@ IMAGE               CREATED             CREATED BY                              
 
 我们首先分解这些步骤所表示的内容：
 
-* `/bin/sh -c #(nop) ADD file:caf91edab64f988bc…`: 使用 `ADD` 命令添加文件；
-* `/bin/sh -c #(nop) CMD ["bash"]`：使用 `CMD` 配置默认执行的程序是 `bash` 。
+- `/bin/sh -c #(nop) ADD file:caf91edab64f988bc…`: 使用 `ADD` 命令添加文件；
+- `/bin/sh -c #(nop) CMD ["bash"]`：使用 `CMD` 配置默认执行的程序是 `bash` 。
 
 从前面 `Config` 的配置中，我们也可以看到第二步其实是修改了 `Config` 的配置，所以占用空间为 0，并没有使镜像变大。
 
@@ -290,8 +289,8 @@ CMD ["bash"]
 
 所以Docker 镜像的主要作用是：
 
-* 为启动容器提供必要的文件；
-* 记录了各层的操作和配置等。
+- 为启动容器提供必要的文件；
+- 记录了各层的操作和配置等。
 
 ### 容器和镜像的区别及联系
 

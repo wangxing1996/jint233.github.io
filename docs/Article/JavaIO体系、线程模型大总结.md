@@ -1,5 +1,4 @@
-Java IO 体系、线程模型大总结
-==================
+# Java IO 体系、线程模型大总结
 
 Java 中的 I/O 按照其发展历程，可以划分为传统 IO（阻塞式 I/O）和新 IO（非阻塞式 I/O）。
 
@@ -108,9 +107,9 @@ Channel 是对 IO 输入/输出系统的抽象，是 IO 源与目标之间的连
 
 Channel 通常都不是通过构造器来创建的，而是通过传统的输入/输出流的 getChannel() 来返回。通过不同类型的 Stream 获得的 Channel 也不同。比如常见的几个 Channel 的获取方式如下：
 
-* FileChannel：由文件流 FileInputStream、FileOutputStream 的 getChannel() 方法返回。
-* ServerSocketChannel：由 ServerSocketChannel 的静态方法 open() 返回。
-* SocketChannel：由 SocketChannel 的静态方法 open() 返回。
+- FileChannel：由文件流 FileInputStream、FileOutputStream 的 getChannel() 方法返回。
+- ServerSocketChannel：由 ServerSocketChannel 的静态方法 open() 返回。
+- SocketChannel：由 SocketChannel 的静态方法 open() 返回。
 
 Channel 中读写数据对应的方法分别是 read(ByteBuffer) 和 write(ByteBuffer) 方法。一些 Channel 还提供了 map() 方法将 Channel 对应的部分或全部数据映射为 ByteBuffer（实际的实现类为 MappedByteBuffer）。如果 Channel 对应的数据过大，使用 map() 方法一次性映射到内存会引起性能下降，此时还得用"多次重复取水"的方式处理。
 
@@ -290,7 +289,7 @@ public class Server1 {
 
 客户端
 
-```
+````
 public class Client1 {
     public static void main(String[] args) {
         Socket socket = new Socket();
@@ -322,39 +321,39 @@ public class Client1 {
 }
 ```** 版本 2：实现客户端可以不断接收用户输入 **版本 1 演示了最简单的 Socket 编程，只能实现一次性通信。现在要求客户端能够不断地接收用户输入，多次与服务端通信。服务端代码不变，客户端改造如下：
 
-```
+````
 
 public class Client2 {
-    public static void main(String[] args) {
-        Socket socket = new Socket();
-        SocketAddress address = new InetSocketAddress("127.0.0.1", 6666);
-        try {
-            socket.connect(address, 2000);
-            OutputStream outputStream = socket.getOutputStream();
-            InputStream inputStream = socket.getInputStream();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-            String clientMsg;
-            System.out.println("请输入消息:");
-            while ((clientMsg = bufferedReader.readLine()) != null) {
-                outputStream.write(clientMsg.getBytes(StandardCharsets.UTF_8));
-                byte[] buf = new byte[1024];
-                int readLen = inputStream.read(buf);
-                String msgFromServer = new String(buf, 0, readLen);
-                System.out.println("来自服务端的消息:" + msgFromServer);
-                System.out.println("请输入消息:");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
+public static void main(String\[\] args) {
+Socket socket = new Socket();
+SocketAddress address = new InetSocketAddress("127.0.0.1", 6666);
+try {
+socket.connect(address, 2000);
+OutputStream outputStream = socket.getOutputStream();
+InputStream inputStream = socket.getInputStream();
+BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+String clientMsg;
+System.out.println("请输入消息:");
+while ((clientMsg = bufferedReader.readLine()) != null) {
+outputStream.write(clientMsg.getBytes(StandardCharsets.UTF_8));
+byte\[\] buf = new byte\[1024\];
+int readLen = inputStream.read(buf);
+String msgFromServer = new String(buf, 0, readLen);
+System.out.println("来自服务端的消息:" + msgFromServer);
+System.out.println("请输入消息:");
+}
+} catch (IOException e) {
+e.printStackTrace();
+} finally {
+if (socket != null) {
+try {
+socket.close();
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+}
+}
 }
 
 ```** 版本 3：使用字符流包装 **上面的版本是按字节方式读取数据的，缓冲字节数组大小无法权衡，太小了不足以存放一行数据时，将会读取到不完整的数据，产生乱码。我们使用字符流包装字节流，读取整行数据，改进如下。
@@ -364,41 +363,41 @@ public class Client2 {
 ```
 
 public class Server3 {
-    public static void main(String[] args) throws IOException {
-        //开启一个 TCP 服务端,占用一个本地端口
-        ServerSocket serverSocket = new ServerSocket(6666);
-        //服务端循环不断地接受客户端的连接
-        while (true) {
-            Socket socket = null;
-            try {
-                //与单个客户端通信的代码放在一个 try 代码块中，单个客户端发生异常（断开）时不影响服务端正常工作
-                System.out.println("server start...");
-                //下面这行代码会阻塞,直到有客户端连接
-                socket = serverSocket.accept();
-                System.out.println("客户端" + socket.getRemoteSocketAddress() + "上线了");
-                //从 Socket 中获得输入输出流,接收和发送数据
-                PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
-                BufferedReader socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                String msg;
-                while ((msg = socketBufferedReader.readLine()) != null) {
-                    System.out.println("来自客户端的消息：" + msg);
-                    String serverResponseMsg = "服务端收到了来自您的消息【" + msg + "】,并且探测到您的 IP 是：" + socket.getRemoteSocketAddress();
-                    socketPrintWriter.println(serverResponseMsg);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                //当与一个客户端通信结束后，需要关闭对应的 socket
-                if (socket != null) {
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
+public static void main(String\[\] args) throws IOException {
+//开启一个 TCP 服务端,占用一个本地端口
+ServerSocket serverSocket = new ServerSocket(6666);
+//服务端循环不断地接受客户端的连接
+while (true) {
+Socket socket = null;
+try {
+//与单个客户端通信的代码放在一个 try 代码块中，单个客户端发生异常（断开）时不影响服务端正常工作
+System.out.println("server start...");
+//下面这行代码会阻塞,直到有客户端连接
+socket = serverSocket.accept();
+System.out.println("客户端" + socket.getRemoteSocketAddress() + "上线了");
+//从 Socket 中获得输入输出流,接收和发送数据
+PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
+BufferedReader socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+String msg;
+while ((msg = socketBufferedReader.readLine()) != null) {
+System.out.println("来自客户端的消息：" + msg);
+String serverResponseMsg = "服务端收到了来自您的消息【" + msg + "】,并且探测到您的 IP 是：" + socket.getRemoteSocketAddress();
+socketPrintWriter.println(serverResponseMsg);
+}
+} catch (IOException e) {
+e.printStackTrace();
+} finally {
+//当与一个客户端通信结束后，需要关闭对应的 socket
+if (socket != null) {
+try {
+socket.close();
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+}
+}
+}
 }
 
 ```
@@ -408,34 +407,34 @@ public class Server3 {
 ```
 
 public class Client3 {
-    public static void main(String[] args) {
-        Socket socket = new Socket();
-        SocketAddress address = new InetSocketAddress("127.0.0.1", 6666);
-        try {
-            socket.connect(address, 2000);
-            PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            BufferedReader bufferedInputReader = new BufferedReader(new InputStreamReader(System.in));
-            String clientMsg;
-            System.out.println("请输入消息:");
-            while ((clientMsg = bufferedInputReader.readLine()) != null) {
-                socketPrintWriter.println(clientMsg);
-                String msgFromServer = socketBufferedReader.readLine();
-                System.out.println("来自服务端的消息:" + msgFromServer);
-                System.out.println("请输入消息:");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
+public static void main(String\[\] args) {
+Socket socket = new Socket();
+SocketAddress address = new InetSocketAddress("127.0.0.1", 6666);
+try {
+socket.connect(address, 2000);
+PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
+BufferedReader socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+BufferedReader bufferedInputReader = new BufferedReader(new InputStreamReader(System.in));
+String clientMsg;
+System.out.println("请输入消息:");
+while ((clientMsg = bufferedInputReader.readLine()) != null) {
+socketPrintWriter.println(clientMsg);
+String msgFromServer = socketBufferedReader.readLine();
+System.out.println("来自服务端的消息:" + msgFromServer);
+System.out.println("请输入消息:");
+}
+} catch (IOException e) {
+e.printStackTrace();
+} finally {
+if (socket != null) {
+try {
+socket.close();
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+}
+}
 }
 
 ```** 版本 4：实现多客户端与服务器通信 **上面的例子中，只能实现一个客户端和服务端的通信。假如有多个客户端连接服务端，就只能等上一个客户端处理完毕，服务端重新通过 accept() 方法从队列中取出连接请求时才能处理。可以使用多线程的方式实现一个服务器同时响应多个客户端。
@@ -445,55 +444,55 @@ public class Client3 {
 ```
 
 public class Server4 {
-    public static void main(String[] args) throws IOException {
-        //开启一个 TCP 服务端,占用一个本地端口
-        ServerSocket serverSocket = new ServerSocket(6666);
-        //服务端循环不断地接受客户端的连接
-        System.out.println("server start...");
-        while (true) {
-            Socket socket;
-            try {
-                socket = serverSocket.accept();
-                System.out.println("客户端" + socket.getRemoteSocketAddress() + "上线了");
-                //为每一个客户端分配一个线程
-                Thread workThread = new Thread(new Handler(socket));
-                workThread.start();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+public static void main(String\[\] args) throws IOException {
+//开启一个 TCP 服务端,占用一个本地端口
+ServerSocket serverSocket = new ServerSocket(6666);
+//服务端循环不断地接受客户端的连接
+System.out.println("server start...");
+while (true) {
+Socket socket;
+try {
+socket = serverSocket.accept();
+System.out.println("客户端" + socket.getRemoteSocketAddress() + "上线了");
+//为每一个客户端分配一个线程
+Thread workThread = new Thread(new Handler(socket));
+workThread.start();
+} catch (Exception e) {
+e.printStackTrace();
+}
+}
+}
 }
 class Handler implements Runnable {
-    private Socket socket;
-    public Handler(Socket socket) {
-        this.socket = socket;
-    }
-    @Override
-    public void run() {
-        try {
-            //从 Socket 中获得输入输出流,接收和发送数据
-            PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            String msg;
-            while ((msg = socketBufferedReader.readLine()) != null) {
-                System.out.println("来自客户端" + socket.getRemoteSocketAddress() + "的消息：" + msg);
-                String serverResponseMsg = "服务端收到了来自您的消息【" + msg + "】,并且探测到您的 IP 是：" + socket.getRemoteSocketAddress();
-                socketPrintWriter.println(serverResponseMsg);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            //当与一个客户端通信结束后，需要关闭对应的 socket
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
+private Socket socket;
+public Handler(Socket socket) {
+this.socket = socket;
+}
+@Override
+public void run() {
+try {
+//从 Socket 中获得输入输出流,接收和发送数据
+PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
+BufferedReader socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+String msg;
+while ((msg = socketBufferedReader.readLine()) != null) {
+System.out.println("来自客户端" + socket.getRemoteSocketAddress() + "的消息：" + msg);
+String serverResponseMsg = "服务端收到了来自您的消息【" + msg + "】,并且探测到您的 IP 是：" + socket.getRemoteSocketAddress();
+socketPrintWriter.println(serverResponseMsg);
+}
+} catch (IOException e) {
+e.printStackTrace();
+} finally {
+//当与一个客户端通信结束后，需要关闭对应的 socket
+if (socket != null) {
+try {
+socket.close();
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+}
+}
 }
 
 ```** 版本 5：实现一个简单的网络聊天室 **一个服务端支持多个客户端同时连接，每个客户端都能不断读取用户键入的消息，发送给服务器并由服务器广播到所有连到服务器的客户端，实现群聊的功能。
@@ -503,50 +502,50 @@ class Handler implements Runnable {
 ```
 
 public class Client5 {
-    public static void main(String[] args) {
-        Socket socket = new Socket();
-        SocketAddress address = new InetSocketAddress("127.0.0.1", 6666);
-        try {
-            socket.connect(address, 2000);
-            new Thread(new ClientHandler(socket)).start();
-            PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader bufferedInputReader = new BufferedReader(new InputStreamReader(System.in));
-            String clientMsg;
-            System.out.println("请输入消息:");
-            while ((clientMsg = bufferedInputReader.readLine()) != null) {
-                socketPrintWriter.println(clientMsg);
-                System.out.println("请输入消息:");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
+public static void main(String\[\] args) {
+Socket socket = new Socket();
+SocketAddress address = new InetSocketAddress("127.0.0.1", 6666);
+try {
+socket.connect(address, 2000);
+new Thread(new ClientHandler(socket)).start();
+PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
+BufferedReader bufferedInputReader = new BufferedReader(new InputStreamReader(System.in));
+String clientMsg;
+System.out.println("请输入消息:");
+while ((clientMsg = bufferedInputReader.readLine()) != null) {
+socketPrintWriter.println(clientMsg);
+System.out.println("请输入消息:");
+}
+} catch (IOException e) {
+e.printStackTrace();
+} finally {
+if (socket != null) {
+try {
+socket.close();
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+}
+}
 }
 class ClientHandler implements Runnable {
-    private Socket socket;
-    public ClientHandler(Socket socket) {
-        this.socket = socket;
-    }
-    @Override
-    public void run() {
-        try {
-            BufferedReader socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            String msgFromServer;
-            while ((msgFromServer = socketBufferedReader.readLine()) != null) {
-                System.out.println("收到来自服务端的消息:" + msgFromServer);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+private Socket socket;
+public ClientHandler(Socket socket) {
+this.socket = socket;
+}
+@Override
+public void run() {
+try {
+BufferedReader socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+String msgFromServer;
+while ((msgFromServer = socketBufferedReader.readLine()) != null) {
+System.out.println("收到来自服务端的消息:" + msgFromServer);
+}
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
 }
 
 ```
@@ -558,70 +557,70 @@ class ClientHandler implements Runnable {
 ```
 
 public class Server5 {
-    public static List<Socket> socketList = new ArrayList<>();
-    public static void main(String[] args) throws IOException {
-        //开启一个 TCP 服务端,占用一个本地端口
-        ServerSocket serverSocket = new ServerSocket(6666);
-        //服务端循环不断地接受客户端的连接
-        System.out.println("server start...");
-        while (true) {
-            Socket socket;
-            try {
-                socket = serverSocket.accept();
-                socketList.add(socket);
-                System.out.println("客户端" + socket.getRemoteSocketAddress() + "上线了");
-                //为每一个客户端分配一个线程
-                Thread workThread = new Thread(new ServerHandler(socket));
-                workThread.start();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+public static List<Socket> socketList = new ArrayList\<>();
+public static void main(String\[\] args) throws IOException {
+//开启一个 TCP 服务端,占用一个本地端口
+ServerSocket serverSocket = new ServerSocket(6666);
+//服务端循环不断地接受客户端的连接
+System.out.println("server start...");
+while (true) {
+Socket socket;
+try {
+socket = serverSocket.accept();
+socketList.add(socket);
+System.out.println("客户端" + socket.getRemoteSocketAddress() + "上线了");
+//为每一个客户端分配一个线程
+Thread workThread = new Thread(new ServerHandler(socket));
+workThread.start();
+} catch (Exception e) {
+e.printStackTrace();
+}
+}
+}
 }
 class ServerHandler implements Runnable {
-    private Socket socket;
-    private BufferedReader socketBufferedReader;
-    public ServerHandler(Socket socket) throws IOException {
-        this.socket = socket;
-        this.socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    }
-    @Override
-    public void run() {
-        try {
-            //从 Socket 中获得输入输出流,接收和发送数据
-            String msg;
-            while ((msg = readMsgFromClient()) != null) {
-                System.out.println("收到来自客户端" + socket.getRemoteSocketAddress() + "的消息：" + msg);
-                String massMsg = "客户端【" + socket.getRemoteSocketAddress() + "】说：" + msg;
-                for (Socket socket : Server5.socketList) {
-                    PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
-                    socketPrintWriter.println(massMsg);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            //当与一个客户端通信结束后，需要关闭对应的 socket
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-    private String readMsgFromClient() {
-        try {
-            return socketBufferedReader.readLine();
-        } catch (IOException e) {
-            e.printStackTrace();
-            //如果捕获到异常，则将该客户端对应的 socket 删除
-            Server5.socketList.remove(socket);
-        }
-        return null;
-    }
+private Socket socket;
+private BufferedReader socketBufferedReader;
+public ServerHandler(Socket socket) throws IOException {
+this.socket = socket;
+this.socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+}
+@Override
+public void run() {
+try {
+//从 Socket 中获得输入输出流,接收和发送数据
+String msg;
+while ((msg = readMsgFromClient()) != null) {
+System.out.println("收到来自客户端" + socket.getRemoteSocketAddress() + "的消息：" + msg);
+String massMsg = "客户端【" + socket.getRemoteSocketAddress() + "】说：" + msg;
+for (Socket socket : Server5.socketList) {
+PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
+socketPrintWriter.println(massMsg);
+}
+}
+} catch (IOException e) {
+e.printStackTrace();
+} finally {
+//当与一个客户端通信结束后，需要关闭对应的 socket
+if (socket != null) {
+try {
+socket.close();
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+}
+}
+private String readMsgFromClient() {
+try {
+return socketBufferedReader.readLine();
+} catch (IOException e) {
+e.printStackTrace();
+//如果捕获到异常，则将该客户端对应的 socket 删除
+Server5.socketList.remove(socket);
+}
+return null;
+}
 }
 
 ```
@@ -656,50 +655,50 @@ chat:laowang:老王你好哈
 ```
 
 public class Client6 {
-    public static void main(String[] args) {
-        Socket socket = new Socket();
-        SocketAddress address = new InetSocketAddress("127.0.0.1", 6666);
-        try {
-            socket.connect(address, 2000);
-            new Thread(new ClientHandler6(socket)).start();
-            PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader bufferedInputReader = new BufferedReader(new InputStreamReader(System.in));
-            String clientMsg;
-            System.out.println("请输入消息:");
-            while ((clientMsg = bufferedInputReader.readLine()) != null) {
-                socketPrintWriter.println(clientMsg);
-                System.out.println("请输入消息:");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
+public static void main(String\[\] args) {
+Socket socket = new Socket();
+SocketAddress address = new InetSocketAddress("127.0.0.1", 6666);
+try {
+socket.connect(address, 2000);
+new Thread(new ClientHandler6(socket)).start();
+PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
+BufferedReader bufferedInputReader = new BufferedReader(new InputStreamReader(System.in));
+String clientMsg;
+System.out.println("请输入消息:");
+while ((clientMsg = bufferedInputReader.readLine()) != null) {
+socketPrintWriter.println(clientMsg);
+System.out.println("请输入消息:");
+}
+} catch (IOException e) {
+e.printStackTrace();
+} finally {
+if (socket != null) {
+try {
+socket.close();
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+}
+}
 }
 class ClientHandler6 implements Runnable {
-    private Socket socket;
-    public ClientHandler6(Socket socket) {
-        this.socket = socket;
-    }
-    @Override
-    public void run() {
-        try {
-            BufferedReader socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            String msgFromServer;
-            while ((msgFromServer = socketBufferedReader.readLine()) != null) {
-                System.out.println("收到来自服务端的消息:" + msgFromServer);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+private Socket socket;
+public ClientHandler6(Socket socket) {
+this.socket = socket;
+}
+@Override
+public void run() {
+try {
+BufferedReader socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+String msgFromServer;
+while ((msgFromServer = socketBufferedReader.readLine()) != null) {
+System.out.println("收到来自服务端的消息:" + msgFromServer);
+}
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
 }
 
 ```
@@ -709,121 +708,121 @@ class ClientHandler6 implements Runnable {
 ```
 
 public class Server6 {
-    public static Map<String, Socket> userConnectionInfo = new HashMap<>();
-    public static void main(String[] args) throws IOException {
-        //开启一个 TCP 服务端,占用一个本地端口
-        ServerSocket serverSocket = new ServerSocket(6666);
-        //服务端循环不断地接受客户端的连接
-        System.out.println("server start...");
-        while (true) {
-            Socket socket;
-            try {
-                socket = serverSocket.accept();
-                System.out.println("客户端" + socket.getRemoteSocketAddress() + "上线了");
-                //为每一个客户端分配一个线程
-                Thread workThread = new Thread(new ServerHandler6(socket));
-                workThread.start();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+public static Map\<String, Socket> userConnectionInfo = new HashMap\<>();
+public static void main(String\[\] args) throws IOException {
+//开启一个 TCP 服务端,占用一个本地端口
+ServerSocket serverSocket = new ServerSocket(6666);
+//服务端循环不断地接受客户端的连接
+System.out.println("server start...");
+while (true) {
+Socket socket;
+try {
+socket = serverSocket.accept();
+System.out.println("客户端" + socket.getRemoteSocketAddress() + "上线了");
+//为每一个客户端分配一个线程
+Thread workThread = new Thread(new ServerHandler6(socket));
+workThread.start();
+} catch (Exception e) {
+e.printStackTrace();
+}
+}
+}
 }
 class ServerHandler6 implements Runnable {
-    private Socket socket;
-    private BufferedReader socketBufferedReader;
-    public ServerHandler6(Socket socket) throws IOException {
-        this.socket = socket;
-        this.socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    }
-    @Override
-    public void run() {
-        try {
-            //从 Socket 中获得输入输出流,接收和发送数据
-            String msg;
-            while ((msg = readMsgFromClient()) != null) {
-                String[] split = msg.split(":");
-                if (("login".equals(split[0]) && split.length != 2) || (!"login".equals(split[0])) && (split.length != 3)) {
-                    response("消息格式错误,请用冒号分割,形如：消息类型:消息接收人(用户名):消息内容 ,消息类型有两种:login、chat;消息接收人可以是 all 或者具体的用户名");
-                    continue;
-                }
-                String msgType = split[0];
-                String userName = split[1];
-                if ("login".equals(msgType)) {
-                    if (Server6.userConnectionInfo.get(userName) == null) {
-                        Server6.userConnectionInfo.put(userName, socket);
-                        response("用户【" + userName + "】登录成功！");
-                    } else {
-                        response("用户【" + userName + "】已登录,无需重复登录");
-                    }
-                } else if ("chat".equals(msgType)) {
-                    if ("all".equals(userName)) {
-                        String senderName = getUname();
-                        //群发消息
-                        for (Map.Entry<String, Socket> entry : Server6.userConnectionInfo.entrySet()) {
-                            Socket userSocket = entry.getValue();
-                            if (userSocket == socket) {
-                                continue;
-                            }
-                            PrintWriter socketPrintWriter = new PrintWriter(userSocket.getOutputStream(), true);
-                            String sendMsg = "【" + senderName + "】对大家说：" + split[2];
-                            socketPrintWriter.println(sendMsg);
-                        }
-                    } else {
-                        if (Server6.userConnectionInfo.get(userName) == null) {
-                            response("用户【" + userName + "】不在线");
-                        } else {
-                            Socket userSocket = Server6.userConnectionInfo.get(userName);
-                            PrintWriter socketPrintWriter = new PrintWriter(userSocket.getOutputStream(), true);
-                            String sendMsg = "【" + getUname() + "】对你说：" + split[2];
-                            socketPrintWriter.println(sendMsg);
-                        }
-                    }
-                } else {
-                    response("消息类型错误，只支持 login/chat");
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            //当与一个客户端通信结束后，需要关闭对应的 socket
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-    private String getUname() {
-        String uname = "";
-        //找出该 socket 对应的用户名
-        for (Map.Entry<String, Socket> entry : Server6.userConnectionInfo.entrySet()) {
-            String userNameInfo = entry.getKey();
-            Socket userSocket = entry.getValue();
-            if (userSocket == socket) {
-                uname = userNameInfo;
-                break;
-            }
-        }
-        return uname;
-    }
-    private void response(String msg) throws IOException {
-        PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
-        socketPrintWriter.println(msg);
-    }
-    private String readMsgFromClient() {
-        try {
-            return socketBufferedReader.readLine();
-        } catch (IOException e) {
-            e.printStackTrace();
-            //如果捕获到异常，则将该客户端对应的 socket 删除
-            System.out.println("客户端" + socket.getRemoteSocketAddress() + "下线了");
-            Server6.userConnectionInfo.remove(getUname());
-        }
-        return null;
-    }
+private Socket socket;
+private BufferedReader socketBufferedReader;
+public ServerHandler6(Socket socket) throws IOException {
+this.socket = socket;
+this.socketBufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+}
+@Override
+public void run() {
+try {
+//从 Socket 中获得输入输出流,接收和发送数据
+String msg;
+while ((msg = readMsgFromClient()) != null) {
+String\[\] split = msg.split(":");
+if (("login".equals(split\[0\]) && split.length != 2) || (!"login".equals(split\[0\])) && (split.length != 3)) {
+response("消息格式错误,请用冒号分割,形如：消息类型:消息接收人(用户名):消息内容 ,消息类型有两种:login、chat;消息接收人可以是 all 或者具体的用户名");
+continue;
+}
+String msgType = split\[0\];
+String userName = split\[1\];
+if ("login".equals(msgType)) {
+if (Server6.userConnectionInfo.get(userName) == null) {
+Server6.userConnectionInfo.put(userName, socket);
+response("用户【" + userName + "】登录成功！");
+} else {
+response("用户【" + userName + "】已登录,无需重复登录");
+}
+} else if ("chat".equals(msgType)) {
+if ("all".equals(userName)) {
+String senderName = getUname();
+//群发消息
+for (Map.Entry\<String, Socket> entry : Server6.userConnectionInfo.entrySet()) {
+Socket userSocket = entry.getValue();
+if (userSocket == socket) {
+continue;
+}
+PrintWriter socketPrintWriter = new PrintWriter(userSocket.getOutputStream(), true);
+String sendMsg = "【" + senderName + "】对大家说：" + split\[2\];
+socketPrintWriter.println(sendMsg);
+}
+} else {
+if (Server6.userConnectionInfo.get(userName) == null) {
+response("用户【" + userName + "】不在线");
+} else {
+Socket userSocket = Server6.userConnectionInfo.get(userName);
+PrintWriter socketPrintWriter = new PrintWriter(userSocket.getOutputStream(), true);
+String sendMsg = "【" + getUname() + "】对你说：" + split\[2\];
+socketPrintWriter.println(sendMsg);
+}
+}
+} else {
+response("消息类型错误，只支持 login/chat");
+}
+}
+} catch (Exception e) {
+e.printStackTrace();
+} finally {
+//当与一个客户端通信结束后，需要关闭对应的 socket
+if (socket != null) {
+try {
+socket.close();
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+}
+}
+private String getUname() {
+String uname = "";
+//找出该 socket 对应的用户名
+for (Map.Entry\<String, Socket> entry : Server6.userConnectionInfo.entrySet()) {
+String userNameInfo = entry.getKey();
+Socket userSocket = entry.getValue();
+if (userSocket == socket) {
+uname = userNameInfo;
+break;
+}
+}
+return uname;
+}
+private void response(String msg) throws IOException {
+PrintWriter socketPrintWriter = new PrintWriter(socket.getOutputStream(), true);
+socketPrintWriter.println(msg);
+}
+private String readMsgFromClient() {
+try {
+return socketBufferedReader.readLine();
+} catch (IOException e) {
+e.printStackTrace();
+//如果捕获到异常，则将该客户端对应的 socket 删除
+System.out.println("客户端" + socket.getRemoteSocketAddress() + "下线了");
+Server6.userConnectionInfo.remove(getUname());
+}
+return null;
+}
 }
 
 ```
@@ -910,59 +909,59 @@ serverSocketChannel.configureBlocking(false);
 ```
 
 public class NIOServer1 {
-    private int port = 6666;
-    private ServerSocketChannel serverSocketChannel;
-    private ExecutorService executorService;
-    public NIOServer1() throws IOException {
-        executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 4);
-        serverSocketChannel = ServerSocketChannel.open();
-        //允许地址重用，即关闭了服务端程序之后，哪怕立即再启动该程序时可以顺利绑定相同的端口
-        serverSocketChannel.socket().setReuseAddress(true);
-        serverSocketChannel.socket().bind(new InetSocketAddress(port));
-        System.out.println("server started...");
-    }
-    public static void main(String[] args) throws IOException {
-        new NIOServer1().service();
-    }
-    private void service() {
-        while (true) {
-            SocketChannel socketChannel;
-            try {
-                socketChannel = serverSocketChannel.accept();
-                executorService.execute(new NioHandler1(socketChannel));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+private int port = 6666;
+private ServerSocketChannel serverSocketChannel;
+private ExecutorService executorService;
+public NIOServer1() throws IOException {
+executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 4);
+serverSocketChannel = ServerSocketChannel.open();
+//允许地址重用，即关闭了服务端程序之后，哪怕立即再启动该程序时可以顺利绑定相同的端口
+serverSocketChannel.socket().setReuseAddress(true);
+serverSocketChannel.socket().bind(new InetSocketAddress(port));
+System.out.println("server started...");
+}
+public static void main(String\[\] args) throws IOException {
+new NIOServer1().service();
+}
+private void service() {
+while (true) {
+SocketChannel socketChannel;
+try {
+socketChannel = serverSocketChannel.accept();
+executorService.execute(new NioHandler1(socketChannel));
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+}
 }
 class NioHandler1 implements Runnable {
-    private SocketChannel socketChannel;
-    public NioHandler1(SocketChannel socketChannel) {
-        this.socketChannel = socketChannel;
-    }
-    @Override
-    public void run() {
-        Socket socket = socketChannel.socket();
-        System.out.println("接受到客户端的连接，来自" + socket.getRemoteSocketAddress());
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-            String msg;
-            while ((msg = reader.readLine()) != null) {
-                System.out.println("客户端【" + socket.getInetAddress() + ":" + socket.getPort() + "】说：" + msg);
-                writer.println(genResponse(msg));
-                if ("bye".equals(msg)) {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    private String genResponse(String msg) {
-        return "服务器收到了您的消息：" + msg;
-    }
+private SocketChannel socketChannel;
+public NioHandler1(SocketChannel socketChannel) {
+this.socketChannel = socketChannel;
+}
+@Override
+public void run() {
+Socket socket = socketChannel.socket();
+System.out.println("接受到客户端的连接，来自" + socket.getRemoteSocketAddress());
+try {
+BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+String msg;
+while ((msg = reader.readLine()) != null) {
+System.out.println("客户端【" + socket.getInetAddress() + ":" + socket.getPort() + "】说：" + msg);
+writer.println(genResponse(msg));
+if ("bye".equals(msg)) {
+break;
+}
+}
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+private String genResponse(String msg) {
+return "服务器收到了您的消息：" + msg;
+}
 }
 
 ```
@@ -972,37 +971,37 @@ class NioHandler1 implements Runnable {
 ```
 
 public class NIOClient1 {
-    private SocketChannel socketChannel;
-    public NIOClient1() throws IOException {
-        socketChannel = SocketChannel.open();
-        InetAddress localHost = InetAddress.getLocalHost();
-        InetSocketAddress socketAddress = new InetSocketAddress(localHost, 6666);
-        //采用阻塞模式连接服务器
-        socketChannel.connect(socketAddress);
-        System.out.println("与服务端连接成功！");
-    }
-    public static void main(String[] args) throws IOException {
-        new NIOClient1().chat();
-    }
-    public void chat() {
-        Socket socket = socketChannel.socket();
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
-            String msg;
-            while ((msg = inputReader.readLine()) != null) {
-                writer.println(msg);
-                System.out.println("【服务器】说:" + reader.readLine());
-                //如果输入 bye，则终止聊天
-                if ("bye".equals(msg)) {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+private SocketChannel socketChannel;
+public NIOClient1() throws IOException {
+socketChannel = SocketChannel.open();
+InetAddress localHost = InetAddress.getLocalHost();
+InetSocketAddress socketAddress = new InetSocketAddress(localHost, 6666);
+//采用阻塞模式连接服务器
+socketChannel.connect(socketAddress);
+System.out.println("与服务端连接成功！");
+}
+public static void main(String\[\] args) throws IOException {
+new NIOClient1().chat();
+}
+public void chat() {
+Socket socket = socketChannel.socket();
+try {
+BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
+String msg;
+while ((msg = inputReader.readLine()) != null) {
+writer.println(msg);
+System.out.println("【服务器】说:" + reader.readLine());
+//如果输入 bye，则终止聊天
+if ("bye".equals(msg)) {
+break;
+}
+}
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
 }
 
 ```
@@ -1024,119 +1023,119 @@ public class NIOClient1 {
 ```
 
 public class NIOServer2 {
-    private int port = 6666;
-    private ServerSocketChannel serverSocketChannel;
-    private Selector selector;
-    private Charset charset = Charset.forName("UTF-8");
-    public NIOServer2() throws IOException {
-        selector = Selector.open();
-        serverSocketChannel = ServerSocketChannel.open();
-        serverSocketChannel.socket().setReuseAddress(true);
-        //设置为非阻塞模式
-        serverSocketChannel.configureBlocking(false);
-        serverSocketChannel.socket().bind(new InetSocketAddress(port));
-        System.out.println("server started...");
-    }
-    public static void main(String[] args) throws IOException {
-        new NIOServer2().service();
-    }
-    private void service() throws IOException {
-        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-        while (selector.select() > 0) {
-            Set<SelectionKey> selectionKeys = selector.selectedKeys();
-            Iterator<SelectionKey> iterator = selectionKeys.iterator();
-            while (iterator.hasNext()) {
-                SelectionKey key = null;
-                //处理每个 SelectionKey 的代码放在一个 try/catch 块中，如果出现异常，就使其失效并关闭对应的 Channel
-                try {
-                    key = iterator.next();
-                    if (key.isAcceptable()) {
-                        doAccept(key);
-                    }
-                    if (key.isWritable()) {
-                        sendMsg(key);
-                    }
-                    if (key.isReadable()) {
-                        receiveMsg(key);
-                    }
-                    //从 Selector 的 selected-keys 集合中删除处理过的 SelectionKey
-                    iterator.remove();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    try {
-                        //发生异常时，使这个 SelectionKey 失效，Selector 不再监控这个 SelectionKey 感兴趣的事件
-                        if (key != null) {
-                            key.cancel();
-                            //关闭这个 SelectionKey 关联的 SocketChannel
-                            key.channel().close();
-                        }
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
-    private void receiveMsg(SelectionKey key) throws IOException {
-        ByteBuffer buffer = (ByteBuffer) key.attachment();
-        SocketChannel socketChannel = (SocketChannel) key.channel();
-        //创建一个 ByteBuffer 存放读取到的数据
-        ByteBuffer readBuffer = ByteBuffer.allocate(64);
-        socketChannel.read(readBuffer);
-        readBuffer.flip();
-        buffer.limit(buffer.capacity());
-        //把 readBuffer 中的数据拷贝到 buffer 中，假设 buffer 的容量足够大，不会出现溢出的情况
-        //在非阻塞模式下，socketChannel.read(readBuffer)方法一次读入多少字节的数据是不确定的，无法保证一次读入的是一整行字符串数据
-        //因此需要将其每次读取的数据放到 buffer 中，当凑到一行数据时再回复客户端
-        buffer.put(readBuffer);
-    }
-    private void sendMsg(SelectionKey key) throws IOException {
-        ByteBuffer buffer = (ByteBuffer) key.attachment();
-        SocketChannel socketChannel = (SocketChannel) key.channel();
-        buffer.flip();
-        String data = decode(buffer);
-        //当凑满一行数据时再回复客户端
-        if (data.indexOf("\r\n") == -1) {
-            return;
-        }
-        //读取一行数据
-        String recvData = data.substring(0, data.indexOf("\n") + 1);
-        System.out.print("客户端【" + socketChannel.socket().getInetAddress() + ":" + socketChannel.socket().getPort() + "】说：" + recvData);
-        ByteBuffer outputBuffer = encode(genResponse(recvData));
-        while (outputBuffer.hasRemaining()) {
-            socketChannel.write(outputBuffer);
-        }
-        ByteBuffer temp = encode(recvData);
-        buffer.position(temp.limit());
-        //删除 buffer 中已经处理过的数据
-        buffer.compact();
-        if ("bye\r\n".equals(recvData)) {
-            key.cancel();
-            key.channel().close();
-            System.out.println("关闭与客户端" + socketChannel.socket().getRemoteSocketAddress() + "的连接");
-        }
-    }
-    private ByteBuffer encode(String msg) {
-        return charset.encode(msg);//转为字节
-    }
-    private String decode(ByteBuffer buffer) {
-        CharBuffer charBuffer = charset.decode(buffer);//转为字符
-        return charBuffer.toString();
-    }
-    private void doAccept(SelectionKey key) throws IOException {
-        ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
-        SocketChannel socketChannel = ssc.accept();
-        System.out.println("接受到客户端的连接，来自" + socketChannel.socket().getRemoteSocketAddress());
-        //设置为非阻塞模式
-        socketChannel.configureBlocking(false);
-        //创建一个用于接收客户端数据的缓冲区
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-        //向 Selector 注册读、写就绪事件,并关联一个 buffer 附件
-        socketChannel.register(selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ, buffer);
-    }
-    private String genResponse(String msg) {
-        return "服务器收到了您的消息：" + msg;
-    }
+private int port = 6666;
+private ServerSocketChannel serverSocketChannel;
+private Selector selector;
+private Charset charset = Charset.forName("UTF-8");
+public NIOServer2() throws IOException {
+selector = Selector.open();
+serverSocketChannel = ServerSocketChannel.open();
+serverSocketChannel.socket().setReuseAddress(true);
+//设置为非阻塞模式
+serverSocketChannel.configureBlocking(false);
+serverSocketChannel.socket().bind(new InetSocketAddress(port));
+System.out.println("server started...");
+}
+public static void main(String\[\] args) throws IOException {
+new NIOServer2().service();
+}
+private void service() throws IOException {
+serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+while (selector.select() > 0) {
+Set<SelectionKey> selectionKeys = selector.selectedKeys();
+Iterator<SelectionKey> iterator = selectionKeys.iterator();
+while (iterator.hasNext()) {
+SelectionKey key = null;
+//处理每个 SelectionKey 的代码放在一个 try/catch 块中，如果出现异常，就使其失效并关闭对应的 Channel
+try {
+key = iterator.next();
+if (key.isAcceptable()) {
+doAccept(key);
+}
+if (key.isWritable()) {
+sendMsg(key);
+}
+if (key.isReadable()) {
+receiveMsg(key);
+}
+//从 Selector 的 selected-keys 集合中删除处理过的 SelectionKey
+iterator.remove();
+} catch (Exception e) {
+e.printStackTrace();
+try {
+//发生异常时，使这个 SelectionKey 失效，Selector 不再监控这个 SelectionKey 感兴趣的事件
+if (key != null) {
+key.cancel();
+//关闭这个 SelectionKey 关联的 SocketChannel
+key.channel().close();
+}
+} catch (Exception ex) {
+ex.printStackTrace();
+}
+}
+}
+}
+}
+private void receiveMsg(SelectionKey key) throws IOException {
+ByteBuffer buffer = (ByteBuffer) key.attachment();
+SocketChannel socketChannel = (SocketChannel) key.channel();
+//创建一个 ByteBuffer 存放读取到的数据
+ByteBuffer readBuffer = ByteBuffer.allocate(64);
+socketChannel.read(readBuffer);
+readBuffer.flip();
+buffer.limit(buffer.capacity());
+//把 readBuffer 中的数据拷贝到 buffer 中，假设 buffer 的容量足够大，不会出现溢出的情况
+//在非阻塞模式下，socketChannel.read(readBuffer)方法一次读入多少字节的数据是不确定的，无法保证一次读入的是一整行字符串数据
+//因此需要将其每次读取的数据放到 buffer 中，当凑到一行数据时再回复客户端
+buffer.put(readBuffer);
+}
+private void sendMsg(SelectionKey key) throws IOException {
+ByteBuffer buffer = (ByteBuffer) key.attachment();
+SocketChannel socketChannel = (SocketChannel) key.channel();
+buffer.flip();
+String data = decode(buffer);
+//当凑满一行数据时再回复客户端
+if (data.indexOf("\\r\\n") == -1) {
+return;
+}
+//读取一行数据
+String recvData = data.substring(0, data.indexOf("\\n") + 1);
+System.out.print("客户端【" + socketChannel.socket().getInetAddress() + ":" + socketChannel.socket().getPort() + "】说：" + recvData);
+ByteBuffer outputBuffer = encode(genResponse(recvData));
+while (outputBuffer.hasRemaining()) {
+socketChannel.write(outputBuffer);
+}
+ByteBuffer temp = encode(recvData);
+buffer.position(temp.limit());
+//删除 buffer 中已经处理过的数据
+buffer.compact();
+if ("bye\\r\\n".equals(recvData)) {
+key.cancel();
+key.channel().close();
+System.out.println("关闭与客户端" + socketChannel.socket().getRemoteSocketAddress() + "的连接");
+}
+}
+private ByteBuffer encode(String msg) {
+return charset.encode(msg);//转为字节
+}
+private String decode(ByteBuffer buffer) {
+CharBuffer charBuffer = charset.decode(buffer);//转为字符
+return charBuffer.toString();
+}
+private void doAccept(SelectionKey key) throws IOException {
+ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
+SocketChannel socketChannel = ssc.accept();
+System.out.println("接受到客户端的连接，来自" + socketChannel.socket().getRemoteSocketAddress());
+//设置为非阻塞模式
+socketChannel.configureBlocking(false);
+//创建一个用于接收客户端数据的缓冲区
+ByteBuffer buffer = ByteBuffer.allocate(1024);
+//向 Selector 注册读、写就绪事件,并关联一个 buffer 附件
+socketChannel.register(selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ, buffer);
+}
+private String genResponse(String msg) {
+return "服务器收到了您的消息：" + msg;
+}
 }
 
 ```
@@ -1152,125 +1151,125 @@ public class NIOServer2 {
 ```
 
 public class NIOClient2 {
-    private ByteBuffer recvBuf = ByteBuffer.allocate(1024);
-    private ByteBuffer sendBuf = ByteBuffer.allocate(1024);
-    private Charset charset = Charset.forName("UTF-8");
-    private SocketChannel socketChannel;
-    private Selector selector;
-    public NIOClient2() throws IOException {
-        socketChannel = SocketChannel.open();
-        InetAddress localHost = InetAddress.getLocalHost();
-        InetSocketAddress socketAddress = new InetSocketAddress(localHost, 6666);
-        //采用阻塞模式连接服务器
-        socketChannel.connect(socketAddress);
-        //设置为非阻塞模式
-        socketChannel.configureBlocking(false);
-        System.out.println("与服务端连接成功！");
-        selector = Selector.open();
-    }
-    public static void main(String[] args) throws IOException {
-        NIOClient2 nioClient2 = new NIOClient2();
-        Thread inputThread = new Thread() {
-            @Override
-            public void run() {
-                nioClient2.receiveInput();
-            }
-        };
-        inputThread.start();
-        nioClient2.chat();
-    }
-    private void chat() throws IOException {
-        //接收和发送数据
-        socketChannel.register(selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-        while (selector.select() > 0) {
-            Set<SelectionKey> selectionKeys = selector.selectedKeys();
-            Iterator<SelectionKey> iterator = selectionKeys.iterator();
-            while (iterator.hasNext()) {
-                SelectionKey key = null;
-                try {
-                    key = iterator.next();
-                    iterator.remove();
-                    if (key.isWritable()) {
-                        sendMsg(key);
-                    }
-                    if (key.isReadable()) {
-                        receiveMsg(key);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    try {
-                        //发生异常时，使这个 SelectionKey 失效，Selector 不再监控这个 SelectionKey 感兴趣的事件
-                        if (key != null) {
-                            key.cancel();
-                            //关闭这个 SelectionKey 关联的 SocketChannel
-                            key.channel().close();
-                        }
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
-    private void receiveMsg(SelectionKey key) throws IOException {
-        //接收服务端发来的数据，放到 recvBuf 中，如满一行数据，就输出，然后从 recvBuf 中删除
-        SocketChannel channel = (SocketChannel) key.channel();
-        channel.read(recvBuf);
-        recvBuf.flip();
-        String recvMsg = decode(recvBuf);
-        if (recvMsg.indexOf("\n") == -1) {
-            return;
-        }
-        String recvMsgLine = recvMsg.substring(0, recvMsg.indexOf("\n") + 1);
-        System.out.print("【服务器】说:" + recvMsgLine);
-        if (recvMsgLine.contains("bye")) {
-            key.cancel();
-            socketChannel.close();
-            System.out.println("与服务器断开连接");
-            selector.close();
-            System.exit(0);
-        }
-        ByteBuffer temp = encode(recvMsgLine);
-        recvBuf.position(temp.limit());
-        //删除已经输出的数据
-        recvBuf.compact();
-    }
-    private void sendMsg(SelectionKey key) throws IOException {
-        //发送 sendBuf 中的数据
-        SocketChannel channel = (SocketChannel) key.channel();
-        synchronized (sendBuf) {
-            //为取出数据做好准备
-            sendBuf.flip();
-            //将 sendBuf 中的数据写入到 Channel 中去
-            channel.write(sendBuf);
-            //删除已经发送的数据(通过压缩的方式)
-            sendBuf.compact();
-        }
-    }
-    private void receiveInput() {
-        try {
-            BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
-            String msg;
-            while ((msg = inputReader.readLine()) != null) {
-                synchronized (sendBuf) {
-                    sendBuf.put(encode(msg + "\r\n"));
-                }
-                //如果输入 bye，则终止聊天
-                if ("bye".equals(msg)) {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    private ByteBuffer encode(String msg) {
-        return charset.encode(msg);//转为字节
-    }
-    private String decode(ByteBuffer buffer) {
-        CharBuffer charBuffer = charset.decode(buffer);//转为字符
-        return charBuffer.toString();
-    }
+private ByteBuffer recvBuf = ByteBuffer.allocate(1024);
+private ByteBuffer sendBuf = ByteBuffer.allocate(1024);
+private Charset charset = Charset.forName("UTF-8");
+private SocketChannel socketChannel;
+private Selector selector;
+public NIOClient2() throws IOException {
+socketChannel = SocketChannel.open();
+InetAddress localHost = InetAddress.getLocalHost();
+InetSocketAddress socketAddress = new InetSocketAddress(localHost, 6666);
+//采用阻塞模式连接服务器
+socketChannel.connect(socketAddress);
+//设置为非阻塞模式
+socketChannel.configureBlocking(false);
+System.out.println("与服务端连接成功！");
+selector = Selector.open();
+}
+public static void main(String\[\] args) throws IOException {
+NIOClient2 nioClient2 = new NIOClient2();
+Thread inputThread = new Thread() {
+@Override
+public void run() {
+nioClient2.receiveInput();
+}
+};
+inputThread.start();
+nioClient2.chat();
+}
+private void chat() throws IOException {
+//接收和发送数据
+socketChannel.register(selector, SelectionKey.OP_WRITE | SelectionKey.OP_READ);
+while (selector.select() > 0) {
+Set<SelectionKey> selectionKeys = selector.selectedKeys();
+Iterator<SelectionKey> iterator = selectionKeys.iterator();
+while (iterator.hasNext()) {
+SelectionKey key = null;
+try {
+key = iterator.next();
+iterator.remove();
+if (key.isWritable()) {
+sendMsg(key);
+}
+if (key.isReadable()) {
+receiveMsg(key);
+}
+} catch (IOException e) {
+e.printStackTrace();
+try {
+//发生异常时，使这个 SelectionKey 失效，Selector 不再监控这个 SelectionKey 感兴趣的事件
+if (key != null) {
+key.cancel();
+//关闭这个 SelectionKey 关联的 SocketChannel
+key.channel().close();
+}
+} catch (Exception ex) {
+ex.printStackTrace();
+}
+}
+}
+}
+}
+private void receiveMsg(SelectionKey key) throws IOException {
+//接收服务端发来的数据，放到 recvBuf 中，如满一行数据，就输出，然后从 recvBuf 中删除
+SocketChannel channel = (SocketChannel) key.channel();
+channel.read(recvBuf);
+recvBuf.flip();
+String recvMsg = decode(recvBuf);
+if (recvMsg.indexOf("\\n") == -1) {
+return;
+}
+String recvMsgLine = recvMsg.substring(0, recvMsg.indexOf("\\n") + 1);
+System.out.print("【服务器】说:" + recvMsgLine);
+if (recvMsgLine.contains("bye")) {
+key.cancel();
+socketChannel.close();
+System.out.println("与服务器断开连接");
+selector.close();
+System.exit(0);
+}
+ByteBuffer temp = encode(recvMsgLine);
+recvBuf.position(temp.limit());
+//删除已经输出的数据
+recvBuf.compact();
+}
+private void sendMsg(SelectionKey key) throws IOException {
+//发送 sendBuf 中的数据
+SocketChannel channel = (SocketChannel) key.channel();
+synchronized (sendBuf) {
+//为取出数据做好准备
+sendBuf.flip();
+//将 sendBuf 中的数据写入到 Channel 中去
+channel.write(sendBuf);
+//删除已经发送的数据(通过压缩的方式)
+sendBuf.compact();
+}
+}
+private void receiveInput() {
+try {
+BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
+String msg;
+while ((msg = inputReader.readLine()) != null) {
+synchronized (sendBuf) {
+sendBuf.put(encode(msg + "\\r\\n"));
+}
+//如果输入 bye，则终止聊天
+if ("bye".equals(msg)) {
+break;
+}
+}
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
+private ByteBuffer encode(String msg) {
+return charset.encode(msg);//转为字节
+}
+private String decode(ByteBuffer buffer) {
+CharBuffer charBuffer = charset.decode(buffer);//转为字符
+return charBuffer.toString();
+}
 }
 
 ```
@@ -1284,73 +1283,73 @@ public class NIOClient2 {
 ```
 
 public class NIOServer3 {
-    private int port = 6666;
-    private ServerSocketChannel serverSocketChannel;
-    private Selector selector;
-    private Charset charset = Charset.forName("UTF-8");
-    public NIOServer3() throws IOException {
-        selector = Selector.open();
-        serverSocketChannel = ServerSocketChannel.open();
-        serverSocketChannel.socket().setReuseAddress(true);
-        //设置为非阻塞模式
-        serverSocketChannel.configureBlocking(false);
-        serverSocketChannel.socket().bind(new InetSocketAddress(port));
-        System.out.println("server started...");
-    }
-    public static void main(String[] args) throws IOException {
-        new NIOServer3().service();
-    }
-    private void service() throws IOException {
-        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-        while (selector.select() > 0) {
-            for (SelectionKey key : selector.selectedKeys()) {
-                selector.selectedKeys().remove(key);
-                if (key.isAcceptable()) {
-                    ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
-                    SocketChannel socketChannel = ssc.accept();
-                    System.out.println("接受到客户端的连接，来自" + socketChannel.socket().getRemoteSocketAddress());
-                    //设置为非阻塞模式
-                    socketChannel.configureBlocking(false);
-                    socketChannel.register(selector, SelectionKey.OP_READ);
-                }
-                if (key.isReadable()) {
-                    SocketChannel sc = (SocketChannel) key.channel();
-                    ByteBuffer buffer = ByteBuffer.allocate(1024);
-                    String msg = "";
-                    try {
-                        while (sc.read(buffer) > 0) {
-                            buffer.flip();
-                            msg += charset.decode(buffer);
-                        }
-                        System.out.println("客户端【" + sc.getRemoteAddress() + "】说：" + msg);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        try {
-                            //对某个 Client 对应的 Channel 读写发生异常时，使这个 SelectionKey 失效，Selector 不再监控这个 SelectionKey 感兴趣的事件
-                            if (key != null) {
-                                key.cancel();
-                                //关闭这个 SelectionKey 关联的 SocketChannel
-                                System.out.println("客户端【" + ((SocketChannel) key.channel()).socket().getRemoteSocketAddress() + "】下线了");
-                                key.channel().close();
-                            }
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                    if (msg.length() > 0) {
-                        for (SelectionKey selectedKey : selector.keys()) {
-                            Channel channel = selectedKey.channel();
-                            //遍历 Selector 中的所有注册的 Channel，如果是客户端的 SocketChannel，则群发消息，并排除自己
-                            if (channel instanceof SocketChannel && channel != sc) {
-                                SocketChannel socketChannel = (SocketChannel) channel;
-                                socketChannel.write(charset.encode("用户【" + sc.getRemoteAddress() + "】说：" + msg));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+private int port = 6666;
+private ServerSocketChannel serverSocketChannel;
+private Selector selector;
+private Charset charset = Charset.forName("UTF-8");
+public NIOServer3() throws IOException {
+selector = Selector.open();
+serverSocketChannel = ServerSocketChannel.open();
+serverSocketChannel.socket().setReuseAddress(true);
+//设置为非阻塞模式
+serverSocketChannel.configureBlocking(false);
+serverSocketChannel.socket().bind(new InetSocketAddress(port));
+System.out.println("server started...");
+}
+public static void main(String\[\] args) throws IOException {
+new NIOServer3().service();
+}
+private void service() throws IOException {
+serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+while (selector.select() > 0) {
+for (SelectionKey key : selector.selectedKeys()) {
+selector.selectedKeys().remove(key);
+if (key.isAcceptable()) {
+ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
+SocketChannel socketChannel = ssc.accept();
+System.out.println("接受到客户端的连接，来自" + socketChannel.socket().getRemoteSocketAddress());
+//设置为非阻塞模式
+socketChannel.configureBlocking(false);
+socketChannel.register(selector, SelectionKey.OP_READ);
+}
+if (key.isReadable()) {
+SocketChannel sc = (SocketChannel) key.channel();
+ByteBuffer buffer = ByteBuffer.allocate(1024);
+String msg = "";
+try {
+while (sc.read(buffer) > 0) {
+buffer.flip();
+msg += charset.decode(buffer);
+}
+System.out.println("客户端【" + sc.getRemoteAddress() + "】说：" + msg);
+} catch (IOException e) {
+e.printStackTrace();
+try {
+//对某个 Client 对应的 Channel 读写发生异常时，使这个 SelectionKey 失效，Selector 不再监控这个 SelectionKey 感兴趣的事件
+if (key != null) {
+key.cancel();
+//关闭这个 SelectionKey 关联的 SocketChannel
+System.out.println("客户端【" + ((SocketChannel) key.channel()).socket().getRemoteSocketAddress() + "】下线了");
+key.channel().close();
+}
+} catch (Exception ex) {
+ex.printStackTrace();
+}
+}
+if (msg.length() > 0) {
+for (SelectionKey selectedKey : selector.keys()) {
+Channel channel = selectedKey.channel();
+//遍历 Selector 中的所有注册的 Channel，如果是客户端的 SocketChannel，则群发消息，并排除自己
+if (channel instanceof SocketChannel && channel != sc) {
+SocketChannel socketChannel = (SocketChannel) channel;
+socketChannel.write(charset.encode("用户【" + sc.getRemoteAddress() + "】说：" + msg));
+}
+}
+}
+}
+}
+}
+}
 }
 
 ```
@@ -1360,77 +1359,77 @@ public class NIOServer3 {
 ```
 
 public class NIOClient3 {
-    private ByteBuffer recvBuf = ByteBuffer.allocate(1024);
-    private ByteBuffer sendBuf = ByteBuffer.allocate(1024);
-    private Charset charset = Charset.forName("UTF-8");
-    private SocketChannel socketChannel;
-    private Selector selector;
-    public NIOClient3() throws IOException {
-        socketChannel = SocketChannel.open();
-        InetAddress localHost = InetAddress.getLocalHost();
-        InetSocketAddress socketAddress = new InetSocketAddress(localHost, 6666);
-        //采用阻塞模式连接服务器
-        socketChannel.connect(socketAddress);
-        //设置为非阻塞模式
-        socketChannel.configureBlocking(false);
-        System.out.println("与服务端连接成功！");
-        selector = Selector.open();
-    }
-    public static void main(String[] args) throws IOException {
-        NIOClient3 nioClient3 = new NIOClient3();
-        Thread inputThread = new Thread() {
-            @Override
-            public void run() {
-                nioClient3.sendInputMsg();
-            }
-        };
-        inputThread.start();
-        nioClient3.receiveMsg();
-    }
-    private void receiveMsg() throws IOException {
-        socketChannel.register(selector, SelectionKey.OP_READ);
-        while (selector.select() > 0) {
-            for (SelectionKey key : selector.selectedKeys()) {
-                try {
-                    selector.selectedKeys().remove(key);
-                    if (key.isReadable()) {
-                        SocketChannel sc = (SocketChannel) key.channel();
-                        ByteBuffer buffer = ByteBuffer.allocate(1024);
-                        String msg = "";
-                        while (sc.read(buffer) > 0) {
-                            buffer.flip();
-                            msg += charset.decode(buffer);
-                        }
-                        System.out.println(msg);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    try {
-                        //发生异常时，使这个 SelectionKey 失效，Selector 不再监控这个 SelectionKey 感兴趣的事件
-                        if (key != null) {
-                            key.cancel();
-                            //关闭这个 SelectionKey 关联的 SocketChannel
-                            key.channel().close();
-                        }
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
-    private void sendInputMsg() {
-        //接收键盘输入的消息并发送数据到服务器
-        try {
-            BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
-            String msg;
-            while ((msg = inputReader.readLine()) != null) {
-                socketChannel.write(charset.encode(msg));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+private ByteBuffer recvBuf = ByteBuffer.allocate(1024);
+private ByteBuffer sendBuf = ByteBuffer.allocate(1024);
+private Charset charset = Charset.forName("UTF-8");
+private SocketChannel socketChannel;
+private Selector selector;
+public NIOClient3() throws IOException {
+socketChannel = SocketChannel.open();
+InetAddress localHost = InetAddress.getLocalHost();
+InetSocketAddress socketAddress = new InetSocketAddress(localHost, 6666);
+//采用阻塞模式连接服务器
+socketChannel.connect(socketAddress);
+//设置为非阻塞模式
+socketChannel.configureBlocking(false);
+System.out.println("与服务端连接成功！");
+selector = Selector.open();
+}
+public static void main(String\[\] args) throws IOException {
+NIOClient3 nioClient3 = new NIOClient3();
+Thread inputThread = new Thread() {
+@Override
+public void run() {
+nioClient3.sendInputMsg();
+}
+};
+inputThread.start();
+nioClient3.receiveMsg();
+}
+private void receiveMsg() throws IOException {
+socketChannel.register(selector, SelectionKey.OP_READ);
+while (selector.select() > 0) {
+for (SelectionKey key : selector.selectedKeys()) {
+try {
+selector.selectedKeys().remove(key);
+if (key.isReadable()) {
+SocketChannel sc = (SocketChannel) key.channel();
+ByteBuffer buffer = ByteBuffer.allocate(1024);
+String msg = "";
+while (sc.read(buffer) > 0) {
+buffer.flip();
+msg += charset.decode(buffer);
+}
+System.out.println(msg);
+}
+} catch (IOException e) {
+e.printStackTrace();
+try {
+//发生异常时，使这个 SelectionKey 失效，Selector 不再监控这个 SelectionKey 感兴趣的事件
+if (key != null) {
+key.cancel();
+//关闭这个 SelectionKey 关联的 SocketChannel
+key.channel().close();
+}
+} catch (Exception ex) {
+ex.printStackTrace();
+}
+}
+}
+}
+}
+private void sendInputMsg() {
+//接收键盘输入的消息并发送数据到服务器
+try {
+BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
+String msg;
+while ((msg = inputReader.readLine()) != null) {
+socketChannel.write(charset.encode(msg));
+}
+} catch (IOException e) {
+e.printStackTrace();
+}
+}
 }
 
 ```
@@ -1518,12 +1517,14 @@ Linux 内核将所有外部设备都当成一个个文件来操作。我们对�
 
 ```
 
-        File file = new File("index.jsp");
-        RandomAccessFile rdf = new RandomAccessFile(file, "rw");
-        byte[] arr = new byte[(int) file.length()];
-        rdf.read(arr);
-        Socket socket = new ServerSocket(8080).accept();
-        socket.getOutputStream().write(arr);
+```
+    File file = new File("index.jsp");
+    RandomAccessFile rdf = new RandomAccessFile(file, "rw");
+    byte[] arr = new byte[(int) file.length()];
+    rdf.read(arr);
+    Socket socket = new ServerSocket(8080).accept();
+    socket.getOutputStream().write(arr);
+```
 
 ```
 
@@ -1654,3 +1655,4 @@ Reactor 主线程可以对应多个 Reactor 子线程，即 MainRecator 能关�
 ### 总结
 
 本篇我们带领读者回顾了一下 Java 中 IO 相关的理论知识，并通过多个代码案例加深了理解。
+```

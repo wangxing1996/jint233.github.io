@@ -1,8 +1,6 @@
-MySQL 主从复制 半同步复制
-================
+# MySQL 主从复制 半同步复制
 
-1.半同步复制
-=======
+# 1.半同步复制
 
 半同步复制官方手册：[https://dev.mysql.com/doc/refman/5.7/en/replication-semisync.html](https://dev.mysql.com/doc/refman/5.7/en/replication-semisync.html)
 
@@ -12,19 +10,18 @@ MySQL 主从复制 半同步复制
 
 ![img](assets/733013-20180524205148967-868029789-1623083552625.png)
 
-MySQL 5.7对半同步复制作了大改进，新增了一个master线程。在MySQL 5.7以前，master上的binlog dump线程负责两件事：dump日志给slave的io\_thread；接收来自slave的ack消息。它们是串行方式工作的。在MySQL 5.7中，新增了一个专门负责接受ack消息的线程ack collector thread。这样master上有两个线程独立工作，可以同时发送binlog到slave和接收slave的ack。
+MySQL 5.7对半同步复制作了大改进，新增了一个master线程。在MySQL 5.7以前，master上的binlog dump线程负责两件事：dump日志给slave的io_thread；接收来自slave的ack消息。它们是串行方式工作的。在MySQL 5.7中，新增了一个专门负责接受ack消息的线程ack collector thread。这样master上有两个线程独立工作，可以同时发送binlog到slave和接收slave的ack。
 
-还新增了几个变量，其中最重要的是 _rpl\_semi\_sync\_master\_wait\_point_ ，它使得MySQL半同步复制有两种工作模型。解释如下。
+还新增了几个变量，其中最重要的是 _rpl_semi_sync_master_wait_point_ ，它使得MySQL半同步复制有两种工作模型。解释如下。
 
-2.半同步复制的两种类型
-============
+# 2.半同步复制的两种类型
 
-从MySQL 5.7.2开始，MySQL支持两种类型的半同步复制。这两种类型由变量 _rpl\_semi\_sync\_master\_wait\_point_ (MySQL 5.7.2之前没有该变量)控制，它有两种值：AFTER\_SYNC和AFTER\_COMMIT。在MySQL 5.7.2之后，默认值为AFTER\_SYNC，在此版本之前，等价的类型为AFTER\_COMMIT。
+从MySQL 5.7.2开始，MySQL支持两种类型的半同步复制。这两种类型由变量 _rpl_semi_sync_master_wait_point_ (MySQL 5.7.2之前没有该变量)控制，它有两种值：AFTER_SYNC和AFTER_COMMIT。在MySQL 5.7.2之后，默认值为AFTER_SYNC，在此版本之前，等价的类型为AFTER_COMMIT。
 
 这个变量控制的是master何时提交、何时接收ack以及何时回复成功信息给客户端的时间点。
 
 1. `AFTER_SYNC`模式：master将新的事务写进binlog(buffer)，然后发送给slave，再sync到自己的binlog file(disk)。之后才允许接收slave的ack回复，接收到ack之后才会提交事务，并返回成功信息给客户端。
-2. `AFTER_COMMIT`模式：master将新的事务写进binlog(buffer)，然后发送给slave，再sync到自己的binlog file(disk)，然后直接提交事务。之后才允许接收slave的ack回复，然后再返回成功信息给客户端。
+1. `AFTER_COMMIT`模式：master将新的事务写进binlog(buffer)，然后发送给slave，再sync到自己的binlog file(disk)，然后直接提交事务。之后才允许接收slave的ack回复，然后再返回成功信息给客户端。
 
 画图理解就很清晰。(前提：已经设置了`sync_binlog=1`，否则binlog刷盘时间由操作系统决定)
 
@@ -34,19 +31,18 @@ MySQL 5.7对半同步复制作了大改进，新增了一个master线程。在My
 
 再来分析下这两种模式的优缺点。
 
-* AFTER\_SYNC
-  * 对于所有客户端来说，它们看到的数据是一样的，因为它们看到的数据都是在接收到slave的ack后提交后的数据。
-  * 这种模式下，如果master突然故障，不会丢失数据，因为所有成功的事务都已经写进slave的relay log中了，slave的数据是最新的。
-* AFTER\_COMMIT
-  * 不同客户端看到的数据可能是不一样的。对于发起事务请求的那个客户端，它只有在master提交事务且收到slave的ack后才能看到提交的数据。但对于那些非本次事务的请求客户端，它们在master提交后就能看到提交后的数据，这时候master可能还没收到slave的ack。
-  * 如果master收到ack回复前，slave和master都故障了，那么将丢失这个事务中的数据。
+- AFTER_SYNC
+  - 对于所有客户端来说，它们看到的数据是一样的，因为它们看到的数据都是在接收到slave的ack后提交后的数据。
+  - 这种模式下，如果master突然故障，不会丢失数据，因为所有成功的事务都已经写进slave的relay log中了，slave的数据是最新的。
+- AFTER_COMMIT
+  - 不同客户端看到的数据可能是不一样的。对于发起事务请求的那个客户端，它只有在master提交事务且收到slave的ack后才能看到提交的数据。但对于那些非本次事务的请求客户端，它们在master提交后就能看到提交后的数据，这时候master可能还没收到slave的ack。
+  - 如果master收到ack回复前，slave和master都故障了，那么将丢失这个事务中的数据。
 
-在MySQL 5.7.2之前，等价的模式是 _AFTER\_COMMIT_ ，在此版本之后，默认的模式为 _AFTER\_SYNC_ ，该模式能最大程度地保证数据安全性，且性能上并不比 _AFTER\_COMMIT_ 差。
+在MySQL 5.7.2之前，等价的模式是 _AFTER_COMMIT_ ，在此版本之后，默认的模式为 _AFTER_SYNC_ ，该模式能最大程度地保证数据安全性，且性能上并不比 _AFTER_COMMIT_ 差。
 
-3.半同步复制插件介绍
-===========
+# 3.半同步复制插件介绍
 
-MySQL的半同步是通过加载google为MySQL提供的半同步插件 _semisync\_master.so_ 和 _semisync\_slave.so_ 来实现的。其中前者是master上需要安装的插件，后者是slave上需要安装的插件。
+MySQL的半同步是通过加载google为MySQL提供的半同步插件 _semisync_master.so_ 和 _semisync_slave.so_ 来实现的。其中前者是master上需要安装的插件，后者是slave上需要安装的插件。
 
 MySQL的插件位置默认存放在`$basedir/lib/plugin`目录下。例如，yum安装的mysql-server，插件目录为/usr/lib64/mysql/plugin。
 
@@ -58,7 +54,7 @@ MySQL的插件位置默认存放在`$basedir/lib/plugin`目录下。例如，yum
 /usr/lib64/mysql/plugin/semisync_slave.so
 ```
 
-因为要加载插件，所以应该保证需要加载插件的MySQL的全局变量 _have\_dynamic\_loading_ 已经设置为YES(默认值就是YES)，否则无法动态加载插件。
+因为要加载插件，所以应该保证需要加载插件的MySQL的全局变量 _have_dynamic_loading_ 已经设置为YES(默认值就是YES)，否则无法动态加载插件。
 
 ```
 mysql> select @@global.have_dynamic_loading;
@@ -69,8 +65,7 @@ mysql> select @@global.have_dynamic_loading;
 +-------------------------------+
 ```
 
-3.1 MySQL中安装插件的方式
------------------
+## 3.1 MySQL中安装插件的方式
 
 安装插件有两种方式：1.在mysql环境中使用`INSTALL PLUGIN`语句临时安装；2.在配置文件中配置永久生效。
 
@@ -82,7 +77,7 @@ INSTALL PLUGIN plugin_name SONAME 'shared_library_name'
 UNINSTALL PLUGIN plugin_name
 ```
 
-例如，使用INSTALL语句在master上安装 _semisync\_master.so_ 插件。
+例如，使用INSTALL语句在master上安装 _semisync_master.so_ 插件。
 
 ```mysql
 mysql> install plugin rpl_semi_sync_master soname 'semisync_master.so';
@@ -158,10 +153,9 @@ rpl_semi_sync_master_enabled=1
 rpl_semi_sync_slave_enabled=1
 ```
 
-3.2 半同步插件相关的变量
---------------
+## 3.2 半同步插件相关的变量
 
-安装了 _semisync\_master.so_ 和 _semisync\_slave.so_ 后，这两个插件分别提供了几个变量。
+安装了 _semisync_master.so_ 和 _semisync_slave.so_ 后，这两个插件分别提供了几个变量。
 
 ```
 mysql> show global variables like "%semi%";
@@ -183,33 +177,32 @@ mysql> show global variables like "%semi%";
 
 1. master相关的变量：
 
-    * ①.`Rpl_semi_sync_master_clients`：(状态变量)master所拥有的半同步复制slave的主机数量。
+   - ①.`Rpl_semi_sync_master_clients`：(状态变量)master所拥有的半同步复制slave的主机数量。
 
-    * ②.`Rpl_semi_sync_master_status` ：(状态变量)master当前是否以半同步复制状态工作(ON)，OFF表示降级为了异步复制。
+   - ②.`Rpl_semi_sync_master_status` ：(状态变量)master当前是否以半同步复制状态工作(ON)，OFF表示降级为了异步复制。
 
-    * ③.`rpl_semi_sync_master_enabled`：master上是否启用了半同步复制。
+   - ③.`rpl_semi_sync_master_enabled`：master上是否启用了半同步复制。
 
-    * ④.`rpl_semi_sync_master_timeout`：等待slave的ack回复的超时时间，默认为10秒。
+   - ④.`rpl_semi_sync_master_timeout`：等待slave的ack回复的超时时间，默认为10秒。
 
-    * ⑤.`rpl_semi_sync_master_trace_level`：半同步复制时master的调试级别。
+   - ⑤.`rpl_semi_sync_master_trace_level`：半同步复制时master的调试级别。
 
-    * ⑥.`rpl_semi_sync_master_wait_for_slave_count`：master在超时时间内需要收到多少个ack回复才认为此次DML成功，否则就降级为异步复制。该变量在MySQL5.7.3才提供，在此之前的版本都默认为收到1个ack则确认成功，且不可更改。MySQL 5.7.3之后该变量的默认值也是1。
+   - ⑥.`rpl_semi_sync_master_wait_for_slave_count`：master在超时时间内需要收到多少个ack回复才认为此次DML成功，否则就降级为异步复制。该变量在MySQL5.7.3才提供，在此之前的版本都默认为收到1个ack则确认成功，且不可更改。MySQL 5.7.3之后该变量的默认值也是1。
 
-    * ⑦.`rpl_semi_sync_master_wait_no_slave`：值为ON(默认)或者OFF。ON表示master在超时时间内如果未收到指定数量的ack消息，则会一直等待下去直到收满ack，即一直采用半同步复制方式，不会降级；OFF表示如果在超时时间内未收到指定数量的ack，则超时时间一过立即降级为异步复制。
+   - ⑦.`rpl_semi_sync_master_wait_no_slave`：值为ON(默认)或者OFF。ON表示master在超时时间内如果未收到指定数量的ack消息，则会一直等待下去直到收满ack，即一直采用半同步复制方式，不会降级；OFF表示如果在超时时间内未收到指定数量的ack，则超时时间一过立即降级为异步复制。
 
-        更官方的解释是：当设置为ON时，即使状态变量Rpl\_semi\_sync\_master\_clients中的值小于rpl\_semi\_sync\_master\_wait\_for\_slave\_count，Rpl\_semi\_sync\_master\_status依旧为ON；当设置为OFF时，如果clients的值小于count的值，则Rpl\_semi\_sync\_master\_status立即变为OFF。通俗地讲，就是在超时时间内，如果slave宕机的数量超过了应该要收到的ack数量，master是否降级为异步复制。
+     更官方的解释是：当设置为ON时，即使状态变量Rpl_semi_sync_master_clients中的值小于rpl_semi_sync_master_wait_for_slave_count，Rpl_semi_sync_master_status依旧为ON；当设置为OFF时，如果clients的值小于count的值，则Rpl_semi_sync_master_status立即变为OFF。通俗地讲，就是在超时时间内，如果slave宕机的数量超过了应该要收到的ack数量，master是否降级为异步复制。
 
-        该变量在MySQL 5.7.3之前似乎没有效果，因为默认设置为ON时，超时时间内收不到任何ack时仍然会降级为异步复制。
+     该变量在MySQL 5.7.3之前似乎没有效果，因为默认设置为ON时，超时时间内收不到任何ack时仍然会降级为异步复制。
 
-    * ⑧.`rpl_semi_sync_master_wait_point`：控制master上commit、接收ack、返回消息给客户端的时间点。值为 _AFTER\_SYNC_ 和 _AFTER\_COMMIT_ ，该选项是MySQL5.7.2后引入的，默认值为 _AFTER\_SYNC_ ，在此版本之前，等价于使用了 _AFTER\_COMMIT_ 模式。关于这两种模式，见前文对两种半同步类型的分析。
+   - ⑧.`rpl_semi_sync_master_wait_point`：控制master上commit、接收ack、返回消息给客户端的时间点。值为 _AFTER_SYNC_ 和 _AFTER_COMMIT_ ，该选项是MySQL5.7.2后引入的，默认值为 _AFTER_SYNC_ ，在此版本之前，等价于使用了 _AFTER_COMMIT_ 模式。关于这两种模式，见前文对两种半同步类型的分析。
 
-2. slave相关的变量：
+1. slave相关的变量：
 
-    * ①.`rpl_semi_sync_slave_enabled`：slave是否开启半同步复制。
-    * ②.`rpl_semi_sync_slave_trace_level`：slave的调试级别。
+   - ①.`rpl_semi_sync_slave_enabled`：slave是否开启半同步复制。
+   - ②.`rpl_semi_sync_slave_trace_level`：slave的调试级别。
 
-4.配置半同步复制
-=========
+# 4.配置半同步复制
 
 需要注意的是，"半同步"是同步/异步类型的一种情况， **既可以实现半同步的传统复制，也可以实现半同步的GTID复制** 。其实半同步复制是基于异步复制的，它是在异步复制的基础上通过加载半同步插件的形式来实现半同步性的。
 
@@ -253,7 +246,7 @@ MySQL 5.7.22
 
 CentOS 7.2
 
-semi\_slave for master semi\_master for other slaves
+semi_slave for master semi_master for other slaves
 
 全新实例
 
@@ -265,7 +258,7 @@ MySQL 5.7.22
 
 CentOS 7.2
 
-semi\_slave for slave1
+semi_slave for slave1
 
 全新实例
 
@@ -277,14 +270,13 @@ MySQL 5.7.22
 
 CentOS 7.2
 
-semi\_slave for slave1
+semi_slave for slave1
 
 全新实例
 
 因为都是全新的实例环境，所以无需考虑基准数据和binlog坐标的问题。如果开始测试前，已经在master上做了一些操作，或者创建了一些新数据，那么请将master上的数据恢复到各slave上，并获取master binlog的坐标，具体操作方法可参见前文：将slave恢复到master指定的坐标。
 
-4.1 半同步复制的配置文件
---------------
+## 4.1 半同步复制的配置文件
 
 首先提供各MySQL Server的配置文件。
 
@@ -336,8 +328,7 @@ rpl_semi_sync_slave_enabled=1
 read-only=on
 ```
 
-4.2 启动复制线程
-----------
+## 4.2 启动复制线程
 
 现在master上创建一个专门用于复制的用户。
 
@@ -380,8 +371,7 @@ mysql> start slave;
 
 一切就绪后，剩下的事情就是测试。在master上对数据做一番修改，然后查看是否会同步到slave1、slave2、slave3上。
 
-5.半同步复制的状态信息
-============
+# 5.半同步复制的状态信息
 
 首先是semisync相关的可修改变量，这几个变量在[前文](https://www.cnblogs.com/f-ck-need-u/p/9166452.html#blog3.2)已经解释过了。
 
@@ -403,7 +393,7 @@ mysql> show global variables like "%semi%";
 
 关于半同步复制，还有几个状态变量很重要。
 
-例如，以下是master上关于semi\_sync的状态变量信息。
+例如，以下是master上关于semi_sync的状态变量信息。
 
 ```
 mysql> show status like "%semi%";
@@ -433,7 +423,7 @@ mysql> show status like "%semi%";
 
 `Rpl_semi_sync_master_status`是该master的半同步复制功能是否开启。在有些时候半同步复制会降级为异步复制，这时它的值为OFF。
 
-以下是slave1上关于semi\_sync的状态变量信息。
+以下是slave1上关于semi_sync的状态变量信息。
 
 ```
 mysql>  show status like "%semi%";
@@ -460,8 +450,7 @@ mysql>  show status like "%semi%";
 
 此外，从MySQL的错误日志、`show slave status`也能获取到一些半同步复制的状态信息。下一节测试半同步复制再说明。
 
-6.测试半同步复制(等待、降级问题)
-==================
+# 6.测试半同步复制(等待、降级问题)
 
 前面已经搭建好了下面的半同步复制结构。
 

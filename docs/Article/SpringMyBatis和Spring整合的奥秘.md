@@ -1,5 +1,4 @@
-Spring MyBatis和Spring整合的奥秘
-==========================
+# Spring MyBatis和Spring整合的奥秘
 
 _本篇博客源码分析基于Spring 5.1.16.RELEASE，mybatis-spring 2.0.0，较高版本的mybatis-spring源码有较大区别。_
 

@@ -1,5 +1,4 @@
-MySQL 故障诊断：教你快速定位加锁的 SQL
-========================
+# MySQL 故障诊断：教你快速定位加锁的 SQL
 
 ### 为什么会加锁
 
@@ -97,7 +96,7 @@ mysql> select * from information_schema.innodb_locks;
 
 结果显示有两个锁相关内容。
 
-**定位事务**```
+**定位事务**\`\`\`
 mysql> select trx_id,trx_started,trx_requested_lock_id,trx_query,trx_mysql_thread_id from information_schema.innodb_trx;
 +--------+---------------------+-----------------------+---------------------------+---------------------+
 | trx_id | trx_started         | trx_requested_lock_id | trx_query                 | trx_mysql_thread_id |
@@ -144,3 +143,4 @@ mysql> select * from performance_schema.events_statements_current where thread_i
 **总结**
 
 在 MySQL 数据库中出现了锁，不要着急，我们通过这个方法可以快速定位加锁的 SQL，你学会了吗？
+```

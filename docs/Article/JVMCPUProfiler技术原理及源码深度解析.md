@@ -1,12 +1,10 @@
-JVM CPU Profiler技术原理及源码深度解析
-===========================
+# JVM CPU Profiler技术原理及源码深度解析
 
 研发人员在遇到线上报警或需要优化系统性能时，常常需要分析程序运行行为和性能瓶颈。Profiling技术是一种在应用运行时收集程序相关信息的动态分析手段，常用的JVM Profiler可以从多个方面对程序进行动态分析，如CPU、Memory、Thread、Classes、GC等，其中CPU Profiling的应用最为广泛。CPU Profiling经常被用于分析代码的执行热点，如“哪个方法占用CPU的执行时间最长”、“每个方法占用CPU的比例是多少”等等，通过CPU Profiling得到上述相关信息后，研发人员就可以轻松针对热点瓶颈进行分析和性能优化，进而突破性能瓶颈，大幅提升系统的吞吐量。
 
 本文介绍了JVM平台上CPU Profiler的实现原理，希望能帮助读者在使用类似工具的同时也能清楚其内部的技术实现。
 
-CPU Profiler简介
---------------
+## CPU Profiler简介
 
 社区实现的JVM Profiler很多，比如已经商用且功能强大的[JProfiler](https://www.ej-technologies.com/products/jprofiler/overview.html)，也有免费开源的产品，如[JVM-Profiler](https://github.com/uber-common/jvm-profiler)，功能各有所长。我们日常使用的Intellij IDEA最新版内部也集成了一个简单好用的Profiler，详细的介绍参见[官方Blog](https://blog.jetbrains.com/idea/2018/09/intellij-idea-2018-3-eap-git-submodules-jvm-profiler-macos-and-linux-and-more/)。
 
@@ -24,8 +22,7 @@ Intellij IDEA - 调用堆栈树
 
 这里要说明一下，因为我们没有在项目中引入任何依赖，仅仅是“Run with Profiler”，Profiler就能获取我们程序运行时的信息。这个功能其实是通过JVM Agent实现的，为了更好地帮助大家系统性的了解它，我们在这里先对JVM Agent做个简单的介绍。
 
-JVM Agent简介
------------
+## JVM Agent简介
 
 JVM Agent是一个按一定规则编写的特殊程序库，可以在启动阶段通过命令行参数传递给JVM，作为一个伴生库与目标JVM运行在同一个进程中。在Agent中可以通过固定的接口获取JVM进程内的相关信息。Agent既可以是用C/C++/Rust编写的JVMTI Agent，也可以是用Java编写的Java Agent。
 
@@ -75,8 +72,7 @@ public static void premain(String args, Instrumentation ins) {
 
 更多Instrument API相关的细节可以参考[官方文档](https://docs.oracle.com/en/java/javase/12/docs/api/java.instrument/java/lang/instrument/package-summary.html)。
 
-CPU Profiler原理解析
-----------------
+## CPU Profiler原理解析
 
 在了解完Profiler如何以Agent的形式执行后，我们可以开始尝试构造一个简单的CPU Profiler。但在此之前，还有必要了解下CPU Profiling技术的两种实现方式及其区别。
 
@@ -87,8 +83,8 @@ CPU Profiler原理解析
 Sampling方式顾名思义，基于对StackTrace的“采样”进行实现，核心原理如下：
 
 1. 引入Profiler依赖，或直接利用Agent技术注入目标JVM进程并启动Profiler。
-2. 启动一个采样定时器，以固定的采样频率每隔一段时间（毫秒级）对所有线程的调用栈进行Dump。
-3. 汇总并统计每次调用栈的Dump结果，在一定时间内采到足够的样本后，导出统计结果，内容是每个方法被采样到的次数及方法的调用关系。
+1. 启动一个采样定时器，以固定的采样频率每隔一段时间（毫秒级）对所有线程的调用栈进行Dump。
+1. 汇总并统计每次调用栈的Dump结果，在一定时间内采到足够的样本后，导出统计结果，内容是每个方法被采样到的次数及方法的调用关系。
 
 Instrumentation则是利用Instrument API，对所有必要的Class进行字节码增强，在进入每个方法前进行埋点，方法执行结束后统计本次方法执行耗时，最终进行汇总。二者都能得到想要的结果，那么它们有什么区别呢？或者说，孰优孰劣？
 
@@ -139,7 +135,7 @@ JVM-Profiler的优点在于支持多种指标的Profiling（StackTrace、CPUBusy
 
 在更底层的C/C++层面，我们可以直接对接JVMTI接口，使用原生C API对JVM进行操作，功能更丰富更强大，但开发效率偏低。基于上节同样的原理开发CPU Profiler，使用JVMTI需要进行如下这些步骤：
 
-1.编写Agent\_OnLoad()，在入口通过JNI的JavaVM\*指针的GetEnv()函数拿到JVMTI的jvmtiEnv指针：
+1.编写Agent_OnLoad()，在入口通过JNI的JavaVM\*指针的GetEnv()函数拿到JVMTI的jvmtiEnv指针：
 
 ```c
 // agent.c
@@ -178,7 +174,7 @@ jvmtiError GetStackTrace(jvmtiEnv *env,
 基于Sampling的CPU Profiler通过采集程序在不同时间点的调用栈样本来近似地推算出热点方法，因此，从理论上来讲Sampling CPU Profiler必须遵循以下两个原则：
 
 1. 样本必须足够多。
-2. 程序中所有正在运行的代码点都必须以相同的概率被Profiler采样。
+1. 程序中所有正在运行的代码点都必须以相同的概率被Profiler采样。
 
 如果只能在安全点采样，就违背了第二条原则。因为我们只能采集到位于安全点时刻的调用栈快照，意味着某些代码可能永远没有机会被采样，即使它真实耗费了大量的CPU执行时间，这种现象被称为“SafePoint Bias”。
 
@@ -210,13 +206,13 @@ void AsyncGetCallTrace(AGCT_CallTrace *trace, jint depth, void *ucontext);
 
 通过原型可以看到，该函数的使用方式非常简洁，直接通过ucontext就能获取到完整的Java调用栈。
 
-顾名思义，AsyncGetCallTrace是“async”的，不受安全点影响，这样的话采样就可能发生在任何时间，包括Native代码执行期间、GC期间等，在这时我们是无法获取Java调用栈的，AGCT\_CallTrace的num\_frames字段正常情况下标识了获取到的调用栈深度，但在如前所述的异常情况下它就表示为负数，最常见的-2代表此刻正在GC。
+顾名思义，AsyncGetCallTrace是“async”的，不受安全点影响，这样的话采样就可能发生在任何时间，包括Native代码执行期间、GC期间等，在这时我们是无法获取Java调用栈的，AGCT_CallTrace的num_frames字段正常情况下标识了获取到的调用栈深度，但在如前所述的异常情况下它就表示为负数，最常见的-2代表此刻正在GC。
 
-由于AsyncGetCallTrace非标准JVMTI函数，因此我们无法在jvmti.h中找到该函数声明，且由于其目标文件也早已链接进JVM二进制文件中，所以无法通过简单的声明来获取该函数的地址，这需要通过一些Trick方式来解决。简单说，Agent最终是作为动态链接库加载到目标JVM进程的地址空间中，因此可以在Agent\_OnLoad内通过glibc提供的dlsym()函数拿到当前地址空间（即目标JVM进程地址空间）名为“AsyncGetCallTrace”的符号地址。这样就拿到了该函数的指针，按照上述原型进行类型转换后，就可以正常调用了。
+由于AsyncGetCallTrace非标准JVMTI函数，因此我们无法在jvmti.h中找到该函数声明，且由于其目标文件也早已链接进JVM二进制文件中，所以无法通过简单的声明来获取该函数的地址，这需要通过一些Trick方式来解决。简单说，Agent最终是作为动态链接库加载到目标JVM进程的地址空间中，因此可以在Agent_OnLoad内通过glibc提供的dlsym()函数拿到当前地址空间（即目标JVM进程地址空间）名为“AsyncGetCallTrace”的符号地址。这样就拿到了该函数的指针，按照上述原型进行类型转换后，就可以正常调用了。
 
 通过AsyncGetCallTrace实现CPU Profiler的大致流程：
 
-1.编写Agent\_OnLoad()，在入口拿到jvmtiEnv和AsyncGetCallTrace指针，获取AsyncGetCallTrace方式如下:
+1.编写Agent_OnLoad()，在入口拿到jvmtiEnv和AsyncGetCallTrace指针，获取AsyncGetCallTrace方式如下:
 
 ```
 typedef void (*AsyncGetCallTrace)(AGCT_CallTrace *traces, jint depth, void *ucontext);
@@ -274,7 +270,7 @@ setitimer(ITIMER_PROF, &tv, NULL);
 
 4.在Buffer中保存每一次的采样结果，最终生成必要的统计数据即可。
 
-按如上步骤即可实现基于AsyncGetCallTrace的CPU Profiler，这是社区中目前性能开销最低、相对效率最高的CPU Profiler实现方式，在Linux环境下结合perf\_events还能做到同时采样Java栈与Native栈，也就能同时分析Native代码中存在的性能热点。该方式的典型开源实现有[Async-Profiler](https://github.com/jvm-profiling-tools/async-profiler)和[Honest-Profiler](https://github.com/jvm-profiling-tools/honest-profiler)，Async-Profiler实现质量较高，感兴趣的话建议大家阅读参考文章。有趣的是，IntelliJ IDEA内置的Java Profiler，其实就是Async-Profiler的包装。更多关于AsyncGetCallTrace的内容，大家可以参考《[The Pros and Cons of AsyncGetCallTrace Profilers](https://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html)》。
+按如上步骤即可实现基于AsyncGetCallTrace的CPU Profiler，这是社区中目前性能开销最低、相对效率最高的CPU Profiler实现方式，在Linux环境下结合perf_events还能做到同时采样Java栈与Native栈，也就能同时分析Native代码中存在的性能热点。该方式的典型开源实现有[Async-Profiler](https://github.com/jvm-profiling-tools/async-profiler)和[Honest-Profiler](https://github.com/jvm-profiling-tools/honest-profiler)，Async-Profiler实现质量较高，感兴趣的话建议大家阅读参考文章。有趣的是，IntelliJ IDEA内置的Java Profiler，其实就是Async-Profiler的包装。更多关于AsyncGetCallTrace的内容，大家可以参考《[The Pros and Cons of AsyncGetCallTrace Profilers](https://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html)》。
 
 ### 生成性能火焰图
 
@@ -301,8 +297,7 @@ flamegraph.pl stacktraces.txt > stacktraces.svg
 
 通过flamegraph.pl生成的火焰图
 
-HotSpot的Dynamic Attach机制解析
---------------------------
+## HotSpot的Dynamic Attach机制解析
 
 到目前为止，我们已经了解了CPU Profiler完整的工作原理，然而使用过JProfiler/Arthas的同学可能会有疑问，很多情况下可以直接对线上运行中的服务进行Profling，并不需要在Java进程的启动参数添加Agent参数，这是通过什么手段做到的？答案是Dynamic Attach。
 
@@ -364,7 +359,7 @@ private void attachAgent(Configure configure) throws Exception {
 
 ### 直接对HotSpot进行Attach
 
-sun.tools封装的API足够简单易用，但只能使用Java编写，也只能用在Java Agent上，因此有些时候我们必须手工对JVM进程直接进行Attach。对于JVMTI，除了Agent\_OnLoad()之外，我们还需实现一个Agent\_OnAttach()函数，当将JVMTI Agent Attach到目标进程时，从该函数开始执行：
+sun.tools封装的API足够简单易用，但只能使用Java编写，也只能用在Java Agent上，因此有些时候我们必须手工对JVM进程直接进行Attach。对于JVMTI，除了Agent_OnLoad()之外，我们还需实现一个Agent_OnAttach()函数，当将JVMTI Agent Attach到目标进程时，从该函数开始执行：
 
 ```
 // $JAVA_HOME/include/jvmti.h
@@ -388,7 +383,7 @@ Args:
 jattach 1234 load /absolute/path/to/agent/libagent.so true
 ```
 
-执行上述命令，libagent.so就被加载到ID为1234的JVM进程中并开始执行Agent\_OnAttach函数了。有一点需要注意，执行Attach的进程euid及egid，与被Attach的目标JVM进程必须相同。接下来开始分析jattach源码。
+执行上述命令，libagent.so就被加载到ID为1234的JVM进程中并开始执行Agent_OnAttach函数了。有一点需要注意，执行Attach的进程euid及egid，与被Attach的目标JVM进程必须相同。接下来开始分析jattach源码。
 
 如下所示的Main函数描述了一次Attach的整体流程：
 
@@ -421,7 +416,7 @@ int main(int argc, char** argv) {
 }
 ```
 
-忽略掉命令行参数解析与检查euid和egid的过程。jattach首先调用了check\_socket函数进行了“socket检查？”，check\_socket源码如下：
+忽略掉命令行参数解析与检查euid和egid的过程。jattach首先调用了check_socket函数进行了“socket检查？”，check_socket源码如下：
 
 ```
 // async-profiler/src/jattach/jattach.c
@@ -434,15 +429,15 @@ static int check_socket(int pid) {
 }
 ```
 
-我们知道，UNIX操作系统提供了一种基于文件的Socket接口，称为“UNIX Socket”（一种常用的进程间通信方式）。在该函数中使用S\_ISSOCK宏来判断该文件是否被绑定到了UNIX Socket，如此看来，“/tmp/.java\_pid”文件很有可能就是外部进程与JVM进程间通信的桥梁。
+我们知道，UNIX操作系统提供了一种基于文件的Socket接口，称为“UNIX Socket”（一种常用的进程间通信方式）。在该函数中使用S_ISSOCK宏来判断该文件是否被绑定到了UNIX Socket，如此看来，“/tmp/.java_pid”文件很有可能就是外部进程与JVM进程间通信的桥梁。
 
 查阅官方文档，得到如下描述：
 
 > The attach listener thread then communicates with the source JVM in an OS dependent manner: - On Solaris, the Doors IPC mechanism is used. The door is attached to a file in the file system so that clients can access it. - On Linux, a Unix domain socket is used. This socket is bound to a file in the filesystem so that clients can access it. - On Windows, the created thread is given the name of a pipe which is served by the client. The result of the operations are written to this pipe by the target JVM.
 
-证明了我们的猜想是正确的。目前为止check\_socket函数的作用很容易理解了：判断外部进程与目标JVM进程之间是否已经建立了UNIX Socket连接。
+证明了我们的猜想是正确的。目前为止check_socket函数的作用很容易理解了：判断外部进程与目标JVM进程之间是否已经建立了UNIX Socket连接。
 
-回到Main函数，在使用check\_socket确定连接尚未建立后，紧接着调用start\_attach\_mechanism函数，函数名很直观地描述了它的作用，源码如下：
+回到Main函数，在使用check_socket确定连接尚未建立后，紧接着调用start_attach_mechanism函数，函数名很直观地描述了它的作用，源码如下：
 
 ```
 // async-profiler/src/jattach/jattach.c
@@ -475,17 +470,17 @@ static int start_attach_mechanism(int pid, int nspid) {
 }
 ```
 
-start\_attach\_mechanism函数首先创建了一个名为“/tmp/.attach\_pid”的空文件，然后向目标JVM进程发送了一个SIGQUIT信号，这个信号似乎触发了JVM的某种机制？紧接着，start\_attach\_mechanism函数开始陷入了一种等待，每20ms调用一次check\_socket函数检查连接是否被建立，如果等了300ms还没有成功就放弃。函数的最后调用Unlink删掉.attach\_pid文件并返回。
+start_attach_mechanism函数首先创建了一个名为“/tmp/.attach_pid”的空文件，然后向目标JVM进程发送了一个SIGQUIT信号，这个信号似乎触发了JVM的某种机制？紧接着，start_attach_mechanism函数开始陷入了一种等待，每20ms调用一次check_socket函数检查连接是否被建立，如果等了300ms还没有成功就放弃。函数的最后调用Unlink删掉.attach_pid文件并返回。
 
-如此看来，HotSpot似乎提供了一种特殊的机制，只要给它发送一个SIGQUIT信号，并预先准备好.attach\_pid文件，HotSpot会主动创建一个地址为“/tmp/.java\_pid”的UNIX Socket，接下来主动Connect这个地址即可建立连接执行命令。
+如此看来，HotSpot似乎提供了一种特殊的机制，只要给它发送一个SIGQUIT信号，并预先准备好.attach_pid文件，HotSpot会主动创建一个地址为“/tmp/.java_pid”的UNIX Socket，接下来主动Connect这个地址即可建立连接执行命令。
 
 查阅文档，得到如下描述：
 
-> Dynamic attach has an attach listener thread in the target JVM. This is a thread that is started when the first attach request occurs. On Linux and Solaris, the client creates a file named .attach\_pid(pid) and sends a SIGQUIT to the target JVM process. The existence of this file causes the SIGQUIT handler in HotSpot to start the attach listener thread. On Windows, the client uses the Win32 CreateRemoteThread function to create a new thread in the target process.
+> Dynamic attach has an attach listener thread in the target JVM. This is a thread that is started when the first attach request occurs. On Linux and Solaris, the client creates a file named .attach_pid(pid) and sends a SIGQUIT to the target JVM process. The existence of this file causes the SIGQUIT handler in HotSpot to start the attach listener thread. On Windows, the client uses the Win32 CreateRemoteThread function to create a new thread in the target process.
 
-这样一来就很明确了，在Linux上我们只需创建一个“/tmp/.attach\_pid”文件，并向目标JVM进程发送一个SIGQUIT信号，HotSpot就会开始监听“/tmp/.java\_pid”地址上的UNIX Socket，接收并执行相关Attach的命令。至于为什么一定要创建.attach\_pid文件才可以触发Attach Listener的创建，经查阅资料，我们得到了两种说法：一是JVM不止接收从外部Attach进程发送的SIGQUIT信号，必须配合外部进程创建的外部文件才能确定这是一次Attach请求；二是为了安全。
+这样一来就很明确了，在Linux上我们只需创建一个“/tmp/.attach_pid”文件，并向目标JVM进程发送一个SIGQUIT信号，HotSpot就会开始监听“/tmp/.java_pid”地址上的UNIX Socket，接收并执行相关Attach的命令。至于为什么一定要创建.attach_pid文件才可以触发Attach Listener的创建，经查阅资料，我们得到了两种说法：一是JVM不止接收从外部Attach进程发送的SIGQUIT信号，必须配合外部进程创建的外部文件才能确定这是一次Attach请求；二是为了安全。
 
-继续看jattach的源码，果不其然，它调用了connect\_socket函数对“/tmp/.java\_pid”进行连接，connect\_socket源码如下：
+继续看jattach的源码，果不其然，它调用了connect_socket函数对“/tmp/.java_pid”进行连接，connect_socket源码如下：
 
 ```
 // async-profiler/src/jattach/jattach.c
@@ -508,7 +503,7 @@ static int connect_socket(int pid) {
 
 一个很普通的Socket创建函数，返回Socket文件描述符。
 
-回到Main函数，主流程紧接着调用write\_command函数向该Socket写入了从命令行传进来的参数，并且调用read\_response函数接收从目标JVM进程返回的数据。两个很常见的Socket读写函数，源码如下：
+回到Main函数，主流程紧接着调用write_command函数向该Socket写入了从命令行传进来的参数，并且调用read_response函数接收从目标JVM进程返回的数据。两个很常见的Socket读写函数，源码如下：
 
 ```
 // async-profiler/src/jattach/jattach.c
@@ -546,7 +541,7 @@ static int read_response(int fd) {
 }
 ```
 
-浏览write\_command函数就可知外部进程与目标JVM进程之间发送的数据格式相当简单，基本如下所示：
+浏览write_command函数就可知外部进程与目标JVM进程之间发送的数据格式相当简单，基本如下所示：
 
 ```
 <PROTOCOL VERSION>\0<COMMAND>\0<ARG1>\0<ARG2>\0<ARG3>\0
@@ -582,18 +577,16 @@ static AttachOperationFunctionInfo funcs[] = {
 
 读者可以尝试下threaddump命令，然后对相同的进程进行jstack，对比观察输出，其实是完全相同的，其它命令大家可以自行进行探索。
 
-总结
---
+## 总结
 
 总的来说，善用各类Profiler是提升性能优化效率的一把利器，了解Profiler本身的实现原理更能帮助我们避免对工具的各种误用。CPU Profiler所依赖的Attach、JVMTI、Instrumentation、JMX等皆是JVM平台比较通用的技术，在此基础上，我们去实现Memory Profiler、Thread Profiler、GC Analyzer等工具也没有想象中那么神秘和复杂了。
 
-参考资料
-----
+## 参考资料
 
-* [JVM Tool Interface](https://docs.oracle.com/en/java/javase/12/docs/specs/jvmti.html)
-* [The Pros and Cons of AsyncGetCallTrace Profilers](https://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html)
-* [Why (Most) Sampling Java Profilers Are Fucking Terrible](https://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html)
-* [Safepoints: Meaning, Side Effects and Overheads](https://psy-lob-saw.blogspot.com/2015/12/safepoints.html)
-* [Serviceability in HotSpot](https://openjdk.java.net/groups/hotspot/docs/Serviceability.html)
-* [如何读懂火焰图？](https://www.ruanyifeng.com/blog/2017/09/flame-graph.html)
-* [IntelliJ IDEA 2018.3 EAP: Git Submodules, JVM Profiler (macOS and Linux) and more](https://blog.jetbrains.com/idea/2018/09/intellij-idea-2018-3-eap-git-submodules-jvm-profiler-macos-and-linux-and-more/)
+- [JVM Tool Interface](https://docs.oracle.com/en/java/javase/12/docs/specs/jvmti.html)
+- [The Pros and Cons of AsyncGetCallTrace Profilers](https://psy-lob-saw.blogspot.com/2016/06/the-pros-and-cons-of-agct.html)
+- [Why (Most) Sampling Java Profilers Are Fucking Terrible](https://psy-lob-saw.blogspot.com/2016/02/why-most-sampling-java-profilers-are.html)
+- [Safepoints: Meaning, Side Effects and Overheads](https://psy-lob-saw.blogspot.com/2015/12/safepoints.html)
+- [Serviceability in HotSpot](https://openjdk.java.net/groups/hotspot/docs/Serviceability.html)
+- [如何读懂火焰图？](https://www.ruanyifeng.com/blog/2017/09/flame-graph.html)
+- [IntelliJ IDEA 2018.3 EAP: Git Submodules, JVM Profiler (macOS and Linux) and more](https://blog.jetbrains.com/idea/2018/09/intellij-idea-2018-3-eap-git-submodules-jvm-profiler-macos-and-linux-and-more/)

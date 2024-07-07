@@ -1,5 +1,4 @@
-MySQL 故障诊断：一个 ALTER TALBE 执行了很久，你慌不慌？
-=====================================
+# MySQL 故障诊断：一个 ALTER TALBE 执行了很久，你慌不慌？
 
 ### 先了解下 MySQL 数据字典
 
@@ -9,11 +8,11 @@ MySQL 故障诊断：一个 ALTER TALBE 执行了很久，你慌不慌？
 
 数据字典我们用一句话来概括，就是数据的数据，用于查询数据库中数据的信息内容。
 
-MySQL 在 5.7 开始，对数据字典的使用有了很大的改进，使用上更加的方便，提供的能力也更高。performance\_schema 可以查询事务信息、获取元数据锁、跟踪事件、统计内存使用情况等等。
+MySQL 在 5.7 开始，对数据字典的使用有了很大的改进，使用上更加的方便，提供的能力也更高。performance_schema 可以查询事务信息、获取元数据锁、跟踪事件、统计内存使用情况等等。
 
 到这里你是不是发现了什么？
 
-performance\_schema 这个是什么，是不是用它来让我们解除慌张？
+performance_schema 这个是什么，是不是用它来让我们解除慌张？
 
 有关 MySQL 数据字典，可以看我的另外一个 Chat：
 
@@ -29,18 +28,20 @@ performance\_schema 这个是什么，是不是用它来让我们解除慌张？
 >
 > You can monitor ALTER TABLE progress for InnoDB tables using Performance Schema.
 >
-> There are seven stage events that represent different phases of ALTER TABLE. Each stage event reports a running total of WOR\_COMPLETED and WORK\_ESTIMATED for the overall ALTER TABLE operation as it progresses through its different phases. WORK\_ESTIMATED is calculated using a formula that takes into account all of the work that ALTER TABLE performs, and may be revised during ALTER TABLE processing. WORK\_COMPLETED and WORK\_ESTIMATED values are an abstract representation of all of the work performed by ALTER TABLE.
+> There are seven stage events that represent different phases of ALTER TABLE. Each stage event reports a running total of WOR_COMPLETED and WORK_ESTIMATED for the overall ALTER TABLE operation as it progresses through its different phases. WORK_ESTIMATED is calculated using a formula that takes into account all of the work that ALTER TABLE performs, and may be revised during ALTER TABLE processing. WORK_COMPLETED and WORK_ESTIMATED values are an abstract representation of all of the work performed by ALTER TABLE.
 
 大意就是我们可以在 Performance Schema 看到 ALTER TABLE 的进度，包括执行的时间，大概剩余的时间。
 
 想要使用这个能力，我们需要开启几个功能。
 
-**Enable the stage/innodb/alter% instruments**```
+**Enable the stage/innodb/alter% instruments**\`\`\`
 mysql> UPDATE performance_schema.setup_instruments
 
-    ->        SET ENABLED = 'YES'
+```
+->        SET ENABLED = 'YES'
 
-    ->        WHERE NAME LIKE 'stage/innodb/alter%';
+->        WHERE NAME LIKE 'stage/innodb/alter%';
+```
 
 Query OK, 0 rows affected (0.01 sec)
 
@@ -52,27 +53,33 @@ Rows matched: 7  Changed: 0  Warnings: 0
 
 mysql> UPDATE performance_schema.setup_consumers
 
-    ->        SET ENABLED = 'YES'
+```
+->        SET ENABLED = 'YES'
 
-    ->        WHERE NAME ='events_stages_current';
+->        WHERE NAME ='events_stages_current';
+```
 
 Query OK, 1 row affected (0.00 sec)
 
 Rows matched: 1  Changed: 1  Warnings: 0
 mysql> UPDATE performance_schema.setup_consumers
 
-    ->        SET ENABLED = 'YES'
+```
+->        SET ENABLED = 'YES'
 
-    ->        WHERE NAME ='events_stages_history';
+->        WHERE NAME ='events_stages_history';
+```
 
 Query OK, 1 row affected (0.01 sec)
 
 Rows matched: 1  Changed: 1  Warnings: 0
 mysql> UPDATE performance_schema.setup_consumers
 
-    ->        SET ENABLED = 'YES'
+```
+->        SET ENABLED = 'YES'
 
-    ->        WHERE NAME ='events_stages_history_long';
+->        WHERE NAME ='events_stages_history_long';
+```
 
 Query OK, 1 row affected (0.00 sec)
 
@@ -114,11 +121,11 @@ mysql> desc sbtest.sbtest1;
 
 ```
 
-mysql> select count(*) from  sbtest.sbtest1;
+mysql> select count(\*) from  sbtest.sbtest1;
 
 +----------+
 
-| count(*) |
+| count(\*) |
 
 +----------+
 
@@ -142,61 +149,65 @@ mysql> alter table sbtest.sbtest1 add d char(20);
 
 ```
 
-mysql> select * from performance_schema.events_stages_current\G;
+mysql> select * from performance_schema.events_stages_current\\G;
 
 ***************************1. row***************************
 
-         THREAD_ID: 28
+```
+     THREAD_ID: 28
 
-          EVENT_ID: 14
+      EVENT_ID: 14
 
-      END_EVENT_ID: NULL
+  END_EVENT_ID: NULL
 
-        EVENT_NAME: stage/innodb/alter table (read PK and internal sort)
+    EVENT_NAME: stage/innodb/alter table (read PK and internal sort)
 
-            SOURCE: 
+        SOURCE: 
 
-       TIMER_START: 159726265417733000
+   TIMER_START: 159726265417733000
 
-         TIMER_END: 159819571346680000
+     TIMER_END: 159819571346680000
 
-        TIMER_WAIT: 93305928947000
+    TIMER_WAIT: 93305928947000
 
-    WORK_COMPLETED: 118256
+WORK_COMPLETED: 118256
 
-    WORK_ESTIMATED: 302958
+WORK_ESTIMATED: 302958
+```
 
-  NESTING_EVENT_ID: 13
+NESTING_EVENT_ID: 13
 
 NESTING_EVENT_TYPE: STATEMENT
 
 1 row in set (0.00 sec)
 ......
-mysql> select * from performance_schema.events_stages_current\G;
+mysql> select * from performance_schema.events_stages_current\\G;
 
 ***************************1. row***************************
 
-         THREAD_ID: 28
+```
+     THREAD_ID: 28
 
-          EVENT_ID: 14
+      EVENT_ID: 14
 
-      END_EVENT_ID: NULL
+  END_EVENT_ID: NULL
 
-        EVENT_NAME: stage/innodb/alter table (read PK and internal sort)
+    EVENT_NAME: stage/innodb/alter table (read PK and internal sort)
 
-            SOURCE: 
+        SOURCE: 
 
-       TIMER_START: 159726265417733000
+   TIMER_START: 159726265417733000
 
-         TIMER_END: 159910492100061000
+     TIMER_END: 159910492100061000
 
-        TIMER_WAIT: 184226682328000
+    TIMER_WAIT: 184226682328000
 
-    WORK_COMPLETED: 230688
+WORK_COMPLETED: 230688
 
-    WORK_ESTIMATED: 302958
+WORK_ESTIMATED: 302958
+```
 
-  NESTING_EVENT_ID: 13
+NESTING_EVENT_ID: 13
 
 NESTING_EVENT_TYPE: STATEMENT
 
@@ -264,3 +275,4 @@ mysql> select stmt.sql_text as sql_text, concat(work_completed, '/' , work_estim
 ### 总结
 
 这样我们通过 MySQL 的这个数据字典就可以很直观地看到 ALTER 的执行情况了，当你看到这样的执行进度，是不是就不那么慌了。
+```

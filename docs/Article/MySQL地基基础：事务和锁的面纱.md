@@ -866,7 +866,7 @@ RECORD LOCKS space id 37 page no 4 n bits 72 index no of table `test`.`t_insert`
 Record lock, heap no 2 PHYSICAL RECORD: n_fields 2; compact format; info bits 0
 0: len 5; hex 8000000065; asc     e;;
 1: len 5; hex 8000000001; asc      ;;
-\*\*\* (2) WAITING FOR THIS LOCK TO BE GRANTED:
+**\* (2) WAITING FOR THIS LOCK TO BE GRANTED:
 RECORD LOCKS space id 37 page no 4 n bits 72 index no of table `test`.`t_insert` trx id 2178 lock_mode X locks gap before rec insert intention waiting
 Record lock, heap no 2 PHYSICAL RECORD: n_fields 2; compact format; info bits 0
 0: len 5; hex 8000000065; asc     e;;

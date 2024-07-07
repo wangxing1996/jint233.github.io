@@ -1673,8 +1673,8 @@ Spring MVC 的初始化及请求分发处理请求的流程总结：
 
 - DispatcherServlet#processDispatchResult() 方法处理请求响应结果并渲染页面。（封装 response、响应状态码、渲染视图）
 
-  \*\*
+  **
 
-\*\*
+**
 
-\*\*
+**

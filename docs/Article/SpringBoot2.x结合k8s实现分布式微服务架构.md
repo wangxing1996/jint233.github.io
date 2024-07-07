@@ -615,7 +615,7 @@ typeAliasesPackage: com.damon.\*.model
 接下来看下启动类：
 ```
 
-/\*\*
+/**
 
 -
 
@@ -652,7 +652,7 @@ public static void main(String[] args) {
 我们看到启动类中有一个引入的 EnvConfig.class：
 ```
 
-/\*\*
+/**
 
 - @author Damon
 
@@ -1205,7 +1205,7 @@ coreSize: 5
 接下来看启动类：
 
 ```
-/\*\*
+/**
 - @author Damon
 - @date 2020 年 1 月 13 日 下午 9:23:06
 -

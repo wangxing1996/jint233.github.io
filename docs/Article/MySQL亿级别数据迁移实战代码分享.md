@@ -146,7 +146,7 @@ public class DataSourceConfig {
 
 此处我们使用多数据源的配置，并且使用 JdbcTemplate 进行数据的读取。
 主数据源中配置 Spring Batch 的数据库文件（如果不在意迁移的情况记录可以使用内存数据库，存储 Spring Batch 的迁移记录情况，这样能提高迁移性能，但是实际中不建议做，迁移性能的大幅提升会影响线上的业务正常运行，除非迁移有及时性这种需求再开启内存数据源）。
-\*\*如何定制 Spring Batch 的框架使用的数据源？\*\*从源码中找到：
+**如何定制 Spring Batch 的框架使用的数据源？**从源码中找到：
 
 ```java
 public class BatchConfig extends DefaultBatchConfigurer
@@ -167,7 +167,7 @@ protected JobRepository createJobRepository() throws Exception {
 ```** 3\. 读取的配置**
 ```
 
-/\*\*
+/**
 
 - 数据读取 根据id 查询保证性能 分页读取
   */

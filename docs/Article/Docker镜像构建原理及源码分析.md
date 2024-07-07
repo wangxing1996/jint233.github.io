@@ -181,7 +181,7 @@ func BuildKitEnabled(si ServerInfo) (bool, error) {
 
 当然你也可能会想，从技术上来讲，压缩和流式没有什么必然的冲突，是可实现的。事实的确如此，如果从技术的角度上来讲两者并非完全不能一起存在，无非就是增加解压缩的动作。但是当开启 `stream` 模式，对每个文件都进行压缩和解压的操作那将会是很大的资源浪费，同时也增加了其复杂度，所以在 CLI 中便直接进行了限制，不允许同时使用 `compress` 和 `stream`
 
-- \*\*不可同时使用 stdin 读取 Dockerfile 和 build context。\*\*在进行构建时，如果我们将 `Dockerfile` 的名字传递为 `-` 时，表示从 `stdin` 读取其内容。
+- **不可同时使用 stdin 读取 Dockerfile 和 build context。**在进行构建时，如果我们将 `Dockerfile` 的名字传递为 `-` 时，表示从 `stdin` 读取其内容。
 
 例如，某个目录下有三个文件 `foo` `bar` 和 `Dockerfile`，通过管道将 `Dockerfile` 的内容通过 `stdin` 传递给 `docker build`
 

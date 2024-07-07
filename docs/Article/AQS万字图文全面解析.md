@@ -1,6 +1,6 @@
 # AQS 万字图文全面解析
 
-### 前言
+## 前言
 
 谈到并发，我们不得不说`AQS(AbstractQueuedSynchronizer)`，所谓的`AQS`即是抽象的队列式的同步器，内部定义了很多锁相关的方法，我们熟知的`ReentrantLock`、`ReentrantReadWriteLock`、`CountDownLatch`、`Semaphore`等都是基于`AQS`来实现的。
 
@@ -12,7 +12,7 @@
 
 ![image.png](assets/aHR0cHM6Ly91c2VyLWdvbGQtY2RuLnhpdHUuaW8vMjAyMC81LzIvMTcxZDJkNDJjNWQ2OTMzOA.jfif)
 
-### AQS 实现原理
+## AQS 实现原理
 
 `AQS`中 维护了一个`volatile int state`（代表共享资源）和一个`FIFO`线程等待队列（多线程争用资源被阻塞时会进入此队列）。
 
@@ -33,7 +33,7 @@
 
 这里还有一些方法并没有列出来，接下来我们以`ReentrantLock`作为突破点通过源码和画图的形式一步步了解`AQS`内部实现原理。
 
-### 目录结构
+## 目录结构
 
 文章准备模拟多线程竞争锁、释放锁的场景来进行分析`AQS`源码：
 
@@ -47,9 +47,9 @@
 
 这里会通过画图来分析每个线程加锁、释放锁后`AQS`内部的数据结构和实现原理
 
-### 场景分析
+## 场景分析
 
-#### 线程一加锁成功
+### 线程一加锁成功
 
 如果同时有 **三个线程** 并发抢占锁，此时 **线程一** 抢占锁成功， **线程二** 和**线程三**抢占锁失败，具体执行流程如下：
 
@@ -65,7 +65,7 @@
 
 具体看下抢占锁代码实现：
 
-```
+```java
 java.util.concurrent.locks.ReentrantLock .NonfairSync:
 static final class NonfairSync extends Sync {
     final void lock() {
@@ -82,7 +82,7 @@ static final class NonfairSync extends Sync {
 
 这里使用的**ReentrantLock 非公平锁**，线程进来直接利用`CAS`尝试抢占锁，如果抢占成功`state`值回被改为 1，且设置对象独占锁线程为当前线程。如下所示：
 
-```
+```java
 protected final boolean compareAndSetState(int expect, int update) {
     return unsafe.compareAndSwapInt(this, stateOffset, expect, update);
 }
@@ -91,7 +91,7 @@ protected final void setExclusiveOwnerThread(Thread thread) {
 }
 ```
 
-#### 线程二抢占锁失败
+### 线程二抢占锁失败
 
 我们按照真实场景来分析，**线程一 **抢占锁成功后，`state`变为 1，** 线程二**通过`CAS`修改`state`变量必然会失败。此时`AQS`中`FIFO`(First In First Out 先进先出)队列中数据如图所示：
 
@@ -101,7 +101,7 @@ protected final void setExclusiveOwnerThread(Thread thread) {
 
 `java.util.concurrent.locks.AbstractQueuedSynchronizer.acquire()`:
 
-```
+```java
 public final void acquire(int arg) {
     if (!tryAcquire(arg) &&
         acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
@@ -111,7 +111,7 @@ public final void acquire(int arg) {
 
 先看看`tryAcquire()`的具体实现： `java.util.concurrent.locks.ReentrantLock .nonfairTryAcquire()`:
 
-```
+```java
 final boolean nonfairTryAcquire(int acquires) {
     final Thread current = Thread.currentThread();
     int c = getState();
@@ -140,7 +140,7 @@ final boolean nonfairTryAcquire(int acquires) {
 
 `java.util.concurrent.locks.AbstractQueuedSynchronizer.addWaiter()`:
 
-```
+```java
 private Node addWaiter(Node mode) {    
     Node node = new Node(Thread.currentThread(), mode);
     Node pred = tail;
@@ -158,7 +158,7 @@ private Node addWaiter(Node mode) {
 
 这段代码首先会创建一个和当前线程绑定的`Node`节点，`Node`为双向链表。此时等待对内中的`tail`指针为空，直接调用`enq(node)`方法将当前线程加入等待队列尾部：
 
-```
+```java
 private Node enq(final Node node) {
     for (;;) {
         Node t = tail;
@@ -190,7 +190,7 @@ private Node enq(final Node node) {
 
 `java.util.concurrent.locks.AbstractQueuedSynchronizer.acquireQueued()`:
 
-```
+```java
 final boolean acquireQueued(final Node node, int arg) {
     boolean failed = true;
     try {
@@ -242,11 +242,11 @@ private final boolean parkAndCheckInterrupt() {
 
 此时**线程二**就静静的待在`AQS`的等待队列里面了，等着其他线程释放锁来唤醒它。
 
-#### 线程三抢占锁失败
+### 线程三抢占锁失败
 
 看完了**线程二 **抢占锁失败的分析，那么再来分析** 线程三**抢占锁失败就很简单了，先看看`addWaiter(Node mode)`方法：
 
-```
+```java
 private Node addWaiter(Node mode) {
     Node node = new Node(Thread.currentThread(), mode);
     Node pred = tail;
@@ -266,7 +266,7 @@ private Node addWaiter(Node mode) {
 
 ![image.png](assets/aHR0cHM6Ly91c2VyLWdvbGQtY2RuLnhpdHUuaW8vMjAyMC81LzIvMTcxZDJkNDJjOGU1ZTI2OA-1590419214352.jfif)
 
-#### 线程一释放锁
+### 线程一释放锁
 
 现在来分析下释放锁的过程，首先是**线程一 **释放锁，释放锁后会唤醒`head`节点的后置节点，也就是我们现在的** 线程二**，具体操作流程如下：
 
@@ -282,7 +282,7 @@ private Node addWaiter(Node mode) {
 
 接着还是一步步拆解来看，先看看**线程一**释放锁的代码：
 
-```
+```java
 java.util.concurrent.locks.AbstractQueuedSynchronizer.release()
 public final boolean release(int arg) {
     if (tryRelease(arg)) {
@@ -299,7 +299,7 @@ public final boolean release(int arg) {
 
 此时看`ReentrantLock.tryRelease()`中的具体实现：
 
-```
+```java
 protected final boolean tryRelease(int releases) {
     int c = getState() - releases;
     if (Thread.currentThread() != getExclusiveOwnerThread())
@@ -320,7 +320,7 @@ protected final boolean tryRelease(int releases) {
 
 接着执行`java.util.concurrent.locks.AbstractQueuedSynchronizer.unparkSuccessor()`方法，唤醒`head`的后置节点：
 
-```
+```java
 private void unparkSuccessor(Node node) {
     int ws = node.waitStatus;
     if (ws < 0)
@@ -347,9 +347,9 @@ private void unparkSuccessor(Node node) {
 
 此时**线程二 **被唤醒，** 线程二**接着之前被`park`的地方继续执行，继续执行`acquireQueued()`方法。
 
-#### 线程二唤醒继续加锁
+### 线程二唤醒继续加锁
 
-```
+```java
 final boolean acquireQueued(final Node node, int arg) {
     boolean failed = true;
     try {
@@ -381,7 +381,7 @@ final boolean acquireQueued(final Node node, int arg) {
 
 等待队列中的数据都等待着被垃圾回收。
 
-#### 线程二释放锁/线程三加锁
+### 线程二释放锁/线程三加锁
 
 当**线程二 **释放锁时，会唤醒被挂起的** 线程三 **，流程和上面大致相同，被唤醒的** 线程三**会再次尝试加锁，具体代码可以参考上面内容。具体流程图如下：
 
@@ -409,7 +409,7 @@ final boolean acquireQueued(final Node node, int arg) {
 
 `#java.util.concurrent.locks.AbstractQueuedSynchronizer.acquire()`:
 
-```
+```java
 public final void acquire(int arg) {
     if (!tryAcquire(arg) &&
         acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
@@ -421,7 +421,7 @@ public final void acquire(int arg) {
 
 `#java.util.concurrent.locks.ReentrantLock.FairSync.tryAcquire()`:
 
-```
+```java
 static final class FairSync extends Sync {
     protected final boolean tryAcquire(int acquires) {
         final Thread current = Thread.currentThread();
@@ -451,7 +451,7 @@ static final class FairSync extends Sync {
 
 `#java.util.concurrent.locks.AbstractQueuedSynchronizer.hasQueuedPredecessors()`:
 
-```
+```java
 public final boolean hasQueuedPredecessors() {
     Node t = tail;
     Node h = head;
@@ -475,23 +475,23 @@ public final boolean hasQueuedPredecessors() {
 
 如果`head.next`不为空，那么接着判断`head.next`节点是否为当前线程，如果不是则返回 false。大家要记清楚，返回 false 代表 FIFO 队列中没有等待获取锁的节点，此时线程可以直接尝试获取锁，如果返回 true 代表有等待线程，当前线程如要入队排列，这就是体现**公平锁 **的地方。** 非公平锁 **和** 公平锁 **的区别：** 非公平锁 **性能高于** 公平锁 **性能。** 非公平锁 **可以减少`CPU`唤醒线程的开销，整体的吞吐效率会高点，`CPU`也不必取唤醒所有线程，会减少唤起线程的数量** 非公平锁 **性能虽然优于** 公平锁 **，但是会存在导致** 线程饥饿 **的情况。在最坏的情况下，可能存在某个线程** 一直获取不到锁**。不过相比性能而言，饥饿问题可以暂时忽略，这可能就是`ReentrantLock`默认创建非公平锁的原因之一了。
 
-### Condition 实现原理
+## Condition 实现原理
 
-#### Condition 简介
+### Condition 简介
 
 上面已经介绍了`AQS`所提供的核心功能，当然它还有很多其他的特性，这里我们来继续说下`Condition`这个组件。
 
-```
+```java
 Condition`是在`java 1.5`中才出现的，它用来替代传统的`Object`的`wait()`、`notify()`实现线程间的协作，相比使用`Object`的`wait()`、`notify()`，使用`Condition`中的`await()`、`signal()`这种方式实现线程间协作更加安全和高效。因此通常来说比较推荐使用`Condition
 ```
 
 其中`AbstractQueueSynchronizer`中实现了`Condition`中的方法，主要对外提供`awaite(Object.wait())`和`signal(Object.notify())`调用。
 
-#### Condition Demo 示例
+### Condition Demo 示例
 
 使用示例代码：
 
-```
+```java
 /**
  * ReentrantLock 实现源码学习
  * @author 一枝花算不算浪漫
@@ -536,7 +536,7 @@ public class ReentrantLockDemo {
 
 这里 **线程一** 先获取锁，然后使用`await()`方法挂起当前线程并 **释放锁** ，**线程二 **获取锁后使用`signal`唤醒** 线程一**。
 
-#### Condition 实现原理图解
+### Condition 实现原理图解
 
 我们还是用上面的`demo`作为实例，执行的流程如下：
 
@@ -544,7 +544,7 @@ public class ReentrantLockDemo {
 
 先看下具体的代码实现，`#java.util.concurrent.locks.AbstractQueuedSynchronizer.ConditionObject.await()`：
 
-```
+```java
  public final void await() throws InterruptedException {
     if (Thread.interrupted())
         throw new InterruptedException();
@@ -573,7 +573,7 @@ public class ReentrantLockDemo {
 
 具体实现代码为：
 
-```
+```java
 private Node addConditionWaiter() {
     Node t = lastWaiter;
     if (t != null && t.waitStatus != Node.CONDITION) {
@@ -604,7 +604,7 @@ private Node addConditionWaiter() {
 
 接着就来看看**线程二 **唤醒** 线程一**的具体执行流程：
 
-```
+```java
 public final void signal() {
     if (!isHeldExclusively())
         throw new IllegalMonitorStateException();
@@ -616,7 +616,7 @@ public final void signal() {
 
 先判断当前线程是否为获取锁的线程，如果不是则直接抛出异常。 接着调用`doSignal()`方法来唤醒线程。
 
-```
+```java
 private void doSignal(Node first) {
     do {
         if ( (firstWaiter = first.nextWaiter) == null)
@@ -668,7 +668,7 @@ private Node enq(final Node node) {
 
 **线程一**被唤醒后，继续执行`await()`方法中的 while 循环。
 
-```
+```java
 public final void await() throws InterruptedException {
     if (Thread.interrupted())
         throw new InterruptedException();
@@ -693,7 +693,7 @@ public final void await() throws InterruptedException {
 
 接着执行`acquireQueued()`方法，这里之前也有讲过，尝试重新获取锁，如果获取锁失败继续会被挂起。直到另外线程释放锁才被唤醒。
 
-```
+```java
 final boolean acquireQueued(final Node node, int arg) {
     boolean failed = true;
     try {
@@ -719,14 +719,14 @@ final boolean acquireQueued(final Node node, int arg) {
 
 此时**线程一 **的流程都已经分析完了，等** 线程二 **释放锁后，** 线程一**会继续重试获取锁，流程到此终结。
 
-#### Condition 总结
+### Condition 总结
 
 我们总结下 Condition 和 wait/notify 的比较：
 
 - Condition 可以精准的对多个不同条件进行控制，wait/notify 只能和 synchronized 关键字一起使用，并且只能唤醒一个或者全部的等待队列；
 - Condition 需要使用 Lock 进行控制，使用的时候要注意 lock()后及时的 unlock()，Condition 有类似于 await 的机制，因此不会产生加锁方式而产生的死锁出现，同时底层实现的是 park/unpark 的机制，因此也不会产生先唤醒再挂起的死锁，一句话就是不会产生死锁，但是 wait/notify 会产生先唤醒再挂起的死锁。
 
-### 总结
+## 总结
 
 这里用了一步一图的方式结合三个线程依次加锁/释放锁来展示了`ReentrantLock`的实现方式和实现原理，而`ReentrantLock`底层就是基于`AQS`实现的，所以我们也对`AQS`有了深刻的理解。
 

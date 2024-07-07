@@ -2,31 +2,32 @@ site_name: 技术文章摘抄
 site_url: https://jint233.github.io/
 site_author: jin
 site_description: 技术文章摘抄
-docs_dir: ./docs
+docs_dir: build/docs
 site_dir: site
 # Repository
-repo_name: jint233/Notes
-repo_url: https://github.com/jint233/jint233.github.io.git
+repo_name: jint233/jint233.github.io
+repo_url: https://github.com/jint233/jint233.github.io
 edit_uri: ""
 
 # # Copyright
-copyright: Copyright &copy; 2016 - 2024 jint233 
+copyright: Copyright &copy; 2016 - 2024 jint233
 
 # Configuration
 theme:
   name: material
-  custom_dir: ./build/overrides
-  icon:
-    logo: material/library
+  custom_dir: build/overrides
   language: zh
   features:
+    - announce.dismiss
     - content.code.annotate
     - content.code.copy
     - content.tabs.link
     - content.tooltips
     - navigation.tabs
     - navigation.instant
+    - navigation.instant.prefetch
     - navigation.instant.progress
+    - navigation.prune
     - navigation.indexes
     - navigation.top
     - navigation.footer
@@ -35,7 +36,7 @@ theme:
     - search.share
     - search.suggest
     - toc.follow
-  palette:
+  palette:  
     - scheme: default
       primary: white
       accent: teal
@@ -49,8 +50,8 @@ theme:
         icon: material/theme-light-dark
         name: 浅色模式
   font:
-    text: Noto Sans SC
-    code: Fira Code
+    text: Roboto
+    code: Roboto Mono
   favicon: assets/images/favicon.png
   logo: assets/images/logo.svg
   icon:
@@ -65,13 +66,11 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/jint233/Notes
-  generator: false
-  status:
-    new: 最近添加
 
 # Plugins
 plugins:
-  - search
+  - search:
+      separator: '[\s\u200b\-_,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'  
   - glightbox:
       touchNavigation: true
       loop: false

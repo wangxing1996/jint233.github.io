@@ -7,17 +7,17 @@
 Chat 内容：
 
 1. 分析代码冲突的原因，并通过漫画的形式举例讲解。
-1. 分析 `git merge` 合并分支代码
-1. `git rebase` 合并分支代码，并通过漫画的形式举例讲解
-1. `git merge` 对比 `git rebase` 该如何选择？
-1. 加餐学习：`git stash` 解决线上代码冲突
+2. 分析 `git merge` 合并分支代码
+3. `git rebase` 合并分支代码，并通过漫画的形式举例讲解
+4. `git merge` 对比 `git rebase` 该如何选择？
+5. 加餐学习：`git stash` 解决线上代码冲突
 
 ## 分析代码冲突的原因，并通过漫画的形式举例讲解
 
 代码冲突是团队协同开发绕不开的问题，要更好的解决它，首先我们就得深入的认识它。首先我们有一个基本的认识就是 **代码冲突都是在代码合并的时候才产生** 。所以代码冲突通常会在以下两个场景出现：
 
 1. 本地仓库拉取远端仓库时产生
-1. 本地主分支合并代码分支时产生
+2. 本地主分支合并代码分支时产生
 
 下面我通过漫画的形式来演示两种场景。首先准备两个本地客户端和一个代码仓库，两个客户端为了好记，姑且就叫熊大熊二吧（简称A和B）。
 
@@ -52,7 +52,7 @@ git push origin master
 
 因为熊二不想吃苹果，所以他果断将`today-food-menu.txt`里面的内容改为了蜂蜜`honey`。
 
-```
+```bash
 git clone https://gitee.com/chandler2code/git-conflict-demo.git
 sed -i 's/apple/honey/g' today-food-menu.txt
 git add .
@@ -68,7 +68,7 @@ git push origin master
 
 于是他将食物清单改为香蕉后再次提交。
 
-```
+```bash
 sed -i 's/apple/banana/g' -i today-food-menu.txt
 git add .
 git commit -m 'update apple to banana'
@@ -87,7 +87,7 @@ git push origin master
 
 提示`today-food-menu.txt`产生了冲突，我们打开查看文件内容：
 
-```
+```bash
 <<<<<<< HEAD
 banana
 =======
@@ -97,7 +97,7 @@ honey
 
 可以看到是本地的 banana 与远端的 honey 冲突了，那咋办呀？解决冲突呗。于是熊大和熊二坐在一起讨论，最终决定还是吃香蕉吧，于是熊大把蜂蜜部分去掉，保留香蕉再次提交，最后修改成功。
 
-```
+```bash
 git add .
 git commit -m 'merge conflic'
 git push origin master

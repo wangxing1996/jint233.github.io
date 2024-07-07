@@ -107,9 +107,7 @@ mysql> select trx_id,trx_started,trx_requested_lock_id,trx_query,trx_mysql_threa
 2 rows in set (0.01 sec)
 
 ```
-
 结果有两个事务，MySQL 事务线程 id 为 38 和 41，很直观的看到 41 是我们的 delete 事务，被 38 锁定。** 定位线程**
-
 ```
 
 mysql> select * from performance_schema.threads where processlist_id=38;
@@ -121,11 +119,8 @@ mysql> select * from performance_schema.threads where processlist_id=38;
 1 row in set (0.00 sec)
 
 ```
-
 结果找到 MySQL 事务线程 38 对应的服务器线程 63。
-
 **定位加锁 SQL**
-
 ```
 
 mysql> select * from performance_schema.events_statements_current where thread_id=63;
@@ -137,10 +132,7 @@ mysql> select * from performance_schema.events_statements_current where thread_i
 1 row in set (0.00 sec)
 
 ```
-
 结果中我们找到了加锁的 update 的 SQL 语句。
-
 **总结**
-
 在 MySQL 数据库中出现了锁，不要着急，我们通过这个方法可以快速定位加锁的 SQL，你学会了吗？
 ```

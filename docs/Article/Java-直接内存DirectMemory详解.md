@@ -93,51 +93,33 @@ Oracle JDK 没有 Unsafe 类的源码，所以需要 OpenJDK 才能知道 Unsafe
 
 - putchar
 
-```javascript
+```java
  public ByteBuffer putChar(char x) {
-
         putChar(ix(nextPutIndex((1 << 1))), x);
-
         return this;
-
     }
-
 ```
 
 - getchar
 
-```javascript
+```java
 public char getChar() {
-
         return getChar(ix(nextGetIndex((1 << 1))));
-
     }
-
 ```
 
 其中 `nextPutIndex` 以及 `nextGetIndex` 第一参数相当于待放入的基本类型要分为几份 byte 类型，这两个方法主要用于处理加入/拿出基本类型数据是对计数指针的加与减。以 `putChar` 为例，其做好统计指针操作后，又调用了本地的方法 `putchar`，其源代码如下：
 
-```javascript
+```java
     private ByteBuffer putChar(long a, char x) {
-
-      
-
         if (unaligned) {
-
             char y = (x);
-
             unsafe.putChar(a, (nativeByteOrder ? y : Bits.swap(y)));
-
         } else {
-
             Bits.putChar(a, x, bigEndian);
-
         }
-
         return this;
-
     }
-
 ```
 
 其最终会调用 native `putChat()` 方法：`sun.misc.Unsafe#getChar(long)`。

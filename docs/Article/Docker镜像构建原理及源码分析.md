@@ -243,21 +243,13 @@ invalid argument: can't use stdin for both build context and dockerfile
   }
 
 ````
-
 从 `stdin` 传入，上文已经演示过了，传递给 `stdin` 的是 `tar` 归档文件；
-
 当然也可以是指定一个具体的 `PATH`，我们通常使用的 `docker build .` 便是这种用法；
-
 或者可以指定一个 `git` 仓库的地址，CLI 会调用 `git` 命令将仓库 `clone` 至一个临时目录，进行使用；
-
 最后一种是，给定一个 `URL` 地址，该地址可以是** 一个具体的 Dockerfile 文件地址 **或者是** 一个 tar 归档文件的下载地址** 。
-
 这几种基本就是字面上的区别，至于 CLI 的行为差异，主要是最后一种，当 `URL` 地址是一个具体的 `Dockerfile` 文件地址，在这种情况下 `build context` 相当于只有 `Dockerfile` 自身，所以并不能使用 `COPY` 之类的指定，至于 `ADD` 也只能使用可访问的外部地址。
-
 *   **可使用 .dockerignore 忽略不需要的文件**
-
 我在之前的 Chat \[高效构建 Docker 镜像的最佳实践\] 中有分享过相关的内容。这里我们看看它的实现逻辑。
-
 ```go
 // cli/command/image/build/dockerignore.go#L13
 func ReadDockerignore(contextDir string) ([]string, error) {
@@ -277,18 +269,12 @@ func ReadDockerignore(contextDir string) ([]string, error) {
 - `.dockerignore` 是一个固定的文件名，并且需要放在 `build context` 的根目录下。类似前面提到的，使用一个 `Dockerfile` 文件的 URL 地址作为 `build context` 传入的方式，便无法使用 `.dockerignore` 。
 - `.dockerignore` 文件可以不存在，但在读取的时候如果遇到错误，便会抛出错误。
 - 通过 `.dockerignore` 将会过滤掉不希望加入到镜像内，或者过滤掉与镜像无关的内容。
-
-最后 CLI 会将 `build context` 中的内容经过 `.dockerignore` 过滤后，打包成为真正的 `build context` 即真正的构建上下文。这也是为什么有时候你发现自己明明在 `Dockerfile` 里面写了 `COPY xx xx` 但是最后没有发现该文件的情况。 很可能就是被 `.dockerignore` 给忽略掉了。
-
-这样有利于优化 CLI 与 `dockerd` 之间的传输压力之类的。
-
+  最后 CLI 会将 `build context` 中的内容经过 `.dockerignore` 过滤后，打包成为真正的 `build context` 即真正的构建上下文。这也是为什么有时候你发现自己明明在 `Dockerfile` 里面写了 `COPY xx xx` 但是最后没有发现该文件的情况。 很可能就是被 `.dockerignore` 给忽略掉了。
+  这样有利于优化 CLI 与 `dockerd` 之间的传输压力之类的。
 - `docker` CLI 还会去读取 `~/.docker/config.json` 中的内容。
-
-这与前面 API 部分所描述的内容基本是一致的。将认证信息通过 `X-Registry-Config` 头传递给 `dockerd` 用于在需要拉取镜像时进行身份校验。
-
+  这与前面 API 部分所描述的内容基本是一致的。将认证信息通过 `X-Registry-Config` 头传递给 `dockerd` 用于在需要拉取镜像时进行身份校验。
 - **调用 API 进行实际构建任务**
-
-当一切所需的校验和信息都准备就绪之后，则开始调用 `dockerCli.Client` 封装的 API 接口，将请求发送至 `dockerd`，进行实际的构建任务。
+  当一切所需的校验和信息都准备就绪之后，则开始调用 `dockerCli.Client` 封装的 API 接口，将请求发送至 `dockerd`，进行实际的构建任务。
 
 ```go
 response, err := dockerCli.Client().ImageBuild(ctx, body, buildOptions)
@@ -307,15 +293,10 @@ defer response.Body.Close()
 #### 小结
 
 整个过程大致如下图：
-
 ![docker builder 处理流程](assets/6a69dde0-933a-11e9-8825-e7da71af5ddb.jpg)
-
 从入口函数 `runBuild` 开始，经过判断是否支持 `buildkit` ，如果不支持 `buildkit` 则继续使用 v1 的 `builder`。接下来读取各类参数，按照不同的参数执行各类不同的处理逻辑。这里需要注意的就是 `Dockerfile` 及 `build context` 都可支持从文件或者 `stdin` 等读入，具体使用时，需要注意。
-
 另外 `.dockerignore` 文件可过滤掉 `build context` 中的一些文件，在使用时，可通过此方法进行构建效率的优化，当然也需要注意，在通过 URL 获取 `Dockerfile` 的时候，是不存在 `build context` 的，所以类似 `COPY` 这样的命令也就无法使用了。
-
 当所有的 `build context` 和参数都准备就绪后，接下来调用封装好的客户端，将这些请求按照本文开始之初介绍的 API 发送给 `dockerd` ，由其进行真正的构建逻辑。
-
 最后当构建结束后，CLI 根据参数决定是否要显示构建进度或者结果。
 
 ### buildkit
@@ -383,9 +364,7 @@ func isSessionSupported(dockerCli command.Cli, forStream bool) bool {
 ```
 
 `isSessionSupported` 很明显是用于判断是否支持 `Session`，这里由于我们会传入 `forStream` 为 `false` ，而且当前的 API 版本是 1.40 比 1.39 大，所以此函数会返回 `true` 。其实在 `builder` 中也执行过相同的逻辑，只不过是在传递了 `--stream` 参数后，使用 `Session` 获取一个长连接以达到 `stream` 的处理能力。
-
 这也就是为什么会有下面 `dockerCli.ServerInfo().HasExperimental && versions.GreaterThanOrEqualTo(dockerCli.Client().ClientVersion(), "1.31")` 这个判断存在的原因了。
-
 当确认支持 `Session` 时，则会调用 `session.NewSession` 创建一个新的会话。
 
 ```go
@@ -412,7 +391,6 @@ func NewSession(ctx context.Context, name, sharedKey string) (*Session, error) {
 ```
 
 它创建了一个长连接会话，接下来的操作也都会基于这个会话来做。
-
 接下来的操作与 `builder` 大体一致，先判断 `context` 是以哪种形式提供的；当然它也与 `builder` 一样，是不允许同时从 `stdin` 获取 `Dockerfile` 和 `build context` 。
 
 ```go
@@ -472,13 +450,11 @@ func (s *Session) Allow(a Attachable) {
 这个 `Allow` 函数就是允许通过上面提到的 grpc 会话访问给定的服务。
 
 - `authprovider`
-
-`authprovider` 是 `buildkit` 提供的一组抽象接口集合，通过它们可以访问到机器上的配置文件，进而拿到认证信息，行为与 `builder` 基本一致。
+  `authprovider` 是 `buildkit` 提供的一组抽象接口集合，通过它们可以访问到机器上的配置文件，进而拿到认证信息，行为与 `builder` 基本一致。
 
 #### 高阶特性：`secrets` 和 `ssh`
 
 在前一篇 Chat [进阶：Dockerfile 高阶使用指南及镜像优化](https://gitbook.cn/gitchat/activity/5cdc40db94539c0c5ded160c) 我已经讲过这两种高阶特性的使用了，本篇中就不再多使用进行过多说明了，只来大体看下该部分的原理和逻辑。
-
 `secretsprovider` 和 `sshprovider` 都是 `buildkit` 在提供的，利用这两种特性可以在 Docker 镜像进行构建时更加安全，且更加灵活。
 
 ```go
@@ -574,19 +550,14 @@ func doBuild(ctx context.Context, eg *errgroup.Group, dockerCli command.Cli, std
 ```
 
 从以上的介绍我们可以先做个小的总结。 **当 build context 从 stdin 读，并且是个 tar 归档时，实际会向 dockerd 发起两次 /build 请求** 而一般情况下只会发送一次请求。
-
 那这里会有什么差别呢？此处先不展开，我们留到下面讲 `dockerd` 后端的时候再来解释。
 
 #### 小结
 
 这里我们对开启了 `buildkit` 支持的 CLI 构建镜像的过程进行了分析，大致过程如下：
-
 从入口函数 `runBuild` 开始，判断是否支持 `buildkit` ，如果支持 `buildkit` 则调用 `runBuildBuildKit`。与 v1 的 `builder` 不同的是，开启了 `buildkit` 后，会首先创建一个长连接的会话，并一直保持。
-
 其次，与 `builder` 相同，判断 `build context` 的来源，格式之类的，校验参数等。当然，`buildkit` 支持三种不同的输出格式 `tar`, `local` 或正常的存储于 Docker 的目录中。
-
 另外是在 `buildkit` 中新增的高阶特性，可以配置 `secrets` 和 `ssh` 密钥等功能。
-
 最后，再调用 API 与 `dockerd` 交互完成镜像的构建。
 
 ### 服务端：dockerd
@@ -628,7 +599,6 @@ func (cli *Client) ImageBuild(ctx context.Context, buildContext io.Reader, optio
 #### `dockerd`
 
 由于本次 Chat 集中讨论的是构建系统相关的部分，所以也就不再过多赘述与构建无关的内容了，我们直接来看，当 CLI 通过 `/build` 接口发送请求后，会发生什么。
-
 先来看该 API 的入口：
 
 ```go
@@ -643,7 +613,6 @@ func (r *buildRouter) initRoutes() {
 ```
 
 `dockerd` 提供了一套类 RESTful 的后端接口服务，处理逻辑的入口便是上面的 `postBuild` 函数。
-
 该函数的内容较多，我们来分解下它的主要步骤。
 
 ```go

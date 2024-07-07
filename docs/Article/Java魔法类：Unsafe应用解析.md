@@ -14,7 +14,6 @@ Unsafe是位于sun.misc包下的一个类，主要提供一些用于执行低级
 public final class Unsafe {
   // 单例对象
   private static final Unsafe theUnsafe;
-
   private Unsafe() {
   }
   @CallerSensitive
@@ -123,9 +122,7 @@ Cleaner继承自Java四大引用类型之一的虚引用PhantomReference（众�
   * @return          true | false
   */
 public final native boolean compareAndSwapObject(Object o, long offset,  Object expected, Object update);
-
 public final native boolean compareAndSwapInt(Object o, long offset, int expected,int update);
-  
 public final native boolean compareAndSwapLong(Object o, long offset, long expected, long update);
 ```
 

@@ -39,7 +39,6 @@ mysql> UPDATE performance_schema.setup_instruments
 
 ```
 ->        SET ENABLED = 'YES'
-
 ->        WHERE NAME LIKE 'stage/innodb/alter%';
 ```
 
@@ -48,14 +47,12 @@ Query OK, 0 rows affected (0.01 sec)
 Rows matched: 7  Changed: 0  Warnings: 0
 
 ```** Enable the stage event consumer tables**
-
 ```
 
 mysql> UPDATE performance_schema.setup_consumers
 
 ```
 ->        SET ENABLED = 'YES'
-
 ->        WHERE NAME ='events_stages_current';
 ```
 
@@ -66,7 +63,6 @@ mysql> UPDATE performance_schema.setup_consumers
 
 ```
 ->        SET ENABLED = 'YES'
-
 ->        WHERE NAME ='events_stages_history';
 ```
 
@@ -77,7 +73,6 @@ mysql> UPDATE performance_schema.setup_consumers
 
 ```
 ->        SET ENABLED = 'YES'
-
 ->        WHERE NAME ='events_stages_history_long';
 ```
 
@@ -86,13 +81,9 @@ Query OK, 1 row affected (0.00 sec)
 Rows matched: 1  Changed: 1  Warnings: 0
 
 ```
-
 功能开启了，接下来我们进行直观的验证环节。
-
 ### 直观的观察事件执行进度
-
 首先，我们有一张大表（你可以用 SysBench 建一个，或者其他各种途径都可以），这里我已经有一张大表 sbtest.sbtest1，表结构如下：
-
 ```
 
 mysql> desc sbtest.sbtest1;
@@ -116,9 +107,7 @@ mysql> desc sbtest.sbtest1;
 4 rows in set (0.00 sec)
 
 ```
-
 数据量 500W：
-
 ```
 
 mysql> select count(\*) from  sbtest.sbtest1;
@@ -136,17 +125,13 @@ mysql> select count(\*) from  sbtest.sbtest1;
 1 row in set (0.67 sec)
 
 ```
-
 新增一个字段：
-
 ```
 
 mysql> alter table sbtest.sbtest1 add d char(20);
 
 ```
-
 重头戏来了，查看一下进度：
-
 ```
 
 mysql> select * from performance_schema.events_stages_current\\G;
@@ -155,23 +140,14 @@ mysql> select * from performance_schema.events_stages_current\\G;
 
 ```
      THREAD_ID: 28
-
       EVENT_ID: 14
-
   END_EVENT_ID: NULL
-
     EVENT_NAME: stage/innodb/alter table (read PK and internal sort)
-
         SOURCE: 
-
    TIMER_START: 159726265417733000
-
      TIMER_END: 159819571346680000
-
     TIMER_WAIT: 93305928947000
-
 WORK_COMPLETED: 118256
-
 WORK_ESTIMATED: 302958
 ```
 
@@ -187,23 +163,14 @@ mysql> select * from performance_schema.events_stages_current\\G;
 
 ```
      THREAD_ID: 28
-
       EVENT_ID: 14
-
   END_EVENT_ID: NULL
-
     EVENT_NAME: stage/innodb/alter table (read PK and internal sort)
-
         SOURCE: 
-
    TIMER_START: 159726265417733000
-
      TIMER_END: 159910492100061000
-
     TIMER_WAIT: 184226682328000
-
 WORK_COMPLETED: 230688
-
 WORK_ESTIMATED: 302958
 ```
 
@@ -214,9 +181,7 @@ NESTING_EVENT_TYPE: STATEMENT
 1 row in set (0.01 sec)
 
 ```
-
 多执行几次，发现数据是有变化的，这些内容代表了什么呢？
-
 *   THREAD\_ID：线程 ID
 *   EVENT\_ID：事件 ID
 *   END\_EVENT\_ID：结束事件 ID
@@ -229,11 +194,8 @@ NESTING_EVENT_TYPE: STATEMENT
 *   WORK\_ESTIMATED：任务估算情况
 *   NESTING\_EVENT\_ID：事件对应的父事件 ID
 *   NESTING\_EVENT\_TYPE：父事件类型（STATEMENT、STAGE、WAIT）
-
 ### 收下这个常用的 SQL
-
 1.  查看事件任务完成情况：
-
 ```
 
 mysql> SELECT pt.INFO, ec.THREAD_ID, ec.EVENT_NAME, ec.WORK_COMPLETED, ec.WORK_ESTIMATED, pt.STATE FROM performance_schema.events_stages_current ec left join performance_schema.threads th on ec.thread_id = th.thread_id left join information_schema.PROCESSLIST pt on th.PROCESSLIST_ID = pt.ID where pt.INFO like 'ALTER%';
@@ -251,9 +213,7 @@ mysql> SELECT pt.INFO, ec.THREAD_ID, ec.EVENT_NAME, ec.WORK_COMPLETED, ec.WORK_E
 1 row in set (0.25 sec)
 
 ```
-
 2.  查看任务完成事件：
-
 ```
 
 mysql> select stmt.sql_text as sql_text, concat(work_completed, '/' , work_estimated) as progress, (stage.timer_end - stmt.timer_start) / 1e12 as current_seconds, (stage.timer_end - stmt.timer_start) / 1e12 * (work_estimated-work_completed) / work_completed as remaining_seconds from performance_schema.events_stages_current stage, performance_schema.events_statements_current stmt where stage.thread_id = stmt.thread_id and stage.nesting_event_id = stmt.event_id;
@@ -271,8 +231,6 @@ mysql> select stmt.sql_text as sql_text, concat(work_completed, '/' , work_estim
 1 row in set (0.00 sec)
 
 ```
-
 ### 总结
-
 这样我们通过 MySQL 的这个数据字典就可以很直观地看到 ALTER 的执行情况了，当你看到这样的执行进度，是不是就不那么慌了。
 ```

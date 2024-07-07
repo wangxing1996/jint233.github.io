@@ -367,21 +367,18 @@ Redis 支持的数据结构主要有：字符串（string）、哈希（Hash）�
 
 ```
 redis-server -maxclients 100000（连接数）; 
-
 ```
 
 查看 Redis 最大连接数的命令为：
 
 ```
 config get maxclients 
-
 ```
 
 查看 Redis 连接数的命令为：
 
 ```
 info 命令
-
 ```
 
 在 redis-cli 中输入 info 命令即可查看。
@@ -484,23 +481,14 @@ SDS 的定义格式如下：
 
 ```
 struct sdshdr{
-
     //记录 buf 数组中已使用字节的数量
-
     //等于 SDS 保存字符串的长度
-
     int len;
-
     //记录 buf 数组中未使用字节的数量
-
     int free;
-
     //字节数组，用于保存字符串
-
     char buf[];  //buf的大小等于len+free+1，其中多余的1个字节是用来存储‘\0’的。
-
 }
-
 ```
 
 SDS 的存储示例如下：

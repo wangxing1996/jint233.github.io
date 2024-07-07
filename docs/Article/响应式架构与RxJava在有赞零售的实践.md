@@ -49,36 +49,23 @@ Rxjava是用来编写异步和基于消息的程序的类库。RxJava在Android�
 
 ```
 Observable.zip(
-
     callAsync(()->处理库存相关操作),
-
     callAsync(()->更新商品库门店销售渠道),
-
     callAsync(()->创建商品库与网店商品关联关系),
-
     (sku1,sku2,sku3)-> sku
-
 ).blockingFirst();
-
 ```
 
 最终我们的整体的代码
 
 ```
 UpgradeItem.listItems(manager, shop)
-
     .flatMap(item-> fromCallable(()->更新为零售商品类型))
-
     .flatMap(item-> fromCallable(()->并发处理商品操作), true)
-
     .flatMap(item-> 商品流转化为sku流, true)
-
     .flatMap(sku-> fromCallable(()->保存零售商品))
-
     .flatMap(sku-> fromCallable(()->并发处理保存商品后续操作, true)
-
     .subscribeOn(Schedulers.io());
-
 ```
 
 整个商品处理流程就是上面这段代码，一目了然，后面扩展可以自己在中间加入处理流程，也可以在对应业务方法中修改逻辑。
@@ -99,55 +86,35 @@ UpgradeItem.listItems(manager, shop)
 
 ```
 //只有包含的merger才会加载
-
 List<SkuAttrMerger> validMergers = 
-
     Observable.fromIterable(skuAttrMergers).filter(loader -> request.getAttributes().contains(loader.supportAttribute().getValue())).toList().blockingGet();
-
 ```
 
 2.根据es结果获取商品各个属性详情并加载到SkuAttrContext中（某类属性加载失败则忽略）
 
 ```java
 //调用load并发加载数据到商品属性上下文中
-
 Observable.fromIterable(商品信息加载器列表)
-
 .flatMap(商品信息加载器-> Observable.fromCallable(() ->异步加载商品信息))
-
 .onErrorResumeNext(Observable.empty())//如果失败则忽略
-
 .subscribeOn(Schedulers.io()),false,线程数(为加载器数 
-
 量)).blockingSubscribe();
-
 ```
 
 3.组装搜索结果（如果某个sku组装失败则直接忽略）
 
 ```
 //调用merge将数据合并到目标对象
-
 商品搜索返回结果列表 = Observable.fromIterable(商品id列表)
-
     .map(商品id->初始化商品搜索结果返回对象)
-
     .flatMap(商品搜索结果返回对象-> {
-
         val observables=Observable.fromIterable(商品加载器列表)
-
             .map(loader -> Observable.fromCallable(() ->合并每个sku的不同属性)).toList().blockingGet();
-
         return Observable.zipIterable(observables, (a) -> sku, false, 线程数)
-
         .onErrorResumeNext(Observable.empty()); //如果失败则忽略
-
         }, false, 1)
-
     .toList()
-
     .blockingGet();
-
 ```
 
 ## 后记

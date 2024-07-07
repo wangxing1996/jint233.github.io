@@ -53,49 +53,30 @@ MySQL支持用户自定义在commit时如何将log buffer中的日志刷log file
 
 ```
 #创建测试表
-
 drop table if exists test_flush_log;
-
 create table test_flush_log(id int,name char(50))engine=innodb;
 #创建插入指定行数的记录到测试表中的存储过程
-
 drop procedure if exists proc;
-
 delimiter 
-
 create procedure proc(i int)
-
 begin
-
     declare s int default 1;
-
     declare c char(50) default repeat('a',50);
-
     while s<=i do
-
         start transaction;
-
         insert into test_flush_log values(null,c);
-
         commit;
-
         set s=s+1;
-
     end while;
-
 end
-
 delimiter ;
-
 ```
 
 当前环境下， innodb_flush_log_at_trx_commit 的值为1，即每次提交都刷日志到磁盘。测试此时插入10W条记录的时间。
 
 ```
 mysql> call proc(100000);
-
 Query OK, 0 rows affected (15.48 sec)
-
 ```
 
 结果是15.48秒。
@@ -104,12 +85,9 @@ Query OK, 0 rows affected (15.48 sec)
 
 ```
 mysql> set @@global.innodb_flush_log_at_trx_commit=2;    
-
 mysql> truncate test_flush_log;
 mysql> call proc(100000);
-
 Query OK, 0 rows affected (3.41 sec)
-
 ```
 
 结果插入时间大减，只需3.41秒。
@@ -118,12 +96,9 @@ Query OK, 0 rows affected (3.41 sec)
 
 ```
 mysql> set @@global.innodb_flush_log_at_trx_commit=0;
-
 mysql> truncate test_flush_log;
 mysql> call proc(100000);
-
 Query OK, 0 rows affected (2.10 sec)
-
 ```
 
 结果只有2.10秒。
@@ -136,45 +111,28 @@ Query OK, 0 rows affected (2.10 sec)
 
 ```
 drop procedure if exists proc;
-
 delimiter $$
-
 create procedure proc(i int)
-
 begin
-
     declare s int default 1;
-
     declare c char(50) default repeat('a',50);
-
     start transaction;
-
     while s<=i DO
-
         insert into test_flush_log values(null,c);
-
         set s=s+1;
-
     end while;
-
     commit;
-
 end$$
-
 delimiter ;
-
 ```
 
 测试值为1时的情况。
 
 ```
 mysql> set @@global.innodb_flush_log_at_trx_commit=1;
-
 mysql> truncate test_flush_log;
 mysql> call proc(1000000);
-
 Query OK, 0 rows affected (11.26 sec)
-
 ```
 
 ## 1.3 日志块(log block)
@@ -208,32 +166,19 @@ log group表示的是redo log group，一个组内由多个大小完全相同的
 
 ```
 mysql> show global variables like "innodb_log%";
-
 +-----------------------------+----------+
-
 | Variable_name               | Value    |
-
 +-----------------------------+----------+
-
 | innodb_log_buffer_size      | 8388608  |
-
 | innodb_log_compressed_pages | ON       |
-
 | innodb_log_file_size        | 50331648 |
-
 | innodb_log_files_in_group   | 2        |
-
 | innodb_log_group_home_dir   | ./       |
-
 +-----------------------------+----------+
 [[email protected] data]# ll /mydata/data/ib*
-
 -rw-rw---- 1 mysql mysql 79691776 Mar 30 23:12 /mydata/data/ibdata1
-
 -rw-rw---- 1 mysql mysql 50331648 Mar 30 23:12 /mydata/data/ib_logfile0
-
 -rw-rw---- 1 mysql mysql 50331648 Mar 30 23:12 /mydata/data/ib_logfile1
-
 ```
 
 可以看到在默认的数据目录下，有两个ib_logfile开头的文件，它们就是log group中的redo log file，而且它们的大小完全一致且等于变量 innodb_log_file_size 定义的值。第一个文件ibdata1是在没有开启 innodb_file_per_table 时的共享表空间文件，对应于开启 innodb_file_per_table 时的.ibd文件。
@@ -314,25 +259,15 @@ redo log的lsn信息可以通过 show engine innodb status 来查看。MySQL 5.5
 
 ```
 mysql> show engine innodb stauts
-
 ---
-
 LOG
-
 ---
-
 Log sequence number 2225502463
-
 Log flushed up to   2225502463
-
 Pages flushed up to 2225502463
-
 Last checkpoint at  2225502463
-
 0 pending log writes, 0 pending chkp writes
-
 3201299 log i/o's done, 0.00 log i/o's/second
-
 ```
 
 其中：
@@ -366,14 +301,12 @@ innodb从执行修改语句开始：
 
 ```
 log sequence number(110) > log flushed up to(100) = pages flushed up to = last checkpoint at
-
 ```
 
 之后又执行了一个delete语句，LSN增长到150。等到12:00:01时，触发redo log刷盘的规则(其中有一个规则是 innodb_flush_log_at_timeout 控制的默认日志刷盘频率为1秒)，这时redo log file on disk中的LSN会更新到和redo log in buffer的LSN一样，所以都等于150，这时 show engine innodb status ，即图中②的位置，结果将会是：
 
 ```
 log sequence number(150) = log flushed up to > pages flushed up to(100) = last checkpoint at
-
 ```
 
 再之后，执行了一个update语句，缓存中的LSN将增长到300，即图中③的位置。
@@ -382,7 +315,6 @@ log sequence number(150) = log flushed up to > pages flushed up to(100) = last c
 
 ```
 log sequence number > log flushed up to 和 pages flushed up to > last checkpoint at
-
 ```
 
 但是log flushed up to和pages flushed up to的大小无法确定，因为日志刷盘可能快于数据刷盘，也可能等于，还可能是慢于。但是checkpoint机制有保护数据刷盘速度是慢于日志刷盘的：当数据刷盘速度超过日志刷盘时，将会暂时停止数据刷盘，等待日志刷盘进度超过数据刷盘。
@@ -397,7 +329,6 @@ log sequence number > log flushed up to 和 pages flushed up to > last checkpoin
 
 ```
 log sequence number = log flushed up to > pages flushed up to = last checkpoint at
-
 ```
 
 最后随着时间的推移，检查点再次出现，即图中位置⑨。但是这次检查点不会触发日志刷盘，因为日志的LSN在检查点出现之前已经同步了。假设这次数据刷盘速度极快，快到一瞬间内完成而无法捕捉到状态的变化，这时 show engine innodb status 的结果将是各种LSN相等。
@@ -446,13 +377,9 @@ undo log默认存放在共享表空间中。
 
 ```
 [[email protected] data]# ll /mydata/data/ib*
-
 -rw-rw---- 1 mysql mysql 79691776 Mar 31 01:42 /mydata/data/ibdata1
-
 -rw-rw---- 1 mysql mysql 50331648 Mar 31 01:42 /mydata/data/ib_logfile0
-
 -rw-rw---- 1 mysql mysql 50331648 Mar 31 01:42 /mydata/data/ib_logfile1
-
 ```
 
 如果开启了 innodb_file_per_table ，将放在每个表的.ibd文件中。
@@ -463,13 +390,9 @@ undo log默认存放在共享表空间中。
 
 ```
 2017-03-31 13:16:00 7f665bfab720 InnoDB: Expected to open 3 undo tablespaces but was able
-
 2017-03-31 13:16:00 7f665bfab720 InnoDB: to find only 0 undo tablespaces.
-
 2017-03-31 13:16:00 7f665bfab720 InnoDB: Set the innodb_undo_tablespaces parameter to the
-
 2017-03-31 13:16:00 7f665bfab720 InnoDB: correct value and retry. Suggested value is 0
-
 ```
 
 ## 2.3 和undo log相关的变量
@@ -478,21 +401,13 @@ undo相关的变量在MySQL5.6中已经变得很少。如下：它们的意义�
 
 ```
  mysql> show variables like "%undo%";
-
 +-------------------------+-------+
-
 | Variable_name           | Value |
-
 +-------------------------+-------+
-
 | innodb_undo_directory   | .     |
-
 | innodb_undo_logs        | 128   |
-
 | innodb_undo_tablespaces | 0     |
-
 +-------------------------+-------+
-
 ```
 
 ## 2.4 delete/update操作的内部机制

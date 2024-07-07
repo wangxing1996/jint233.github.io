@@ -83,11 +83,8 @@ SpringApplication.run(BatchsrvApplication.class, args);
 }
 
 ````
-
 在启动类上添加注解 @EnableBatchProcessing。** 注意 **：添加上了此注解，那么项目启动后 Spring Batch 就会自动化初始相关的数据库文件，并且直接启动相关的迁移任务。在实际的线上迁移中是不会直接上线后就自动执行任务的，通常会先通过手动执行来看下执行情况，再动态配置一些指标，所以我们的项目会禁用自动执行，并且手动执行 Spring batch 的数据库文件，数据库初始文件在 spring-batch-core 中，根据数据库进行选择即可。
-
 禁用自动执行任务选项，`batch.job.enabled = false`。
-
 ```java
 server:
   port: 8096
@@ -98,7 +95,6 @@ spring:
     job:
       enabled: false
 ```** 2\. 多数据源配置**
-
 ```java
 package cn.gitchat.share.config;
 import javax.sql.DataSource;
@@ -149,9 +145,7 @@ public class DataSourceConfig {
 ````
 
 此处我们使用多数据源的配置，并且使用 JdbcTemplate 进行数据的读取。
-
 主数据源中配置 Spring Batch 的数据库文件（如果不在意迁移的情况记录可以使用内存数据库，存储 Spring Batch 的迁移记录情况，这样能提高迁移性能，但是实际中不建议做，迁移性能的大幅提升会影响线上的业务正常运行，除非迁移有及时性这种需求再开启内存数据源）。
-
 \*\*如何定制 Spring Batch 的框架使用的数据源？\*\*从源码中找到：
 
 ```java
@@ -171,7 +165,6 @@ protected JobRepository createJobRepository() throws Exception {
     return factory.getObject();
 }
 ```** 3\. 读取的配置**
-
 ````
 
 /\*\*
@@ -198,11 +191,8 @@ protected JobRepository createJobRepository() throws Exception {
   }
 
 ````
-
 **在读取的配置中有几个比较重要的点：**
-
 *   第一点可以看到在 @Bean 下方有个注解 @StepScope 这个注解的作用是我们可以在 Job 执行时给 Job 添加变量，用于我们可以动态的控制每次任务要迁移的记录，通过 `@Value ("#{jobParameters [minId]}"` 这种方式进行接收参数，传递参数可以在任务执行时进行 Job 传参，使用方式如下：
-
 ```java
 @Scheduled(cron = "0 0 2 * * ?")
 public void migratePayRecord() throws Exception {
@@ -221,8 +211,7 @@ public void migratePayRecord() throws Exception {
 - 第二点可以看到我们读取数据使用的是 JdbcPagingItemReader 这个类，这个类的特点是可以通过分页的方式对数据记录进行读取，保证不会内存溢出，这里面 SortKey 是个很重要的点，一定要保证数据的唯一性，这个用于任务重新启动判断从哪再次开始。
 - PageSize 我们可以控制每一次读取多少条记录，这个用于调优用，根据实际的情况进行控制。SaveState 用于将迁移的记录情况进行记录。
 - 这个 Reader 的配置非常重要是保证亿级别数据不会发生内存溢出的关键配置。在这里的配置相当于我们对大数量级别的数据进行了一个分段处理。是分而治之的关键点。
-
-**4. 写入的配置**
+  **4. 写入的配置**
 
 ```java
 /**
@@ -278,7 +267,6 @@ public CompositeItemWriter<PayRecord> compositePayRecordItemWriter(@Qualifier("d
 ```
 
 写入的配置这里面使用了两个配置，一个是写入新的数据源，一个是删除原来的迁移数据连接的是原来的主数据源。写入器使用的是框架提供的 JdbcBatchItemWriter ，看名字就知道这个类的作用了，它支持批量的写入，性能非常高。Spring Batch 支持各种 Writer 的组合，通过 CompositeItemWriter 来实现。在这里只是为了演示组合 Writer 的用法，实际中最好分成两步来完成这种任务。
-
 **5. Step 的配置**\`\`\`java
 @Bean
 public Step migratePayRecordStep(@Qualifier("payRecordReader") JdbcPagingItemReader<PayRecord> payRecordReader, @Qualifier(value = "compositePayRecordItemWriter") CompositeItemWriter compositeItemWriter) {
@@ -322,11 +310,8 @@ return this.jobBuilderFactory.get("migratePayRecordJob")
 }
 
 ````
-
 Job 用于将 step 配置好的流程向外以任务的形式暴露。** 7\. 如何启动 Job**
-
 默认情况下 Spring Batch 会自动启动任务，上面提到了，在线上时一定不要自动启动任务。
-
 ```java
 @Component
 @Slf4j
@@ -376,7 +361,6 @@ JobParameters params = new JobParametersBuilder()
 ```
 
 这传递的参数，通过 @StepScope 注解的 Bean 就可以动态获取这个参数。
-
 **8. Job 如何启动、停止、重启**Job 的另一种启动和停止是通过类 JobOperator 这个类来实现的，在启动和重启之前要将 Job 注册到 JobRegistry 中，在 JobController 中可以看到具体的实现。
 
 ```java
@@ -430,7 +414,6 @@ JobExecution abandon(long var1) throws NoSuchJobExecutionException, JobExecution
 ```
 
 在 Spring Batch 的 Admin 管理系统中主要就是通过这个类来获取任务的执行情况。**9. 总结**通过上面的演示可以清楚的看到 Spring Batch 的执行逻辑，Spring Batch 定义了模板，我们在使用过程中只需要按照接口提供相应的数据来源和输出的接口即可。其他的事务处理，多线程池，批量处理，内存控制都由框架来完成。那么 Spring Batch 是怎么样保证在大数据量级的情况下，内存不溢出然后又保证性能的呢，下面用一张图进行展示 Spring Batch 是通过怎么的处理，保证在数据量巨大的情况下，高性能的进行数据的读写的。
-
 ![在这里插入图片描述](assets/d9d2ef90-2f8f-11ea-b7a2-bd62e8fb625b.png)
 
 #### 其他业务场景的扩展
@@ -448,7 +431,6 @@ public class PayRecordExtProcessor implements ItemProcessor<PayRecord,PayRecordE
     }
 }
 ```** 2\. 拆分为多表的场景 **系统有些情况下需要将单表拆分为多表，比如根据用户 id 分片，这种情况下 Spring Batch 提供了一个类 ClassifierCompositeItemWriter 可以根据条件动态选择 Writer，在这里我们模拟将 pay\_record 这个表拆分为两个表的场景 pay\_record\_1、pay\_record2。
-
 ````
 
 create TABLE  pay_record_1 like  pay_record;
@@ -489,19 +471,12 @@ return this.jobBuilderFactory.get("splitPayRecordJob")
 }
 
 ````
-
 在这里面我们定义了一个 ClassifierCompositeItemWriter 根据 Id % 表个数进行分片。具体的实现可以看代码。** 3\. 迁移过程中数据有变更和增量的场景**
-
 一般来说有单表性能的表数据，都有一个特点，随着时间的迁移会有大量的冷数据，上千万频繁变更的场景还是比较少的。如果想保证系统不间断运行，同时又能进行系统的迁移，迁移完成后再进行用户无感知的切换。需要考虑到迁移过程中有增量变更的情况。这种情况下我们一般引入 CDC (change data capture) 组件。比较常用的如阿里的 Canal、Debezium，这种中间件监听数据的变更。关于它们的使用可以去看官方的文档，非常的简单，添加好配置项就可以了。
-
 配置好后将变更的数据再导入的新的数据源。切换后完成再通过 Spring Batch 进行比对迁移的数据和变化数据就可以了。如果变化的量级特别大，最好选用后半夜，数据变更较小的情况下进行数据迁移。因为亿级别的数据实时同步这个是不可能的，找一个折中的方案即可。
-
 #### 如何控制部署的实例不同时运行
-
 为了保证服务的可靠性，通常我们部署的迁移服务实例是多个的，在这种情况下，我们需要保证数据不能迁移重复。在 Spring Batch 里面 Job 的概念相当于任务，还有一个概念叫 JobInstance。
-
 什么意思呢，上面提到 Step 相当于配置的流程，Job 是任务，那么任务是可能有多个的，就像一个类，我们可以 new 出来多个对象一样。一个 JonInstance 在相同的 JobParameter 下只会执行一次。这样在多实例的情况下，实际上部署多台实例也能控制任务不会重复执行，只不过会报一个任务已经存在的异常。但是在实际的项目迁移中我们希望 Job 的参数可以每天动态计算，比如在任务之前我们需要动态的计算出，今天的任务要迁移哪些数据。
-
 ```java
 /**
  *
@@ -565,7 +540,6 @@ set global max_connections= 最大连接数;
 ### Spring Cloud Data Flow 入门简介
 
 Spring Cloud Data Flow 这个是现在 Spring 在数据流处理方面一个功能非常强大的框架。目前被 Spring 放在了首页上，跟 Spring Cloud 并列。在单机条件下对 Spring Batch 的支持有限，不支持任务的动态调度，想使用调度需要 K8s 部署，Spring Cloud Data Flow 在本机搭建有两种方式，一个是用 Docker，一个是直接启动 jar 包。具体的 jar 包我放在了项目的 resources 下面。
-
 如果使用 Docker，cd 到 dataflow 目录下运行。
 
 ```java

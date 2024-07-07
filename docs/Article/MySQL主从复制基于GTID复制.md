@@ -269,7 +269,6 @@ GTID复制是基于事务ID的，确切地说是binlog中的GTID，所以事务I
 purge已有的binlog。
 
 ```
-
 mysql> flush logs;
 mysql> purge master logs to 'master-bin.000005';
 [[email protected] ~]# cat /data/master-bin.index 
@@ -560,24 +559,23 @@ DELIMITER ;
 -----------
 
 *   `gtid_mode`：是否开启gtid复制模式。只允许on/off类的布尔值，不允许其他类型(如1/0)的布尔值，实际上这个变量是枚举类型的。要设置 _gtid\_mode=on_ ，必须同时设置 _enforce\_gtid\_consistency_ 开。在MySQL 5.6中，还必须开启 _log\_slave\_updates_ ，即使是master也要开启。
-    
+
 *   ```
     enforce_gtid_consistency
     ```
-    
+
     ：强制要求只允许复制事务安全的事务。
-    
+
     gtid\_mode=on时必须显式设置该项，如果不给定值，则默认为on。应该尽量将该选项放在gtid\_mode的前面，减少启动mysqld时的检查。
-    
+
     *   不能在事务内部创建和删除临时表。只能在事务外部进行，且autocommit需要设置为1。
     *   不能执行 _create table ... select_ 语句。该语句除了创建一张新表并填充一些数据，其他什么事也没干。
     *   不能在事务内既更新事务表又更新非事务表。
 *   `gtid_executed`：已经执行过的GTID。 _reset master_ 会清空该项的全局变量值。
-    
+
 *   `gtid_purged`：已经purge掉的gtid。要设置该项，必须先保证 _gtid\_executed_ 已经为空，这意味着也一定会同时设置该项为空。在slave上设置该项时，表示稍后启动io线程和SQL线程都跳过这些gtid，slave上设置时应该让此项的gtid集合等于master上 _gtid\_executed_ 的值。
-    
+
 *   `gtid_next`：表示下一个要执行的gtid事务。
-    
 
 需要注意，master和slave上都有`gtid_executed`和`gtid_purged`，它们代表的意义有时候是不同的。
 

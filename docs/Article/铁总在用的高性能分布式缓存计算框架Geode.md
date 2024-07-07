@@ -1601,7 +1601,6 @@ gfsh>start server
 --memcached-protocol=BINARY|ASCII
 
 ````** HTTP 分布式 session **之前接触的分布式 session 方案是 Redis-cluster + Tomcat 来做的， 其实道理是一样的， Geode 替换了 Redis 就成功 geode-session-Tomcat 了。
-
 Geode 使用了不小的篇幅来描述该扩展功能，[详见](https://geode.apache.org/docs/guide/110/tools_modules/http_session_mgmt/quick_start.html)。** Redis 适配器 **```
 gfsh> start server --name=server1 --redis-bind-address=localhost \
  --redis-port=11211 --J=-Dgemfireredis.regiontype=PARTITION_PERSISTENT

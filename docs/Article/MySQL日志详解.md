@@ -612,18 +612,14 @@ mysql> show master status;
 mysql> reset master;
 
 ```** 2.PURGE { BINARY | MASTER } LOGS { TO 'log\_name' | BEFORE datetime\_expr }**purge master logs to "binlog\_name.00000X" 将会清空00000X之前的所有日志文件。例如删除000006之前的日志文件。
-
 ```
 
 mysql> purge master logs to "mysql-bin.000006";
 mysql> purge binary logs to "mysql-bin.000006";
 
 ```
-
 master和binary是同义词
-
 purge master logs before 'yyyy-mm-dd hh:mi:ss' 将会删除指定日期之前的所有日志。但是若指定的时间处在正在使用中的日志文件中，将无法进行purge。
-
 ```
 
 mysql> purge master logs before '2017-03-29 07:36:40';
@@ -635,18 +631,12 @@ mysql> show warnings;
 +---------+------+---------------------------------------------------------------------------+
 
 ```** 3.****使用--expire\_logs\_days=N****选项指定过了多少天日志自动过期清空。**
-
 5.4 二进制日志的记录格式
 --------------
-
 在MySQL 5.1之前，MySQL只有一种基于语句statement形式的日志记录格式。即将所有的相关操作记录为SQL语句形式。但是这样的记录方式对某些特殊信息无法同步记录，例如uuid，now()等这样动态变化的值。
-
 从MySQL 5.1开始，MySQL支持statement、row、mixed三种形式的记录方式。row形式是基于行来记录，也就是将相关行的每一列的值都在日志中保存下来，这样的结果会导致日志文件变得非常大，但是保证了动态值的确定性。还有一种mixed形式，表示如何记录日志由MySQL自己来决定。
-
 日志的记录格式由变量 binlog\_format 来指定。其值有：row,statement,mixed。innodb引擎的创始人之一在博客上推荐使用row格式。
-
 下面将记录格式改为row。
-
 ```
 
 mysql> alter table student add birthday datetime default  now();
@@ -655,9 +645,7 @@ mysql> set binlog_format='row';
 mysql> insert into student values(7,'xiaowoniu','female',now());
 
 ```
-
 查看产生的日志。
-
 ```
 
 \[\[email protected\] data\]# mysqlbinlog mysql-bin.000005
@@ -704,9 +692,7 @@ DELIMITER ;
 ...后面固定部分省略...
 
 ```
-
 发现是一堆看不懂的东西，使用-vv可将这些显示出来。可以看出，结果中记录的非常详细，这也是为什么基于row记录日志会导致日志文件极速变大。
-
 ```
 
 \[\[email protected\] data\]# mysqlbinlog mysql-bin.000005 -vv
@@ -734,14 +720,10 @@ gPraWB4BAAAAOAAAADoBAAAAAF4AAAAAAAEAAgAE//AHAAAACXhpYW93b25pdQGZnDqBmCz35ow=
 ...后面省略...
 
 ```
-
 还有一种mixed模式。这种模式下默认会采用statement的方式记录，只有以下几种情况会采用row的形式来记录日志。 1.表的存储引擎为NDB，这时对表的DML操作都会以row的格式记录。 2.使用了uuid()、user()、current\_user()、found\_rows()、row\_count()等不确定函数。但测试发现对now()函数仍会以statement格式记录，而sysdate()函数会以row格式记录。 3.使用了insert delay语句。 4.使用了临时表。
-
 5.5 二进制日志相关的变量
 --------------
-
 注意：在配置binlog相关变量的时候，相关变量名总是搞混，因为有的是binlog，有的是log\_bin，当他们分开的时候，log在前，当它们一起的时候，bin在前。在配置文件中也同样如此。
-
 *   log\_bin = {on | off | base\_name} #指定是否启用记录二进制日志或者指定一个日志路径(路径不能加.否则.后的被忽略)
 *   sql\_log\_bin ={ on | off } #指定是否启用记录二进制日志，只有在log\_bin开启的时候才有效
 *   expire\_logs\_days = #指定自动删除二进制日志的时间，即日志过期时间
@@ -761,32 +743,23 @@ gPraWB4BAAAAOAAAADoBAAAAAF4AAAAAAAEAAgAE//AHAAAACXhpYW93b25pdQGZnDqBmCz35ow=
 *   sync\_binlog = { 0 | n } #这个参数直接影响mysql的性能和完整性
     *   sync\_binlog=0:不同步，日志何时刷到磁盘由FileSystem决定，这个性能最好。
     *   sync\_binlog=n:每写n次事务(注意，对于非事务表来说，是n次事件，对于事务表来说，是n次事务，而一个事务里可能包含多个二进制事件)，MySQL将执行一次磁盘同步指令fdatasync()将缓存日志刷新到磁盘日志文件中。Mysql中默认的设置是sync\_binlog=0，即不同步，这时性能最好，但风险最大。一旦系统奔溃，缓存中的日志都会丢失。
-
 **在innodb的主从复制结构中，如果启用了二进制日志(几乎都会启用)，要保证事务的一致性和持久性的时候，必须将sync\_binlog的值设置为1，因为每次事务提交都会写入二进制日志，设置为1就保证了每次事务提交时二进制日志都会写入到磁盘中，从而立即被从服务器复制过去。**
-
 5.6 二进制日志定点还原数据库
 ----------------
-
 只需指定二进制日志的起始位置（可指定终止位置）并将其保存到sql文件中，由mysql命令来载入恢复即可。当然直接通过管道送给mysql命令也可。
-
 至于是基于位置来恢复还是基于时间点来恢复，这两种行为都可以。选择时间点来恢复比较直观些，并且跨日志文件恢复时更方便。
-
 ```
 
 mysqlbinlog --stop-datetime="2014-7-2 15:27:48" /tmp/mysql-bin.000008 | mysql -u user -p password
 
 ```
-
 恢复多个二进制日志文件时：
-
 ```
 
 mysqlbinlog mysql-bin.\[\*\] | mysql -uroot -p password
 
 ```
-
 或者将它们导入到一个文件中后恢复。
-
 ```
 
 mysqlbinlog mysql-bin.000001 > /tmp/a.sql

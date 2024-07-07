@@ -106,7 +106,6 @@ T1:begin tran
 
 ```
  　　select * from table lock in share mode
-
  　　update table set column1='hello'
 ```
 
@@ -114,7 +113,6 @@ T2:begin tran
 
 ```
  　　select * from table lock in share mode
-
  　　update table set column1='world'
 ```
 
@@ -152,7 +150,6 @@ T1:begin tran
 
 ```
  　　select * from table for update
-
  　　update table set column1='hello'
 ```
 
@@ -160,7 +157,6 @@ T2:begin tran
 
 ```
  　　select * from table for update
-
  　　update table set column1='world'
 ```
 
@@ -176,7 +172,6 @@ T1:begin tran
 
 ```
  select * from table [加更新锁操作]
-
  update table set column1='hello'
 ```
 
@@ -184,7 +179,6 @@ T2:begin tran
 
 ```
  select * from table [加更新锁操作]
-
  update table set column1='world'
 ```
 

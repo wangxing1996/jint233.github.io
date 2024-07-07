@@ -20,7 +20,6 @@ public class Person {
     public string Id { get; set; }
     public string Name { get; set; }
     public int Age { get; set; }
-    
     public void Say(string word) {
         Console.WriteLine($"{Name} Say: {word}");
     }
@@ -87,7 +86,6 @@ Event Souring，翻译过来叫事件溯源。什么意思呢？它把对象的�
 public class PersonUpdateCommand {
     public string Id { get; set; }
     public int Age{ get; set; }
-    
     public PersonUpdateCommand(string id, int age){
         this.Id = id;
         this.Age = age;
@@ -101,7 +99,6 @@ PersonUpdateCommand是一个命令，它描述了用户更新个人资料的意�
 public class PersonAgeChangeEvent {
     public string Id { get; private set; }
     public int Age{ get; private set; }
-    
     public PersonAgeChangeEvent(string id, int age){
         this.Id = id;
         this.Age = age;
@@ -109,11 +106,9 @@ public class PersonAgeChangeEvent {
 }
 public class PersonUpdateCommandHandler {
     private PersonUpdateCommand Command;
-    
     public PersonUpdateCommandHandler(PersonUpdateCommand command) {
         this.Command = command;
     }
-    
     public void Handle() {
         var person = GetPersonById(Command.Id);
         if(person.Age != Command.Age) {

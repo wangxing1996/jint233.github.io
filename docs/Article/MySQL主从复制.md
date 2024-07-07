@@ -140,38 +140,27 @@ relay-log=slave-bin
 server-id=111
 
 ```
-
 1.  重启master和slave上的MySQL实例。
-
 ```
 
 service mysqld restart
 
 ```
-
 1.** 在master上创建复制专用的用户。**
-
 ```
 
 create user 'repl'@'192.168.100.%' identified by '\[email protected\]!';
 grant REPLICATION SLAVE on *.* to 'repl'@'192.168.100.%';
 
 ```
-
 1.  **将slave恢复到master上指定的坐标。** 这是备份恢复的内容，此处用一个小节来简述操作过程。详细内容见[MySQL备份和恢复(一)、(二)、(三)](https://www.cnblogs.com/f-ck-need-u/p/9013458.html)。
-
 4.2 将slave恢复到master指定的坐标
 ------------------------
-
 对于复制而言，有几种情况：
-
 *   (1).待复制的master没有新增数据，例如新安装的mysql实例。这种情况下，可以跳过恢复这个过程。
 *   (2).待复制的master上已有数据。这时需要将这些已有数据也应用到slave上，并获取master上binlog当前的坐标。只有slave和master的数据能匹配上，slave重放relay log时才不会出错。
-
 第一种情况此处不赘述。第二种情况有几种方法，例如使用mysqldump、冷备份、xtrabackup等工具，这其中又需要考虑是MyISAM表还是InnoDB表。
-
 在实验开始之前，首先在master上新增一些测试数据，以innodb和myisam的数值辅助表为例。
-
 ```
 
 DROP DATABASE IF EXISTS backuptest;
@@ -234,9 +223,7 @@ CALL proc_num1 (1000000) ;
 CALL proc_num2 (1000000) ;
 
 ```
-
 所谓数值辅助表是只有一列的表，且这个字段的值全是数值，从1开始增长。例如上面的是从1到100W的数值辅助表。
-
 ```
 
 mysql> select * from backuptest.num_isam limit 10;
@@ -256,17 +243,13 @@ mysql> select * from backuptest.num_isam limit 10;
 +----+
 
 ````
-
 ### 4.2.1 获取master binlog的坐标
-
 **如果master是全新的数据库实例，或者在此之前没有开启过binlog，那么它的坐标位置是position=4 **。之所以是4而非0，是因为binlog的前4个记录单元是每个binlog文件的头部信息。
-
 如果master已有数据，或者说master以前就开启了binlog并写过数据库，那么需要手动获取position。** 为了安全以及没有后续写操作，必须先锁表。 **```
 mysql> flush tables with read lock;
 ````
 
 注意，这次的**锁表会导致写阻塞以及innodb的commit操作。**
-
 然后查看binlog的坐标。
 
 ```
@@ -288,17 +271,16 @@ mysql> show master status;   # 为了排版，简化了输出结果
 
 2. 如果要复制的是某个或某几个库，直接拷贝相关目录即可。但注意，这种冷备份的方式只适合MyISAM表和开启了`innodb_file_per_table=ON`的InnoDB表。如果没有开启该变量，innodb表使用公共表空间，无法直接冷备份。
 1. 如果要冷备份innodb表，最安全的方法是先关闭master上的mysql，而不是通过表锁。
-
-所以，**如果没有涉及到innodb表，那么在锁表之后，可以直接冷拷贝。最后释放锁。**\`\`\`
-mysql> flush tables with read lock;
-mysql> show master status;   # 为了排版，简化了输出结果
-+-------------------+----------+--------------+--------+--------+
-| File              | Position | Binlog_Do_DB | ...... | ...... |
-+-------------------+----------+--------------+--------+--------+
-| master-bin.000001 |      623 |              |        |        |
-+-------------------+----------+--------------+--------+--------+
-shell> rsync -avz /data 192.168.100.150:/
-mysql> unlock tables;
+   所以，**如果没有涉及到innodb表，那么在锁表之后，可以直接冷拷贝。最后释放锁。**\`\`\`
+   mysql> flush tables with read lock;
+   mysql> show master status;   # 为了排版，简化了输出结果
+   +-------------------+----------+--------------+--------+--------+
+   | File              | Position | Binlog_Do_DB | ...... | ...... |
+   +-------------------+----------+--------------+--------+--------+
+   | master-bin.000001 |      623 |              |        |        |
+   +-------------------+----------+--------------+--------+--------+
+   shell> rsync -avz /data 192.168.100.150:/
+   mysql> unlock tables;
 
 ```
 
@@ -934,20 +916,19 @@ shell> service mysqld start
 ```** 冷备份时，以下几点千万注意**：
 
 1.  因为slave2是slave1的从，所以
-    
+
     在启动MySQL前必须将备份到slave2上的和复制有关的文件都删除
-    
+
     。包括：
-    
+
     *   (1).master.info。除非配置文件中指定了`skip-slave-start`，否则slave2将再次连接到master并作为master的slave。
     *   (2).relay-log.info。因为slave1启动后会继续执行relay log中的内容(如果有未执行的)，这时slave1会将这部分写入binlog并传送到slave2。
     *   (3).删除relay log文件。其实不是必须删除，但建议删除。
     *   (4).删除relay log index文件。
     *   (5).删除DATADIR/auto.conf。这个文件必须删除，因为这里面保留了mysql server的UUID，而master和slave的UUID必须不能一致。在启动mysql的时候，如果没有这个文件会自动生成自己的UUID并保存到auto.conf中。
 2.  检查slave1上从master复制过来的专门用于复制的用户`repl`是否允许slave2连接。如果不允许，应该去master上修改这个用户。
-    
+
 3.  因为slave1是刚开启的binlog，所以slave2连接slave1时的binlog position应该指定为4。即使slave1不是刚开启的binlog，它在重启后也会滚动binlog。
-    
 
 所以，在slave2上继续操作：
 

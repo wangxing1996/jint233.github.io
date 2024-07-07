@@ -35,56 +35,36 @@ script、img、iframe、link、video、audio 等带有 src 属性的标签可以
 
 ```
 <script>
-
     var scriptTag = document.createElement('script');
-
     scriptTag.type = "text/javascript";
-
     scriptTag.src = "http://10.10.0.101:8899/jsonp?callback=f";
-
     document.head.appendChild(scriptTag);
-
 </script>
-
 ```
 
 再看下 jQuery 的写法。
 
 ```
 $.ajax({
-
     // 请求域名
-
     url:'http://10.10.0.101:8899/login',
-
     // 请求方式
-
     type:'GET',
-
     // 数据类型选择 jsonp
-
     dataType:'jsonp',
-
     // 回调方法名
-
     jsonpCallback:'callback',
 });
-
 // 回调方法
-
 function callback(response) {
-
   console.log(response);
-
 }
-
 ```
 
 JSONP 实现跨域很简单但是只支持 GET 请求方式。而且在服务器端接受到 JSONP 请求后需要设置请求头，添加 Access-Control-Allow-Origin 属性，属性值为 `*`，表示允许所有域名访问，这样浏览器才会正常解析，否则会报 406 错误。
 
 ```
 response.setHeader("Access-Control-Allow-Origin", "*");
-
 ```
 
 ## 3.2 CORS 方式
@@ -97,55 +77,35 @@ CORS（Cross-Origin Resource Sharing）即跨域资源共享，需要浏览器�
 
 ```
 GET
-
 // 标明本次请求来自哪个源（协议+域名+端口）
-
 Origin: http://127.0.0.1:8080
-
 // IP
-
 Host: 127.0.0.1:8080
-
 // 长连接
-
 Connection: keep-alive
-
 Content-Type: text/plain
-
 ```
 
 如果 Origin 标明的域名在服务器许可范围内，那么服务器就会给出响应：
 
 ```
   // 该值上文提到过，表示允许浏览器指定的域名访问，要么为浏览器传入的 origin，要么为 * 表示所有域名都可以访问
-
   Access-Control-Allow-Origin: http://127.0.0.1:8080
-
   // 表示服务器是否同意浏览器发送 cookie
-
   Access-Control-Allow-Credentials: true
-
   // 指定 XMLHttpRequest#getResponseHeader() 方法可以获取到的字段
-
   Access-Control-Expose-Headers: xxx
-
   Content-Type: text/html; charset=utf-8
-
 ```
 
 `Access-Control-Allow-Credentials: true` 表示服务器同意浏览器发送 cookie，另外浏览器也需要设置支持发送 cookie，否则就算服务器支持浏览器也不会发送。
 
 ```
 var xhr = new XMLHttpRequest(); 
-
 // 设置发送的请求是否带 cookie
-
 xhr.withCredentials = true;
-
 xhr.open('post', 'http://10.10.0.101:8899/login', true);
-
 xhr.setRequestHeader('Content-Type', 'text/plain');
-
 ```
 
 另外一种是非简单请求，请求方式是 PUT 或 DELETE，或者请求头中添加了 Content-Type:application/json 属性和属性值的请求。
@@ -156,66 +116,38 @@ xhr.setRequestHeader('Content-Type', 'text/plain');
 
 ```
  // 预检请求的请求方式是 OPTIONS
-
  OPTIONS
-
   // 标明本次请求来自哪个源（协议+域名+端口）
-
   Origin: http://127.0.0.1:8080
-
   // 标明接下来的 CORS 请求要使用的请求方式
-
   Access-Control-Request-Method: PUT
-
   // 标明接下来的 CORS 请求要附加发送的头信息属性
-
   Access-Control-Request-Headers: X-Custom-Header
-
   // IP
-
   Host: 127.0.0.1:8080
-
   // 长连接
-
   Connection: keep-alive
-
 ```
 
 如果服务器回应预检请求的响应头中没有任何 CORS 相关的头信息的话表示不支持跨域，如果允许跨域就会做出响应，响应头信息如下：
 
 ```
 HTTP/1.1 200 OK
-
 // 该值上文提到过，表示允许浏览器指定的域名访问，要么为浏览器传入的 origin，要么为 * 表示所有域名都可以访问
-
 Access-Control-Allow-Origin:http://127.0.0.1:8080
-
 // 服务器支持的所有跨域请求方式，为了防止浏览器发起多次预检请求把所有的请求方式返回给浏览器
-
 Access-Control-Allow-Methods: GET, POST, PUT
-
 // 服务器支持预检请求头信息中的 Access-Control-Request-Headers 属性值
-
 Access-Control-Allow-Headers: X-Custom-Header
-
 // 服务器同意浏览器发送 cookie
-
 Access-Control-Allow-Credentials: true
-
 // 指定预检请求的有效期是 20 天，期间不必再次发送另一个预检请求
-
 Access-Control-Max-Age:1728000
-
 Content-Type: text/html; charset=utf-8
-
 Keep-Alive: timeout=2, max=100
-
 // 长连接
-
 Connection: Keep-Alive
-
 Content-Type: text/plain
-
 ```
 
 接着浏览器会像简单请求一样，发送一个 CORS 请求，请求头中一定包含 Origin 属性，服务器的响应头中也一定得包含 Access-Control-Allow-Origin 属性。
@@ -228,54 +160,33 @@ Nginx 的配置信息：
 
 ```
 server {
-
     # 代理服务器的端口
-
     listen      88;
-
     # 代理服务器的域名
-
     server_name http://127.0.0.1;
     location / {
-
         # 反向代理服务器的域名+端口
-
         proxy_pass  http://127.0.0.2:89; 
-
         # 修改cookie里域名
-
         proxy_cookie_domain http://127.0.0.2 http://127.0.0.1; 
-
         index  index.html index.htm;
-
          # 设置当前代理服务器允许浏览器跨域
-
         add_header Access-Control-Allow-Origin http://127.0.0.1; 
-
         # 设置当前代理服务器允许浏览器发送 cookie
-
         add_header Access-Control-Allow-Credentials true;
-
     }
 }
-
 ```
 
 前端代码：
 
 ```
 var xhr = new XMLHttpRequest();
-
 // 设置浏览器允许发送 cookie
-
 xhr.withCredentials = true;
-
 // 访问 nginx 代理服务器
-
 xhr.open('get', 'http://127.0.0.1:88', true);
-
 xhr.send();
-
 ```
 
 # 5. get 和 post 请求有哪些区别？
@@ -332,62 +243,34 @@ UDP 服务端代码：
 // UDPServerTest.java
 public class UDPServerTest {
     public static void main(String[] args) throws Exception {
-
         DatagramSocket serverSocket = new DatagramSocket(8888);
-
         byte[] readyToSendData;
-
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
         while (true) {
-
             byte[] receiveData = new byte[1024];
-
             // 创建接收数据报，接受来自客户端的数据
-
             DatagramPacket fromClientDataPacket = new DatagramPacket(receiveData, receiveData.length);
-
             // 监听客户端是否发送了数据包
-
             serverSocket.receive(fromClientDataPacket);
-
             // 获取客户端数据包的内容
-
             String data = new String(fromClientDataPacket.getData());
-
             // 获取客户端 IP 地址
-
             InetAddress address = fromClientDataPacket.getAddress();
-
             if (data != null) {
-
                 System.out.println("【"+formatter.format(new Date()) + "】 receive data from client[" + address + "]: " + data );
-
             }
-
             // 获得客户端端口号
-
             int port = fromClientDataPacket.getPort();
-
             // 将获取到的数据包的内容转为大写
-
             String upperData = data.toUpperCase();
-
             readyToSendData = upperData.getBytes();
-
             // 创建发送数据报，用来向客户端发送数据
-
             DatagramPacket readyToSendPacket = new DatagramPacket(readyToSendData, readyToSendData.length, address, port);
-
             //向客户端发送数据报包
-
             serverSocket.send(readyToSendPacket);
-
         }
-
     }
 }
-
 ```
 
 UDP 客户端代码：
@@ -396,56 +279,31 @@ UDP 客户端代码：
 // UDPClientTest.java
 public class UDPClientTest {
     public static void main(String[] args) throws Exception {
-
         DatagramSocket clientSocket = new DatagramSocket();
-
         // 监听 console 的文字输入
-
         BufferedReader inputFromConsole = new BufferedReader(new InputStreamReader(System.in));
-
         // 获取 client 端的 IP 地址
-
         InetAddress adress = InetAddress.getLocalHost();
-
         byte[] readyToSendData;
-
         byte[] receiveData = new byte[1024];
-
         while (true) {
-
             String input = inputFromConsole.readLine();
-
             if (input.equals("exit")) break;
-
             readyToSendData = input.getBytes();
-
             // 创建发送数据报，用来向服务端发送数据
-
             DatagramPacket readyToSendPacket = new DatagramPacket(readyToSendData, readyToSendData.length, adress, 8888);
-
             //发送数据报包
-
             clientSocket.send(readyToSendPacket);
-
             // 创建接收数据报，接收来自服务端的数据
-
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-
             // 监听服务端是否发来了数据包
-
             clientSocket.receive(receivePacket);
-
             String data = new String(receivePacket.getData());
-
             System.out.println("Server reply: " + data);
-
         }
-
         clientSocket.close();
-
     }
 }
-
 ```
 
 UDP 服务端执行结果：
@@ -462,50 +320,28 @@ TCP 服务端代码：
 // TCPServerTest.java
 public class TCPServerTest {
     public static void main(String[] args) throws Exception {
-
         String data;
-
         String upperData;
-
         SimpleDateFormat dataFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
         ServerSocket serverSocket = new ServerSocket(8888);
-
         while(true) {
-
             // 接受客户端的连接
-
             Socket socket = serverSocket.accept();
-
             // 输入流，保存接收到的数据
-
             BufferedReader isFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
             // 输出流，用于向外发送数据
-
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-
             // 获取客户端数据
-
             data = isFromClient.readLine();
-
             if (data != null) {
-
                 System.out.println("【" + dataFormatter.format(new Date()) + "】 receive data from client[" + socket.getInetAddress() + "]: " + data );
-
             }
-
             upperData = data.toUpperCase() + '\n';
-
             //向客户端发送修改后的字符串
-
             dos.writeBytes(upperData);
-
         }
-
     }
 }
-
 ```
 
 TCP 客户端代码：
@@ -514,48 +350,27 @@ TCP 客户端代码：
 // TCPClientTest.java
 public class TCPClientTest {
     public static void main(String[] args) throws Exception {
-
         String input;
-
         String data;
-
         while (true) {
-
             // 监听 console 的文字输入
-
             BufferedReader inputFromConsole = new BufferedReader(new InputStreamReader(System.in));
-
             Socket clientSocket = new Socket("127.0.0.1", 8888);
-
             // 输出流，用于向外发送数据
-
             DataOutputStream readyToSendDos = new DataOutputStream(clientSocket.getOutputStream());
-
             // 输入流，保存接收到的数据
-
             BufferedReader receiveFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
             input = inputFromConsole.readLine();
-
             if (input.equals("exit")) break;
-
             // 向服务器发送数据
-
             readyToSendDos.writeBytes(input + '\n');
-
             // IO 阻塞等待服务端的响应
-
             data = receiveFromServer.readLine();
-
             System.out.println("Server reply: " + data);
-
             clientSocket.close();
-
         }
-
     }
 }
-
 ```
 
 TCP 服务端执行结果：
@@ -737,26 +552,18 @@ TCP 发送端和接收端都有一个固定大小的缓冲空间，为了防止�
 
 ```
 1.0.0.1～126.255.255.254
-
 128.0.0.1～191.255.255.254
-
 192.0.0.1～223.255.255.254
-
 224.0.0.1～239.255.255.254
-
 240.0.0.1～255.255.255.254
-
 ```
 
 私有地址：
 
 ```
 10.0.0.0～10.255.255.255
-
 172.16.0.0～172.31.255.255
-
 192.168.0.0～192.168.255.255
-
 ```
 
 - 0.0.0.0 路由器转发使用

@@ -12,24 +12,20 @@ ThreadLocal是JDK1.2开始就提供的一个用来存储线程本地变量的类
 
 例如在解决SimpleDateFormat的线程安全的时候。SimpleDateFormat是非线程安全的，它里面无论的是format()方法还是parse()方法，都有使用它自己内部的一个Calendar类的对象，format方法是设置时间，parse()方法里面是先调用Calendar的clear()方法，然后又调用了Calendar的set()方法（赋值），如果一个线程刚调用了set()进行赋值，这个时候又来了一个线程直接调用了clear()方法，那么这个parse()方法执行的结果就会有问题的。 **解决办法一**将使用SimpleDateformat的方法加上synchronized，这样虽然保证了线程安全，但却降低了效率，同一时间只有一个线程能使用格式化时间的方法。
 
-````java
+```java
 private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 public static synchronized String formatDate(Date date){
-
     return simpleDateFormat.format(date);
-
 }
+```
 
-```** 解决办法二** 将SimpleDateFormat的对象，放到ThreadLocal里面，这样每个线程中都有一个自己的格式对象的副本了。互不干扰，从而保证了线程安全。
+**解决办法二** 将SimpleDateFormat的对象，放到ThreadLocal里面，这样每个线程中都有一个自己的格式对象的副本了。互不干扰，从而保证了线程安全。
 
 ```java
 private static final ThreadLocal<SimpleDateFormat> simpleDateFormatThreadLocal = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 public static String formatDate(Date date){
-
    return simpleDateFormatThreadLocal.get().format(date);
-
 }
-
 ````
 
 ### ThreadLocal的原理
@@ -38,26 +34,18 @@ public static String formatDate(Date date){
 
 ```java
 ThreadLocal<Integer> threadLocal99 = new ThreadLocal<Integer>();
-
 threadLocal99.set(3);
-
 int num = threadLocal99.get();
-
 System.out.println("数字:"+num);
-
 threadLocal99.remove();
-
 System.out.println("数字Empty:"+threadLocal99.get());
-
 ```
 
 运行结果：
 
 ```java
 数字:3
-
 数字Empty:null
-
 ```
 
 使用起来很简单，主要是将变量放到ThreadLocal里面，在线程执行过程中就可以取到，当执行完成后在remove掉就可以了，只要没有调用remove()当前线程在执行过程中都是可以拿到变量数据的。 因为是放到了当前执行的线程中，所以ThreadLocal中的变量值只能当前线程来使用，从而保证的了线程安全（当前线程的子线程其实也是可以获取到的）。
@@ -66,52 +54,31 @@ System.out.println("数字Empty:"+threadLocal99.get());
 
 ```java
 public void set(T value) {
-
    // 获取当前线程
-
    Thread t = Thread.currentThread();
-
    // 获取ThreadLocalMap
-
    ThreadLocal.ThreadLocalMap map = getMap(t);
-
    // ThreadLocalMap 对象是否为空，不为空则直接将数据放入到ThreadLocalMap中
-
    if (map != null)
-
        map.set(this, value);
-
    else
-
        createMap(t, value); // ThreadLocalMap对象为空，则先创建对象，再赋值。
-
 }
-
 ```
 
 我们看到变量都是存放在了ThreadLocalMap这个变量中的。那么ThreadLocalMap又是怎么来的呢？
 
 ```java
 ThreadLocalMap getMap(Thread t) {
-
     return t.threadLocals;
-
 }
-
 public class Thread implements Runnable {
-
  ... ...
-
  /* ThreadLocal values pertaining to this thread. This map is maintained
-
      * by the ThreadLocal class. */
-
     ThreadLocal.ThreadLocalMap threadLocals = null;
-
     ... ...
-
 }
-
 ```
 
 通过上面的源码，我们发现ThreadLocalMap变量是当前执行线程中的一个变量，所以说，ThreadLocal中存放的数据其实都是放到了当前执行线程中的一个变量里面了。也就是存储在了当前的线程对象里了，别的线程里面是另一个线程对象了，拿不到其他线程对象中的数据，所以数据自然就隔离开了。
@@ -120,72 +87,40 @@ public class Thread implements Runnable {
 
 ```java
 /**
-
  * Set the value associated with key.
-
  * @param key the thread local object
-
  * @param value the value to be set
-
  */
-
 private void set(ThreadLocal<?> key, Object value) {
     // We don't use a fast path as with get() because it is at
-
     // least as common to use set() to create new entries as
-
     // it is to replace existing ones, in which case, a fast
-
     // path would fail more often than not.
     Entry[] tab = table;
-
     int len = tab.length;
-
     // 定位在数组中的位置
-
     int i = key.threadLocalHashCode & (len-1);
     for (Entry e = tab[i];
-
          e != null;
-
          e = tab[i = nextIndex(i, len)]) {
-
         ThreadLocal<?> k = e.get();
-
         // 如果当前位置不为空，并且当前位置的key和传过来的key相等，那么就会覆盖当前位置的数据
-
         if (k == key) {
-
             e.value = value;
-
             return;
-
         }
-
         // 如果当前位置为空，则初始化一个Entry对象，放到当前位置。
-
         if (k == null) {
-
             replaceStaleEntry(key, value, i);
-
             return;
-
         }
-
     }
-
     // 如果当前位置不为空，并且当前位置的key也不等于要赋值的key ，那么将去找下一个空位置，直接将数据放到下一个空位置处。
-
     tab[i] = new Entry(key, value);
-
     int sz = ++size;
-
     if (!cleanSomeSlots(i, sz) && sz >= threshold)
-
         rehash();
-
 }
-
 ```
 
 我们从set()方法中可以看到，处理逻辑有四步。
@@ -199,109 +134,65 @@ private void set(ThreadLocal<?> key, Object value) {
 
 ```java
 private Entry getEntry(ThreadLocal<?> key) {
-
     int i = key.threadLocalHashCode & (table.length - 1);
-
     Entry e = table[i];
-
     if (e != null && e.get() == key)
-
         return e;
-
     else
-
         return getEntryAfterMiss(key, i, e);
-
 }
-
 /**
-
  * Version of getEntry method for use when key is not found in
-
  * its direct hash slot.
-
  *
-
  * @param  key the thread local object
-
  * @param  i the table index for key's hash code
-
  * @param  e the entry at table[i]
-
  * @return the entry associated with key, or null if no such
-
  */
-
 private Entry getEntryAfterMiss(ThreadLocal<?> key, int i, Entry e) {
-
     Entry[] tab = table;
-
     int len = tab.length;
     while (e != null) {
-
         ThreadLocal<?> k = e.get();
-
         if (k == key)
-
             return e;
-
         if (k == null)
-
             expungeStaleEntry(i);
-
         else
-
             i = nextIndex(i, len);
-
         e = tab[i];
-
     }
-
     return null;
-
 }
-
 ```
 
 我们上文一直说，ThreadLocal是保存在单个线程中的数据，每个线程都有自己的数据，但是实际ThreadLocal里面的真正的对象数据，其实是保存在堆里面的，而线程里面只是存储了对象的引用而已。 并且我们在使用的时候通常需要在上一个线程执行的方法的上下文共享ThreadLocal中的变量。 例如我的主线程是在某个方法中执行代码呢，但是这个方法中有一段代码时新创建了一个线程，在这个线程里面还使用了我这个正在执行的方法里面的定义的ThreadLocal里面的变量。这个时候，就是需要从新线程里面调用外面线程的数据，这个就需要线程间共享了。这种子父线程共享数据的情况，ThreadLocal也是支持的。 例如：
 
 ```java
  ThreadLocal threadLocalMain = new InheritableThreadLocal();
-
  threadLocalMain.set("主线程变量");
-
  Thread t = new Thread() {
-
      @Override
-
      public void run() {
-
          super.run();
-
          System.out.println( "现在获取的变量是 =" + threadLocalMain.get());
-
      }
-
  };
-
  t.start();
-
 ```
 
 运行结果：
 
 ```java
 现在获取的变量是 =主线程变量
-
 ```
 
 上面这样的代码就能实现子父线程共享数据的情况，重点是使用InheritableThreadLocal来实现的共享。 那么它是怎么实现数据共享的呢？ 在Thread类的init()方法中有这么一段代码：
 
 ```java
 if (inheritThreadLocals && parent.inheritableThreadLocals != null)
-
             this.inheritableThreadLocals =ThreadLocal.createInheritedMap(parent.inheritableThreadLocals);
-
 ```
 
 这段代码的意思是，在创建线程的时候，如果当前线程的inheritThreadLocals变量和父线程的inheritThreadLocals变量都不为空的时候，会将父线程的inheritThreadLocals变量中的数据，赋给当前线程中的inheritThreadLocals变量。

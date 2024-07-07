@@ -149,7 +149,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
 2.开启一个线程定时循环，定时使用jvmtiEnv指针配合调用如下几个JVMTI函数：
 
-```java
+```
 // 获取所有线程的jthread
 jvmtiError GetAllThreads(jvmtiEnv *env, jint *threads_count_ptr, jthread **threads_ptr);
 // 根据jthread获取该线程信息（name、daemon、priority...）
@@ -321,14 +321,13 @@ public static void agentmain(String args, Instrumentation ins) {
 
 这样打包出来的jar，既可以作为-javaagent参数启动，也可以被Attach到运行中的目标JVM进程。JDK已经封装了简单的API让我们直接Attach一个Java Agent，下面以Arthas中的代码进行演示：
 
-```
+```java
 // com/taobao/arthas/core/Arthas.java
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 // ...
 private void attachAgent(Configure configure) throws Exception {
     VirtualMachineDescriptor virtualMachineDescriptor = null;
-  
     // 拿到所有JVM进程，找出目标进程
     for (VirtualMachineDescriptor descriptor : VirtualMachine.list()) {
         String pid = descriptor.id();
@@ -361,14 +360,14 @@ private void attachAgent(Configure configure) throws Exception {
 
 sun.tools封装的API足够简单易用，但只能使用Java编写，也只能用在Java Agent上，因此有些时候我们必须手工对JVM进程直接进行Attach。对于JVMTI，除了Agent_OnLoad()之外，我们还需实现一个Agent_OnAttach()函数，当将JVMTI Agent Attach到目标进程时，从该函数开始执行：
 
-```
+```bash
 // $JAVA_HOME/include/jvmti.h
 JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *vm, char *options, void *reserved);
 ```
 
 下面我们以Async-Profiler中的jattach源码为线索，探究一下如何利用Attach机制给运行中的JVM进程发送命令。jattach是Async-Profiler提供的一个Driver，使用方式比较直观：
 
-```
+```bash
 Usage:
     jattach <pid> <cmd> [args ...]
 Args:
@@ -379,7 +378,7 @@ Args:
 
 使用方式如：
 
-```
+```bash
 jattach 1234 load /absolute/path/to/agent/libagent.so true
 ```
 

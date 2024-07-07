@@ -102,11 +102,8 @@ Comment:
 1 row in set (0.00 sec)
 
 ```
-
 data_length 表数据大小 index_length 表索引大小 data\_free 碎片大小
-
 根据返回信息，我们知道碎片大小为 4194304（单位 B）** 2\. 通过数据库视图信息查看 **查询 information\_schema.tables 的 data\_free 列的值：
-
 ```
 
 mysql> select
@@ -133,43 +130,30 @@ where t.table_schema = 'employees';
 8 rows in set (0.01 sec)
 
 ```
-
 根据结果显示，data\_free 列数据就是我们要查询的表的碎片大小内容，是 4M。
-
 ### 如何清理碎片
-
 找到表碎片了，我们如何清理呢？有两种方法。** 1\. 分析表 **命令：
-
 ```
 
 optimize table table_name;
 
 ```
-
 这个方法主要针对 MyISAM 引擎表使用，因为 MyISAM 表的数据和索引是分离的，optimize 表可以整理数据文件，重新排列索引。
-
 注意：optimize 会锁表，时间长短依据表数据量的大小。** 2\. 重建表引擎**
-
 命令：
-
 ```
 
 alter table table_name engine = innodb;
 
 ```
-
 这个方法主要针对 InnoDB 引擎表使用，该操作会重建表的存储引擎，重组数据和索引的存储。
-
 刚才我们查到表 salaries 有 4M 的碎片，我们清理一下 salaries 表碎片：
-
 ```
 
 mysql> alter table salaries engine = innodb;
 
 ```
-
 查询一下该表的碎片是否被清理：
-
 ```
 
 mysql> select
@@ -189,11 +173,8 @@ where t.table_schema = 'employees' and table_name='salaries';
 1 row in set (0.00 sec)
 
 ```
-
 碎片从原来的 4M 清理到现在的 2M。
-
 我们看看查询表是否提高了速度：
-
 ```
 
 mysql> select count(*) from salaries;
@@ -205,8 +186,6 @@ mysql> select count(*) from salaries;
 1 row in set (0.16 sec)
 
 ```
-
 速度还是提高了不少，清理碎片后提高了查询速度。
-
 **总结一下**：清理表的碎片可以提高 MySQL 性能，在日常工作中我们可以定期执行表碎片整理，从而提高 MySQL 性能。
 ```

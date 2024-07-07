@@ -32,17 +32,17 @@ server-uuid=a126fcb6-3706-11e8-b1d5-000c294ebf0d
 
 # 2.gtid的生命周期
 
-**gtid的生命周期对于配置和维护基于gtid的复制至关重要**。所以，请尽可能理解以下几个过程。
+**gtid的生命周期对于配置和维护基于gtid的复制至关重要** 。所以，请尽可能理解以下几个过程。
 
-gtid在master和slave上是一直**持久化保存**(即使删除了日志，也会记录到Previous_GTID中)的。它在master和slave上的生命周期如下：
+gtid在master和slave上是一直 **持久化保存** (即使删除了日志，也会记录到Previous_GTID中)的。它在master和slave上的生命周期如下：
 
 1. 客户端发送DDL/DML给master上，master首先对此事务生成一个唯一的gtid，假如为`uuid_xxx:1`，然后立即执行该事务中的操作。
 
    注意，主从复制的情况下，sync-binlog基本上都会设置为1，这表示在每次提交事务时将缓存中的binlog刷盘。所以，在事务提交前，gtid以及事务相关操作的信息都在缓存中，提交后它们才写入到binlog file中，然后才会被dump线程dump出去。
 
-   换句话说，**只有提交了的事务，gtid和对应的事务操作才会记录到binlog文件中。记录的格式是先记录gtid，紧跟着再记录事务相关的操作。 **2.  当binlog传送到relay log中后，slave上的SQL线程首先读取该gtid，并设置变量 _gtid_next_ 的值为该gtid，表示下一个要操作的事务是该gtid。 _gtid_next_** 是基于会话的，不同会话的gtid_next不同。 **3.  随后slave检测该gtid在自己的binlog中是否存在。如果存在，则放弃此gtid事务；如果不存在，则将此gtid写入到** 自己的binlog中**，然后立刻执行该事务，并在自己的binlog中记录该事务相关的操作。
+   换句话说， **只有提交了的事务，gtid和对应的事务操作才会记录到binlog文件中。记录的格式是先记录gtid，紧跟着再记录事务相关的操作。** 2.  当binlog传送到relay log中后，slave上的SQL线程首先读取该gtid，并设置变量 _gtid_next_ 的值为该gtid，表示下一个要操作的事务是该gtid。 _gtid_next_ **是基于会话的，不同会话的gtid_next不同。** 3.  随后slave检测该gtid在自己的binlog中是否存在。如果存在，则放弃此gtid事务；如果不存在，则将此gtid写入到 **自己的binlog中** ，然后立刻执行该事务，并在自己的binlog中记录该事务相关的操作。
 
-   注意，**slave上replay的时候，gtid不是提交后才写到自己的binlog file的，而是判断gtid不存在后立即写入binlog file。**通过这种在执行事务前先检查并写gtid到binlog的机制，不仅可以保证当前会话在此之前没有执行过该事务，还能保证没有其他会话读取了该gtid却没有提交。因为如果其他会话读取了该gtid会立即写入到binlog(不管是否已经开始执行事务)，所以当前会话总能读取到binlog中的该gtid，于是当前会话就会放弃该事务。总之，一个gtid事务是决不允许多次执行、多个会话并行执行的。
+   注意， **slave上replay的时候，gtid不是提交后才写到自己的binlog file的，而是判断gtid不存在后立即写入binlog file。** 通过这种在执行事务前先检查并写gtid到binlog的机制，不仅可以保证当前会话在此之前没有执行过该事务，还能保证没有其他会话读取了该gtid却没有提交。因为如果其他会话读取了该gtid会立即写入到binlog(不管是否已经开始执行事务)，所以当前会话总能读取到binlog中的该gtid，于是当前会话就会放弃该事务。总之，一个gtid事务是决不允许多次执行、多个会话并行执行的。
 
 1. slave在重放relay log中的事务时，不会自己生成gtid，所以所有的slave(无论是何种方式的一主一从或一主多从复制架构)通过重放relay log中事务获取的gtid都来源于master，并永久保存在slave上。
 
@@ -50,7 +50,7 @@ gtid在master和slave上是一直**持久化保存**(即使删除了日志，也
 
 从上面可以看出，gtid复制的优点大致有：
 
-1.**保证同一个事务在某slave上绝对只执行一次，没有执行过的gtid事务总是会被执行。 **2.** 不用像传统复制那样保证binlog的坐标准确，因为根本不需要binlog以及坐标。 **3.** 故障转移到新的master的时候很方便，简化了很多任务。 **4.** 很容易判断master和slave的数据是否一致。只要master上提交的事务在slave上也提交了，那么一定是一致的。**
+1. **保证同一个事务在某slave上绝对只执行一次，没有执行过的gtid事务总是会被执行。** 2. **不用像传统复制那样保证binlog的坐标准确，因为根本不需要binlog以及坐标。** 3. **故障转移到新的master的时候很方便，简化了很多任务。** 4. **很容易判断master和slave的数据是否一致。只要master上提交的事务在slave上也提交了，那么一定是一致的。**
 
 当然，MySQL提供了选项可以控制跳过某些gtid事务，防止slave第一次启动复制时执行master上的所有事务而导致耗时过久。
 
@@ -184,8 +184,7 @@ call proc_num2(1000000);
 
 ```
 # slave上执行：
-mysql> show slave status\G
-***************************1. row***************************
+mysql> show slave status\G ****  ****  ****  ****  ****  ****  ***1. row**  ****  ****  ****  ****  ****  **** *
                Slave_IO_State: Waiting for master to send event
                   Master_Host: 192.168.100.21
                   Master_User: repl
@@ -336,7 +335,7 @@ enforce_gtid_consistency=on       # 必须项
 gtid_mode=on                      # 必须项
 ```
 
-**1.备份master。**我选择的是xtrabackup的innobackupex工具，因为它速度快，操作简单，而且在线备份也比较安全。如果不知道xtrabackup备份的使用方法，见我的另一篇文章：[xtrabackup用法和原理详述](https://www.cnblogs.com/f-ck-need-u/p/9018716.html)。当然，你也可以采用mysqldump和冷备份的方式，因为gtid复制的特性，这些备份方式也都很安全。
+**1.备份master。** 我选择的是xtrabackup的innobackupex工具，因为它速度快，操作简单，而且在线备份也比较安全。如果不知道xtrabackup备份的使用方法，见我的另一篇文章：[xtrabackup用法和原理详述](https://www.cnblogs.com/f-ck-need-u/p/9018716.html)。当然，你也可以采用mysqldump和冷备份的方式，因为gtid复制的特性，这些备份方式也都很安全。
 
 ```
 # master上执行，备份所有数据：
@@ -344,7 +343,7 @@ gtid_mode=on                      # 必须项
 [[email protected] ~]# innobackupex -uroot [email protected]! -S /data/mysql.sock /backdir/  # 准备数据
 [[email protected] ~]# innobackupex --apply-log /backdir/2018-06-09_20-02-24/   # 应用数据
 [[email protected] ~]# scp -pr /backdir/2018-06-09_20-02-24/ 192.168.100.23:/tmp
-```** 2.将备份恢复到slave2。**
+``` **2.将备份恢复到slave2。**
 
 在slave2上执行：
 ```
@@ -357,7 +356,7 @@ gtid_mode=on                      # 必须项
 
 ```
 
-**3.设置gtid\_purged，连接master，开启复制功能。**
+**3.设置gtid_purged，连接master，开启复制功能。**
 
 由于xtrabackup备份数据集却不备份binlog，所以必须先获取此次备份结束时的最后一个事务ID，并在slave上明确指定跳过这些事务，否则slave会再次从master上复制这些binlog并执行，导致数据重复执行。
 
@@ -408,7 +407,7 @@ mysql> show global variables like '%gtid%';
 
 ```
 
-可以**在启动slave线程之前使用gtid\_purged变量来指定需要跳过的gtid集合。**但因为要设置gtid\_purged必须保证全局变量gtid\_executed为空，所以先在slave上执行`reset master`(注意，不是reset slave)，再设置gtid\_purged。
+可以 **在启动slave线程之前使用gtid_purged变量来指定需要跳过的gtid集合。** 但因为要设置gtid\_purged必须保证全局变量gtid\_executed为空，所以先在slave上执行`reset master`(注意，不是reset slave)，再设置gtid\_purged。
 ```
 
 # slave2上执行

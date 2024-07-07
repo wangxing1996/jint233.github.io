@@ -34,7 +34,7 @@ performance_schema 这个是什么，是不是用它来让我们解除慌张？
 
 想要使用这个能力，我们需要开启几个功能。
 
-**Enable the stage/innodb/alter% instruments**```
+**Enable the stage/innodb/alter% instruments** ```
 mysql> UPDATE performance_schema.setup_instruments
 
 ```
@@ -46,8 +46,7 @@ Query OK, 0 rows affected (0.01 sec)
 
 Rows matched: 7  Changed: 0  Warnings: 0
 
-```** Enable the stage event consumer tables**
-```
+``` **Enable the stage event consumer tables** ```
 
 mysql> UPDATE performance_schema.setup_consumers
 
@@ -136,7 +135,7 @@ mysql> alter table sbtest.sbtest1 add d char(20);
 
 mysql> select * from performance_schema.events_stages_current\\G;
 
-***************************1. row***************************
+****  ****  ****  ****  ****  ****  ***1. row**  ****  ****  ****  ****  ****  **** *
 
 ```
      THREAD_ID: 28
@@ -159,7 +158,7 @@ NESTING_EVENT_TYPE: STATEMENT
 ......
 mysql> select * from performance_schema.events_stages_current\\G;
 
-***************************1. row***************************
+****  ****  ****  ****  ****  ****  ***1. row**  ****  ****  ****  ****  ****  **** *
 
 ```
      THREAD_ID: 28

@@ -14,7 +14,7 @@
 - 由于在 JDK 1.4 中引入了 NIO 机制，为此实现了一种通过 native 函数直接分配对外内存的，而这一切是通过以下两个概念实现的：
   - 通道（Channel）;
   - 缓冲区（Buffer）;
-- 通过存储在 Java 堆里面的 DirectByteBuffer **对象**对这块内存的引用进行操作；
+- 通过存储在 Java 堆里面的 DirectByteBuffer **对象** 对这块内存的引用进行操作；
 - 因避免了 Java 堆和 Native 堆（native heap）中来回复制数据，所以在一些场景中显著提高了性能；
 - 直接内存出现 OutOfMemoryError 异常的原因是物理机器的内存是受限的，但是我们通常会忘记需要为直接内存在物理机中预留相关内存空间；
 
@@ -69,11 +69,11 @@ Unsafe 是位于 sun.misc 包下的一个类，主要提供一些用于执行低
 
 从内存分配效率方面考虑的话，一般认为 HeapByteBuffer 以及 DirectByteBuffer 这种申请堆外内存的方式比堆内申请内存效率低，这主要是因为前者需要向物理机申请堆外内存，这是额外的开销。
 
-**延伸阅读**：
+**延伸阅读** ：
 
-美团技术团队：<https://tech.meituan.com/2019/02/14/talk-about-java-magic-class-unsafe.html>**注意事项**：
+美团技术团队：<https://tech.meituan.com/2019/02/14/talk-about-java-magic-class-unsafe.html> **注意事项** ：
 
-基地址并非是 JVM 运行环境的物理地址，而是虚拟内存地址，详细可见 R 大的回答：<https://www.zhihu.com/question/53150867>**建议**：
+基地址并非是 JVM 运行环境的物理地址，而是虚拟内存地址，详细可见 R 大的回答：<https://www.zhihu.com/question/53150867> **建议** ：
 
 Oracle JDK 没有 Unsafe 类的源码，所以需要 OpenJDK 才能知道 Unsafe 类中的方法详细返回类型，网址如下：
 
@@ -124,7 +124,7 @@ public char getChar() {
 
 其最终会调用 native `putChat()` 方法：`sun.misc.Unsafe#getChar(long)`。
 
-**注意事项**：
+**注意事项** ：
 
 上述方法利用了左移操作 left shift，整形数据左移一位代表`*2`，但是不用 2 而用 `1<<1`，这样不就意味着多进行了一层没有必要的运算了吗？实际上，使用左移运算体现了除 byte 类型的基本类型可以由 byte 类型整数倍表示，增加了可读性，这是这样写代码的主要原因。其次左移操作并不会带来执行时的额外运算，因为左移这类计算表达式在编译期间会直接优化为结果值。
 

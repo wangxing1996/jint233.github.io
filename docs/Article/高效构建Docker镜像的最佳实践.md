@@ -550,7 +550,7 @@ COPY . /app
 CMD [ "java", "-jar", "/app/target/gs-spring-boot-0.1.0.jar" ]
 ```
 
-第一个实践指南： **为了更有效的利用构建缓存，将更新最频繁的步骤放在最后面**这样在之后的构建中，前三步都可以利用缓存。你可以运行多次 `docker build` 以进行验证。
+第一个实践指南： **为了更有效的利用构建缓存，将更新最频繁的步骤放在最后面** 这样在之后的构建中，前三步都可以利用缓存。你可以运行多次 `docker build` 以进行验证。
 
 ### 部分拷贝
 
@@ -566,7 +566,7 @@ COPY target/gs-spring-boot-0.1.0.jar /app/
 CMD [ "java", "-jar", "/app/gs-spring-boot-0.1.0.jar" ]
 ```
 
-第二个实践指南：**避免将全部内容拷贝至镜像中, 至保留需要的内容即可**。当然除去修改 `Dockerfile` 文件外，也可以通过修改 `.dockerignore` 文件来完成类似的事情。
+第二个实践指南： **避免将全部内容拷贝至镜像中, 至保留需要的内容即可** 。当然除去修改 `Dockerfile` 文件外，也可以通过修改 `.dockerignore` 文件来完成类似的事情。
 
 `docker build` 的过程是先加载 `.dockerignore` 文件，然后才按照 `Dockerfile` 进行构建，`.dockerignore` 的用法与 `.gitignore` 类似，排除掉你不想要的文件即可。
 
@@ -583,7 +583,7 @@ COPY target/gs-spring-boot-0.1.0.jar /app/
 CMD [ "java", "-jar", "/app/gs-spring-boot-0.1.0.jar" ]
 ```
 
-第三个实践指南：**将包管理器的缓存生成与安装包的命令写到一起可防止包缓存过期**
+第三个实践指南： **将包管理器的缓存生成与安装包的命令写到一起可防止包缓存过期**
 
 ### 谨慎使用包管理器
 
@@ -659,7 +659,7 @@ local/spring-boot   2                   178dacdaf015        10 hours ago        
 
 可以看到小了 16M 左右。
 
-第四个实践指南： **谨慎使用包管理器，不安装非必要的包，注意清理包管理器缓存文件**。
+第四个实践指南： **谨慎使用包管理器，不安装非必要的包，注意清理包管理器缓存文件** 。
 
 ### 选择合适的基础镜像
 
@@ -699,7 +699,7 @@ local/spring-boot   2                   178dacdaf015        14 hours ago        
 
 很明显，使用 `openjdk:8-jre-alpine` 后，镜像大小只有 103M 比之前的镜像小了很多。
 
-第五个实践指南：**尽可能选择官方镜像，看实际需求进行最终选择**这样说的原因，主要是因为 Alpine Linux 并非基于 glibc 的，而是基于 musl 的，如果是 Python 的项目，请实际测试下性能损失再决定是否选择 Alpine Linux （[这里](http://moelove.info/docker-python-perf/)是我做的一份关于 Python 各镜像主要的性能对比，有需要可以参考）
+第五个实践指南： **尽可能选择官方镜像，看实际需求进行最终选择** 这样说的原因，主要是因为 Alpine Linux 并非基于 glibc 的，而是基于 musl 的，如果是 Python 的项目，请实际测试下性能损失再决定是否选择 Alpine Linux （[这里](http://moelove.info/docker-python-perf/)是我做的一份关于 Python 各镜像主要的性能对比，有需要可以参考）
 
 ### 保持构建环境一致
 
@@ -728,9 +728,9 @@ RUN mvn -e -B package
 CMD [ "java", "-jar", "/app/target/gs-spring-boot-0.1.0.jar" ]
 ```
 
-这样，**即使业务代码发生改变，也不需要重新解决依赖，可有效的利用了缓存，加快构建的速度**。
+这样， **即使业务代码发生改变，也不需要重新解决依赖，可有效的利用了缓存，加快构建的速度** 。
 
-当然，现在我们构建的镜像中，还是包含着项目的源代码，这其实并非我们所需要的。那么我们可以使用**多阶段构建**来解决这个问题。`Dockerfile` 可以修改为：
+当然，现在我们构建的镜像中，还是包含着项目的源代码，这其实并非我们所需要的。那么我们可以使用 **多阶段构建** 来解决这个问题。`Dockerfile` 可以修改为：
 
 ```bash
 FROM maven:3.6.1-jdk-8-alpine AS builder

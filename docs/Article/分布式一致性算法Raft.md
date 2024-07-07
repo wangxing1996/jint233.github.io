@@ -1,14 +1,14 @@
 # 分布式一致性算法 Raft
 
-## **一、Raft 算法背景**在学术理论界，分布式一致性算法的代表还是 Paxos，但是少数理解的人觉得很简单，尚未理解的觉得很难，大多数人还是一知半解。Paxos 的可理解性 & 工程落地性的门槛很高。斯坦福学者花了很多时间理解 Paxos，于是他们研究出来 Raft。本文主要是介绍 Raft 算法的基本原理
+## **一、Raft 算法背景** 在学术理论界，分布式一致性算法的代表还是 Paxos，但是少数理解的人觉得很简单，尚未理解的觉得很难，大多数人还是一知半解。Paxos 的可理解性 & 工程落地性的门槛很高。斯坦福学者花了很多时间理解 Paxos，于是他们研究出来 Raft。本文主要是介绍 Raft 算法的基本原理
 
-## **二、Raft 算法基本原理 **共识算法就是保证一个集群的多台机器协同工作，在遇到请求时，数据能够保持一致。即使遇到机器宕机，整个系** 统仍然能够对外保持**服务的可用性
+## **二、Raft 算法基本原理** 共识算法就是保证一个集群的多台机器协同工作，在遇到请求时，数据能够保持一致。即使遇到机器宕机，整个系 **统仍然能够对外保持** 服务的可用性
 
 Raft 将共识问题分解三个子问题：
 
-1.**Leader election 领导选举 **：有且仅有一个 leader 节点，如果 leader 宕机，通过选举机制选出新的 leader；
-2.** Log replication 日志复制 **：leader 从客户端接收数据更新/删除请求，然后日志复制到 follower 节点，从而保证集群数据的一致性；
-3.** Safety 安全性**：通过安全性原则来处理一些特殊 case，保证 Raft 算法的完备性；
+1. **Leader election 领导选举** ：有且仅有一个 leader 节点，如果 leader 宕机，通过选举机制选出新的 leader；
+2. **Log replication 日志复制** ：leader 从客户端接收数据更新/删除请求，然后日志复制到 follower 节点，从而保证集群数据的一致性；
+3. **Safety 安全性** ：通过安全性原则来处理一些特殊 case，保证 Raft 算法的完备性；
 
 所以，Raft 算法核心流程可以归纳为：
 
@@ -20,22 +20,22 @@ Raft 将共识问题分解三个子问题：
 
 ![img](assets/v2-02b6004fd2b7886d10ccd611b6d66d6c_1440w.jpg)
 
-## **2.1 Leader Election 领导选举**集群中每个节点只能处于 Leader、Follower 和 Candidate 三种状态的一种
+## **2.1 Leader Election 领导选举** 集群中每个节点只能处于 Leader、Follower 和 Candidate 三种状态的一种
 
-1.**follower 从节点**：
+1. **follower 从节点** ：
 
 - 节点默认是 follower；
-- 如果**刚刚开始** 或 **和 leader 通信超时**，follower 会发起选举，变成 candidate，然后去竞选 leader；
-- 如果收到其他 candidate 的竞选投票请求，按照**先来先得 **&** 每个任期只能投票一次**的投票原则投票;
+- 如果 **刚刚开始** 或 **和 leader 通信超时** ，follower 会发起选举，变成 candidate，然后去竞选 leader；
+- 如果收到其他 candidate 的竞选投票请求，按照 **先来先得** & **每个任期只能投票一次** 的投票原则投票;
 
-1.**candidate 候选者**：
+1. **candidate 候选者** ：
 
 - follower 发起选举后就变为 candidate，会向其他节点拉选票。candidate 的票会投给自己，所以不会向其他节点投票
 - 如果获得超过 **半数** 的投票，candidate 变成 leader，然后马上和其他节点通信，表明自己的 leader 的地位；
 - 如果选举超时，重新发起选举；
 - 如果遇到更高任期 Term 的 leader 的通信请求，转化为 follower；
 
-1. **leader 主节点**：
+1. **leader 主节点** ：
 
 - 成为 leader 节点后，此时可以接受客户端的数据请求，负责日志同步；
 - 如果遇到更高任期 Term 的 candidate 的通信请求，这说明 candidate 正在竞选 leader，此时之前任期的 leader 转化为 follower，且完成投票；
@@ -45,7 +45,7 @@ Raft 将共识问题分解三个子问题：
 
 ![img](assets/v2-537082d871c75e59f6b7556b48cee932_1440w.jpg)
 
-Raft 算法把时间轴划分为不同任期 Term。每个任期 Term 都有自己的编号 TermId，该编号全局唯一且单调递增。如下图，每个任务的开始都 **Leader Election 领导选举**。如果选举成功，则进入维持任务 Term 阶段，此时 leader 负责接收客户端请求并，负责复制日志。Leader 和所有 follower 都保持通信，如果 follower 发现通信超时，TermId 递增并发起新的选举。如果选举成功，则进入新的任期。如果选举失败，TermId 递增，然后重新发起选举直到成功。
+Raft 算法把时间轴划分为不同任期 Term。每个任期 Term 都有自己的编号 TermId，该编号全局唯一且单调递增。如下图，每个任务的开始都 **Leader Election 领导选举** 。如果选举成功，则进入维持任务 Term 阶段，此时 leader 负责接收客户端请求并，负责复制日志。Leader 和所有 follower 都保持通信，如果 follower 发现通信超时，TermId 递增并发起新的选举。如果选举成功，则进入新的任期。如果选举失败，TermId 递增，然后重新发起选举直到成功。
 
 举个例子，参考下图，Term N 选举成功，Term N+1 和 Term N+2 选举失败，Term N+3 重新选举成功。
 
@@ -53,28 +53,28 @@ Raft 算法把时间轴划分为不同任期 Term。每个任期 Term 都有自�
 
 具体的说，Leader 在任期内会周期性向其他 follower 节点发送心跳来维持地位。follower 如果发现心跳超时，就认为 leader 节点宕机或不存在。随机等待一定时间后，follower 会发起选举，变成 candidate，然后去竞选 leader。选举结果有三种情况：
 
-1. **获取超过半数投票，赢得选举**：
+1. **获取超过半数投票，赢得选举** ：
 
 - 当 Candidate 获得超过半数的投票时，代表自己赢得了选举，且转化为 leader。此时，它会马上向其他节点发送请求，从而确认自己的 leader 地位，从而阻止新一轮的选举；
 
-- **投票原则**：当多个 Candidate 竞选 Leader 时：
+- **投票原则** ：当多个 Candidate 竞选 Leader 时：
 
 - - 一个任期内，follower 只会 **投票一次票** ，且投票 **先来显得** ；
   - Candidate 存储的日志至少要和 follower 一样新（ **安全性准则** ），否则拒绝投票；
 
-1. **投票未超过半数，选举失败**：
+1. **投票未超过半数，选举失败** ：
 
 - 当 Candidate 没有获得超过半数的投票时，说明多个 Candidate 竞争投票导致过于分散，或者出现了丢包现象。此时，认为当期任期选举失败，任期 TermId+1，然后发起新一轮选举；
 - 上述机制可能出现多个 Candidate 竞争投票，导致每个 Candidate 一直得不到超过半数的票，最终导致无限选举投票循环；
 - **投票分散问题解决：** Raft 会给每个 Candidate 在固定时间内随机确认一个超时时间（一般为 150-300ms）。这么做可以尽量避免新的一次选举出现多个 Candidate 竞争投票的现象；
 
-1.**收到其他 Leader 通信请求**：
+1. **收到其他 Leader 通信请求** ：
 
 - 如果 Candidate 收到其他声称自己是 Leader 的请求的时候，通过任期 TermId 来判断是否处理；
 - 如果请求的任期 TermId 不小于 Candidate 当前任期 TermId，那么 Candidate 会承认该 Leader 的合法地位并转化为 Follower；
 - 否则，拒绝这次请求，并继续保持 Candidate；
 
-简单的多，**Leader Election 领导选举**通过若干的投票原则，保证一次选举有且仅可能最多选出一个 leader，从而解决了脑裂问题。
+简单的多， **Leader Election 领导选举** 通过若干的投票原则，保证一次选举有且仅可能最多选出一个 leader，从而解决了脑裂问题。
 
 ## **2.2 Log Replication 日志复制**
 
@@ -91,18 +91,18 @@ follower 收到日志复制请求的处理流程：
 1. 如此循环往复，直到找到一个共同的任期号&日志索引。此时 follower 从这个索引值开始复制，最终和 leader 节点日志保持一致；
 1. 日志复制过程中，Leader 会无限重试直到成功。如果超过半数的节点复制日志成功，就可以任务当前数据请求达成了共识，即日志可以 commite 提交了；
 
-综上， **Log Replication 日志复制**有两个特点：
+综上， **Log Replication 日志复制** 有两个特点：
 
 1. 如果在不同日志中的两个条目有着相同索引和任期号，则所存储的命令是相同的，这点是由 leader 来保证的；
 1. 如果在不同日志中的两个条目有着相同索引和任期号，则它们之间所有条目完全一样，这点是由日志复制的规则来保证的；
 
 举个例子，最上面表示日志索引，这个是保证唯一性。每个方块代表指定任期内的数据操作，目前来看，LogIndex 1-4 的日志已经完成同步，LogIndex 5 的正在同步，LogIndex6 还未开始同步。Raft 日志提交的过程有点类似两阶段原子提交协议 2PC，不过和 2PC 的最大区别是，Raft 要求超过一般节点同意即可 commited，2PC 要求所有节点同意才能 commited。
 
-![img](assets/v2-2f3ad84935c439bf16b0018351162173_1440w.jpg)**日志不一致问题**：在正常情况下，leader 和 follower 的日志复制能够保证整个集群的一致性，但是遇到 leader 崩溃的时候，leader 和 follower 日志可能出现了不一致的状态，此时 follower 相比 leader 缺少部分日志。
+![img](assets/v2-2f3ad84935c439bf16b0018351162173_1440w.jpg) **日志不一致问题** ：在正常情况下，leader 和 follower 的日志复制能够保证整个集群的一致性，但是遇到 leader 崩溃的时候，leader 和 follower 日志可能出现了不一致的状态，此时 follower 相比 leader 缺少部分日志。
 
-为了解决数据不一致性，Raft 算法规定**follower 强制复制 leader 节日的日志 **，即 follower 不一致日志都会被 leader 的日志覆盖，最终 follower 和 leader 保持一致。简单的说，从前向后寻找 follower 和 leader 第一个公共 LogIndex 的位置，然后从这个位置开始，follower 强制复制 leader 的日志。但是这么多还有其他的安全性问题，所以需要引入** Safety 安全性**规则 。
+为了解决数据不一致性，Raft 算法规定 **follower 强制复制 leader 节日的日志** ，即 follower 不一致日志都会被 leader 的日志覆盖，最终 follower 和 leader 保持一致。简单的说，从前向后寻找 follower 和 leader 第一个公共 LogIndex 的位置，然后从这个位置开始，follower 强制复制 leader 的日志。但是这么多还有其他的安全性问题，所以需要引入 **Safety 安全性** 规则 。
 
-## **2.3 Safety 安全性 **当前的** Leader election 领导选举 **和** Log replication 日志复制**并不能保证 Raft 算法的安全性，在一些特殊情况下，可能导致数据不一致，所以需要引入下面安全性规则
+## **2.3 Safety 安全性** 当前的 **Leader election 领导选举** 和 **Log replication 日志复制** 并不能保证 Raft 算法的安全性，在一些特殊情况下，可能导致数据不一致，所以需要引入下面安全性规则
 
 ## **2.3.1 Election Safety 选举安全性：避免脑裂问题**
 
@@ -112,19 +112,19 @@ follower 收到日志复制请求的处理流程：
 - Candidate 存储的日志至少要和 follower 一样新；
 - 只有获得超过半数投票才有机会成为 leader；
 
-## **2.3.2 Leader Append-Only 日志只能由 leader 添加修改**Raft 算法规定，所有的数据请求都要交给 leader 节点处理，要求
+## **2.3.2 Leader Append-Only 日志只能由 leader 添加修改** Raft 算法规定，所有的数据请求都要交给 leader 节点处理，要求
 
-1. leader 只能日志追加日志，**不能覆盖日志**；
+1. leader 只能日志追加日志， **不能覆盖日志** ；
 1. 只有 leader 的日志项才能被提交，follower 不能接收写请求和提交日志；
 1. 只有已经提交的日志项，才能被应用到状态机中；
 1. 选举时限制新 leader 日志包含所有已提交日志项；
 
-## **2.3.3 Log Matching 日志匹配特性**这点主要是为了保证日志的唯一性，要求
+## **2.3.3 Log Matching 日志匹配特性** 这点主要是为了保证日志的唯一性，要求
 
 1. 如果在不同日志中的两个条目有着相同索引和任期号，则所存储的命令是相同的；
 1. 如果在不同日志中的两个条目有着相同索引和任期号，则它们之间所有条目完全一样；
 
-## **2.3.4 Leader Completeness 选举完备性：leader 必须具备最新提交日志 **Raft 规定：只** 有拥有最新提交日志的 follower 节点才有资格成为 leader 节点。** 具体做法：candidate 竞选投票时会携带最新提交日志，follower 会用自己的日志和 candidate 做比较
+## **2.3.4 Leader Completeness 选举完备性：leader 必须具备最新提交日志** Raft 规定：只 **有拥有最新提交日志的 follower 节点才有资格成为 leader 节点。** 具体做法：candidate 竞选投票时会携带最新提交日志，follower 会用自己的日志和 candidate 做比较
 
 - 如果 follower 的更新，那么拒绝这次投票；
 - 否则根据前面的投票规则处理。这样就可以保证只有最新提交节点成为 leader；
@@ -151,8 +151,8 @@ follower 收到日志复制请求的处理流程：
 
 所以，Raft 对日志提交有额外安全机制：leader 只能提交当前任期 Term 的日志，旧任期 Term（以前的数据）只能通过当前任期 Term 的数据提交来间接完成提交。简单的说，日志提交有两个条件需要满足：
 
-1. **当前任期 **；
-   2.** 复制结点超过半数**；
+1. **当前任期** ；
+   2. **复制结点超过半数** ；
 
 下面举个例子来解释为什么需要这个原则，如下图：
 
@@ -177,16 +177,16 @@ follower 收到日志复制请求的处理流程：
 - leader 选举：follower5 发起选举，可以得到自己、follower2、follower3、follower4 的票（4/5），最终成为 leader；
 - 此时其他节点需要强制复制 follower5 的日志，那么 follower1、follower2、follower3 的日志被强制覆盖掉。即虽然 LogIndex3 被复制到了超过半数节点，但也有可能被覆盖掉；
 
-如何解决这个问题呢？Raft 在日志项提交上增加了限制：只有 **当前任期 **且** 复制超过半数**的日志才可以提交。即只有 LogIndex4 提交后，LogIndex3 才会被提交。
+如何解决这个问题呢？Raft 在日志项提交上增加了限制：只有 **当前任期** 且 **复制超过半数** 的日志才可以提交。即只有 LogIndex4 提交后，LogIndex3 才会被提交。
 
-## **三、Paxos VS Raft：这个世界上只有一种一致性算法，那就是 Paxos**Basic Paxos 算法没有 leader proposer 角色，是一个纯粹的去中心化的分布式算法，但是它存在若干不足（只能单值共识 & 活锁 & 网络开销大）。所以才有了以 leader proposer 为核心的 Multi Paxos 算法（由一个去中心化的算法变为 leader-based 的算法）。Raft 算法相当于 Multi Paxos 的进一步优化，主要通过增加两个限制
+## **三、Paxos VS Raft：这个世界上只有一种一致性算法，那就是 Paxos** Basic Paxos 算法没有 leader proposer 角色，是一个纯粹的去中心化的分布式算法，但是它存在若干不足（只能单值共识 & 活锁 & 网络开销大）。所以才有了以 leader proposer 为核心的 Multi Paxos 算法（由一个去中心化的算法变为 leader-based 的算法）。Raft 算法相当于 Multi Paxos 的进一步优化，主要通过增加两个限制
 
-1.**日志添加次序性**：
+1. **日志添加次序性** ：
 
 - Raft 要求日志必须要串行连续添加的；
 - Multi Paxos 可以并发添加日志，没有顺序性要求，所以日志可能存在空洞现象；
 
-1. **选主限制**：
+1. **选主限制** ：
 
 - Raft 要求只有拥有最新日志的节点才有资格当选 leader，因为日志是串行连续添加的，所以 Raft 能够根据日志确认最新节点；
 - 在 Multi Paxos 算法中由于日志是并发添加的，所以无法确认最新日志的节点，所以 Multi Paxos 可以选择任意节点作为了 leader proposer 节点，成为 leader 节点后需要把其他日志补全；

@@ -119,8 +119,7 @@ mysql> show plugins;
 或者查看`information_schema.plugins`表获取更详细的信息。
 
 ```
-mysql> select * from information_schema.plugins where plugin_name like "%semi%"\G
-***************************1. row***************************
+mysql> select * from information_schema.plugins where plugin_name like "%semi%"\G ****  ****  ****  ****  ****  ****  ***1. row**  ****  ****  ****  ****  ****  **** *
            PLUGIN_NAME: rpl_semi_sync_master
         PLUGIN_VERSION: 1.0
          PLUGIN_STATUS: ACTIVE
@@ -509,8 +508,7 @@ mysql> show status like "%semi%";
 
 ```
 # slave1上执行
-mysql> show slave status \G
-***************************1. row***************************Slave_IO_State: Waiting for master to send event
+mysql> show slave status \G ****  ****  ****  ****  ****  ****  ***1. row**  ****  ****  ****  ****  ****  **** *Slave_IO_State: Waiting for master to send event
                   Master_Host: 192.168.100.21
                   Master_User: repl
                   Master_Port: 3306
@@ -527,7 +525,7 @@ mysql> show slave status \G
 ................................................
 ```
 
-此时slave的**SQL线程**状态是`Waiting for semi-sync ACK from slave`。
+此时slave的 **SQL线程** 状态是`Waiting for semi-sync ACK from slave`。
 
 但10秒之后再查看。
 
@@ -565,4 +563,4 @@ mysql> show status like "%semi%";
 
 它先记录了当前slave2/slave3中已经同步到slave1的哪个位置。然后将Semi-sync复制切换为OFF状态，即降级为异步复制。
 
-在下次slave2或slave3启动IO线程时，**slave1将自动切换回半同步复制**，并发送那些未被复制的binlog。
+在下次slave2或slave3启动IO线程时， **slave1将自动切换回半同步复制** ，并发送那些未被复制的binlog。

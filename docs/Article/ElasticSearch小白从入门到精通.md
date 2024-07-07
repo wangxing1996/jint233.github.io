@@ -44,10 +44,10 @@ Kibana 是一款 ES 的数据可视化和管理工具，可以提供直方图，
 
 #### 为什么要使用 ES
 
-- **ES 很快**：ES 是在 Lucene 基础上构建，所以全文本搜索相当的出色。ES 还是一个实时搜索平台。文档索引操作到文档变为可搜索之间速度很快。
-- **ES 具有分布式的特征**：ES 中保存的文档分布在不同的容器中，这些容器为分片，可以对分片进行复制并形成冗余副本。ES 可以扩充到数百台，并处理 PB 级别的数据。
-- **ES 包含一系列广泛的功能**：ES 拥有大量的内置功能，方便用户管理数据。
-- **ES 简化了数据采集，可视化报告的过程**：通过与 Beats 和 Logstash 集成，用户可以在 ES 中索引数据并处理数据，
+- **ES 很快** ：ES 是在 Lucene 基础上构建，所以全文本搜索相当的出色。ES 还是一个实时搜索平台。文档索引操作到文档变为可搜索之间速度很快。
+- **ES 具有分布式的特征** ：ES 中保存的文档分布在不同的容器中，这些容器为分片，可以对分片进行复制并形成冗余副本。ES 可以扩充到数百台，并处理 PB 级别的数据。
+- **ES 包含一系列广泛的功能** ：ES 拥有大量的内置功能，方便用户管理数据。
+- **ES 简化了数据采集，可视化报告的过程** ：通过与 Beats 和 Logstash 集成，用户可以在 ES 中索引数据并处理数据，
 
 ### ES 搭建
 
@@ -136,7 +136,7 @@ GET /_search
 }
 ```
 
-##### **查询语句的结构**一个查询的典型结构
+##### **查询语句的结构** 一个查询的典型结构
 
 ```
 {
@@ -174,7 +174,7 @@ curl -X GET "localhost:9200/_search?pretty" -H 'Content-Type: application/json' 
 '
 ```
 
-##### **合并查询**分为叶子语句，被用于将查询字符串和字段进行对比，复合语句用于合并其他查询语句
+##### **合并查询** 分为叶子语句，被用于将查询字符串和字段进行对比，复合语句用于合并其他查询语句
 
 例如下面语句：找出信件正文包含 business opportunity 的星标邮件，或者在邮件正文包含 business opportunity 的非垃圾邮件：
 
@@ -196,19 +196,19 @@ curl -X GET "localhost:9200/_search?pretty" -H 'Content-Type: application/json' 
 
 #### 常用查询
 
-##### **match_all 查询**该查询匹配所有文档
+##### **match_all 查询** 该查询匹配所有文档
 
 ```
 { "match_all": {}}
 ```
 
-##### **match 查询**用于使用分词器进行查询
+##### **match 查询** 用于使用分词器进行查询
 
 ```
 { "match": { "tweet": "About Search" }}
 ```
 
-##### **multi_match 查询**用于在多个字段上执行相同更多 match 查询
+##### **multi_match 查询** 用于在多个字段上执行相同更多 match 查询
 
 ```
 {
@@ -219,7 +219,7 @@ curl -X GET "localhost:9200/_search?pretty" -H 'Content-Type: application/json' 
 }
 ```
 
-##### **range 查询**用于找出在指定区间内的数字或者时间
+##### **range 查询** 用于找出在指定区间内的数字或者时间
 
 ```
 {
@@ -232,7 +232,7 @@ curl -X GET "localhost:9200/_search?pretty" -H 'Content-Type: application/json' 
 }
 ```
 
-##### **term 查询**用于进行精确匹配
+##### **term 查询** 用于进行精确匹配
 
 ```
 { "term": { "age":    26           }}
@@ -241,7 +241,7 @@ curl -X GET "localhost:9200/_search?pretty" -H 'Content-Type: application/json' 
 { "term": { "tag":    "full_text"  }}
 ```
 
-##### **terms 查询**用于进行多值匹配
+##### **terms 查询** 用于进行多值匹配
 
 ```
 { "terms": { "tag": [ "search", "full_text", "nosql" ] }}
@@ -466,9 +466,9 @@ curl -X PUT "localhost:9200/my_index/_mapping/my_type?pretty" -H 'Content-Type: 
 
 #### 类型和映射
 
-##### **Lucene 如何处理文档**在 Lucene 中一个文档由键值对组成。在索引文档的时候，每个字段的值都会添加到相关字段的倒排序中
+##### **Lucene 如何处理文档** 在 Lucene 中一个文档由键值对组成。在索引文档的时候，每个字段的值都会添加到相关字段的倒排序中
 
-##### **类型如何实现**每个文档的类型名称将会保存在 \_type 字段上，当要检索字段的时候，ES 会自动在 \_type 字段上检索
+##### **类型如何实现** 每个文档的类型名称将会保存在 \_type 字段上，当要检索字段的时候，ES 会自动在 \_type 字段上检索
 
 例如在 User 类型中，name 字段会映射声明为 string 类型，并索引到 name 的倒排序中，需要使用 whitespace 分词器分析。
 

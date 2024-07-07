@@ -46,15 +46,15 @@ mysql> show tables;
 
 接下来我们讲几个 information_schema 中重要常用视图。
 
-- **SCHEMATA**：查看 MySQL 实例中所有数据库信息
-- **TABLES**：查询数据库中的表、视图信息
-- **COLUMNS**：查询表中的列信息
-- **STATISTICS**：查询表中的索引信息
-- **USER_PRIVILEGES**：查询用户权限信息
-- **SCHEMA_PRIVILEGES**：查询数据库权限信息
-- **TABLE_PRIVILEGES**：查询表权限信息
-- **COLUMN_PRIVILEGES**：查询列权限信息
-- **CHARACTER_SETS**：查询字符集信息
+- **SCHEMATA** ：查看 MySQL 实例中所有数据库信息
+- **TABLES** ：查询数据库中的表、视图信息
+- **COLUMNS** ：查询表中的列信息
+- **STATISTICS** ：查询表中的索引信息
+- **USER_PRIVILEGES** ：查询用户权限信息
+- **SCHEMA_PRIVILEGES** ：查询数据库权限信息
+- **TABLE_PRIVILEGES** ：查询表权限信息
+- **COLUMN_PRIVILEGES** ：查询列权限信息
+- **CHARACTER_SETS** ：查询字符集信息
 
 好了，information_schema 不做过多的介绍了，查询的内容比较全面，也比较简单，大家可以自行去探索。
 
@@ -363,12 +363,12 @@ mysql> show tables like '%instances';
 6 rows in set (0.00 sec)
 ```
 
-- **cond_instances**：保存系统中使用的条件变量的对象
-- **file_instances**：保存系统中打开文件的对象
-- **mutex_instances**：保存系统中使用互斥变量的对象
-- **prepared_statements_instances**：保存预处理 SQL 语句的 statements 的对象
-- **rwlock_instances**：保存系统中使用读写锁的对象
-- **socket_instances**：保存系统中使用的 socket 的对象
+- **cond_instances** ：保存系统中使用的条件变量的对象
+- **file_instances** ：保存系统中打开文件的对象
+- **mutex_instances** ：保存系统中使用互斥变量的对象
+- **prepared_statements_instances** ：保存预处理 SQL 语句的 statements 的对象
+- **rwlock_instances** ：保存系统中使用读写锁的对象
+- **socket_instances** ：保存系统中使用的 socket 的对象
 
 #### wait event 表
 
@@ -396,9 +396,9 @@ mysql> show tables like '%waits%';
 
 这里是说前三个，其他的后面介绍。
 
-- **events_waits_current**：保存当前线程的等待事件
-- **events_waits_history**：保存每个线程的最近 N 个等待事件
-- **events_waits_history_long**：保存所有线程的最近 N 个等待事件
+- **events_waits_current** ：保存当前线程的等待事件
+- **events_waits_history** ：保存每个线程的最近 N 个等待事件
+- **events_waits_history_long** ：保存所有线程的最近 N 个等待事件
 
 #### stage event 表
 
@@ -422,9 +422,9 @@ mysql> show tables like '%stage%';
 
 这里是说前三个，其他的后面介绍。
 
-- **events_stages_current**：保存当前线程所处的执行阶段
-- **events_stages_history**：保存当前线程最新的 N 个执行阶段
-- **events_stages_history_long**：保存当前线程最新的 N 个执行阶段
+- **events_stages_current** ：保存当前线程所处的执行阶段
+- **events_stages_history** ：保存当前线程最新的 N 个执行阶段
+- **events_stages_history_long** ：保存当前线程最新的 N 个执行阶段
 
 #### statement event 表
 
@@ -451,9 +451,9 @@ mysql> show tables like '%statement%';
 
 这里是说前三个，其他的后面介绍。
 
-- **events_statements_current**：保存当前线程执行的语句
-- **events_statements_history**：保存每个线程最新的 N 个执行的语句
-- **events_statements_history_long**：保存每个线程最新的 N 个执行的语句
+- **events_statements_current** ：保存当前线程执行的语句
+- **events_statements_history** ：保存每个线程最新的 N 个执行的语句
+- **events_statements_history_long** ：保存每个线程最新的 N 个执行的语句
 
 #### transaction event 表
 
@@ -477,9 +477,9 @@ mysql> show tables like '%transactions%';
 
 这里是说前三个，其他的后面介绍。
 
-- **events_transactions_current**：保存每个线程当前事务事件
-- **events_transactions_history**：保存每个线程最近的 N 个事务事件
-- **events_transactions_history_long**：保存每个线程最近的 N 个事务事件
+- **events_transactions_current** ：保存每个线程当前事务事件
+- **events_transactions_history** ：保存每个线程最近的 N 个事务事件
+- **events_transactions_history_long** ：保存每个线程最近的 N 个事务事件
 
 #### summary 表
 
@@ -742,7 +742,7 @@ Query OK, 1 row affected (0.02 sec)
 Rows matched: 1  Changed: 1  Warnings: 0
 ```
 
-**sysconfiginsertsetuser **当对 sys.sys_config 表做 insert 操作时，该触发器会将 sys_config 表的 set_by 列设置为当前用户名。** sysconfigupdatesetuser**
+**sysconfiginsertsetuser** 当对 sys.sys_config 表做 insert 操作时，该触发器会将 sys_config 表的 set_by 列设置为当前用户名。 **sysconfigupdatesetuser**
 
 当对 sys.sys_config 表做 insert 操作时，该触发器会将 sys_config 表的 set_by 列设置为当前用户名。
 
@@ -773,34 +773,34 @@ mysql> set @sys.ignore_sys_config_triggers=0;
 
 接下来我们重点介绍几个视图。
 
-- **host_summary**：这个视图我们可以查看连接数据库的主机情况，统计每个主机 SQL 执行次数、SQL 执行时长、表扫描次数、文件 IO 情况、连接情况、用户情况、内存分布情况。通过这些信息我们可以快速了解连接数据库的主机情况。
-- **hostsummarybyfileio_type**：查询连接数据库每个主机的文件 IO 使用情况。
-- **hostsummarybyfileio**：查询连接数据库主机的总 IO 使用情况。
-- **innodbbufferstatsbyschema**：扫描整个 buffer pool 来统计查看每个库的内存占用情况。如果生产环境 buffer pool 很大，扫描会占用很多资源，造成性能问题，慎用。
-- **innodbbufferstatsbytable**：扫描整个 buffer pool 来统计查看每个库的每个对象的内存占用情况。如果生产环境 buffer pool 很大，扫描会占用很多资源，造成性能问题，慎用。
-- **ioglobalbyfileby_bytes**：查询数据库的 IO 情况。
-- **memorybyhostbycurrent_bytes**：查询连接数据库的主机内存情况。
-- **memorybythreadbycurrent_bytes**：查询连接数据库的线程内存情况。
-- **memorybyuserbycurrent_bytes**：查询连接数据库的用户内存情况。
-- **processlist**：查询数据库连接情况。
-- **session**：查询连接数据库的会话情况。
-- **schematablelock_waits**：查询锁等待情况。
-- **schematablestatistics**：查询对表的 insert、update、delete、select 的 IO 情况。
-- **schematableswithfulltable_scans**：查询全表扫描情况。
-- **schemaautoincrement_columns**：查询自增列情况。
-- **schemaobjectoverview**：查询 MySQL 中每个数据库的对象情况（包括表、索引、视图、函数、存储过程、触发器）。
-- **schemaredundantindexes**：查询数据库的冗余索引情况。
-- **schemaunusedindexes**：查询数据库中没有使用索引的情况。
-- **schemaindexstatistics**：查询索引的 select、insert、update、delete 情况。
-- **statement_analysis**：查询执行语句总体的统计信息情况。
-- **statementswitherrorsorwarnings**：查询执行语句的错误和警告情况。
-- **statementswithfulltablescans**：查询全表扫描情况。
-- **statementswithruntimesin95th_percentile**：查询语句平均执行时间大于整体 95%平均分布的情况。
-- **statementswithsorting**：查询使用了文件排序的情况。
-- **statementswithtemp_tables**：查询使用了临时表的执行语句情况。
-- **user_summary**：查询连接的总体执行时间、平均执行时间、IO、内存等情况。
-- **version**：查询 sys schema 和 MySQL 版本情况。
-- **waitclassesglobalbyavg_latency**：查询等待事件的平均延迟时间情况。
-- **waitclassesglobalbylatency**：查询等待事件的总体延迟时间情况。
+- **host_summary** ：这个视图我们可以查看连接数据库的主机情况，统计每个主机 SQL 执行次数、SQL 执行时长、表扫描次数、文件 IO 情况、连接情况、用户情况、内存分布情况。通过这些信息我们可以快速了解连接数据库的主机情况。
+- **hostsummarybyfileio_type** ：查询连接数据库每个主机的文件 IO 使用情况。
+- **hostsummarybyfileio** ：查询连接数据库主机的总 IO 使用情况。
+- **innodbbufferstatsbyschema** ：扫描整个 buffer pool 来统计查看每个库的内存占用情况。如果生产环境 buffer pool 很大，扫描会占用很多资源，造成性能问题，慎用。
+- **innodbbufferstatsbytable** ：扫描整个 buffer pool 来统计查看每个库的每个对象的内存占用情况。如果生产环境 buffer pool 很大，扫描会占用很多资源，造成性能问题，慎用。
+- **ioglobalbyfileby_bytes** ：查询数据库的 IO 情况。
+- **memorybyhostbycurrent_bytes** ：查询连接数据库的主机内存情况。
+- **memorybythreadbycurrent_bytes** ：查询连接数据库的线程内存情况。
+- **memorybyuserbycurrent_bytes** ：查询连接数据库的用户内存情况。
+- **processlist** ：查询数据库连接情况。
+- **session** ：查询连接数据库的会话情况。
+- **schematablelock_waits** ：查询锁等待情况。
+- **schematablestatistics** ：查询对表的 insert、update、delete、select 的 IO 情况。
+- **schematableswithfulltable_scans** ：查询全表扫描情况。
+- **schemaautoincrement_columns** ：查询自增列情况。
+- **schemaobjectoverview** ：查询 MySQL 中每个数据库的对象情况（包括表、索引、视图、函数、存储过程、触发器）。
+- **schemaredundantindexes** ：查询数据库的冗余索引情况。
+- **schemaunusedindexes** ：查询数据库中没有使用索引的情况。
+- **schemaindexstatistics** ：查询索引的 select、insert、update、delete 情况。
+- **statement_analysis** ：查询执行语句总体的统计信息情况。
+- **statementswitherrorsorwarnings** ：查询执行语句的错误和警告情况。
+- **statementswithfulltablescans** ：查询全表扫描情况。
+- **statementswithruntimesin95th_percentile** ：查询语句平均执行时间大于整体 95%平均分布的情况。
+- **statementswithsorting** ：查询使用了文件排序的情况。
+- **statementswithtemp_tables** ：查询使用了临时表的执行语句情况。
+- **user_summary** ：查询连接的总体执行时间、平均执行时间、IO、内存等情况。
+- **version** ：查询 sys schema 和 MySQL 版本情况。
+- **waitclassesglobalbyavg_latency** ：查询等待事件的平均延迟时间情况。
+- **waitclassesglobalbylatency** ：查询等待事件的总体延迟时间情况。
 
 以上差不多就是 sys 库常用的视图了，基本满足我们的日常分析统计需求，大家可以通过官网继续深入学习，学好这一部分的内容，对 MySQL 的底层原理及性能分析有非常大的帮助。

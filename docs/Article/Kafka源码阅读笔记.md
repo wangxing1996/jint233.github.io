@@ -2,7 +2,7 @@
 
 作者：guolonglin，腾讯 IEG 后台开发工程师
 
-### **一、Kafka 总览**1）kafka 集群是由 broker 组成，每个 borker 拥有一个 controller，基于 zookeeper 做集群 controller leader 选举，以及存储集群核心元数据，leader controller 负责管理整个集群
+### **一、Kafka 总览** 1）kafka 集群是由 broker 组成，每个 borker 拥有一个 controller，基于 zookeeper 做集群 controller leader 选举，以及存储集群核心元数据，leader controller 负责管理整个集群
 
 2）以 Topic->partition-> replication 来存储生产者数据，每个 partition 为一个 Log，log 分段存储于文件中；
 
@@ -12,13 +12,13 @@
 
 ![img](assets/v2-a176b3a0f9a6653e6676d7e2e7bfad9f_1440w.jpg)
 
-### **二、Broker 结构**1）
+### **二、Broker 结构** 1）
 
 ![img](assets/v2-08b4addcaa904492f0e1cff65842c626_1440w.jpg)
 
 2）每个 borker 进程，都包含各个管理器，如 socketServer 网络处理，replicaManager 副本管理器，kafkaController 集群管理器，groupCoordinator 消息者数据管理器，LogManager 日志数据管理器，kafkaScheduler 定时器，zkClient 与 zookeeper 通信管理器，transactionCoordinator 事务协调器。
 
-### **三、通信框架**1）
+### **三、通信框架** 1）
 
 ![img](assets/v2-58f8d2e60d96853b5f6ba8f89b922c22_1440w.jpg)
 
@@ -34,7 +34,7 @@
 
 6）处理完请求后，封装成 reponse，根据 ProcessorID 放入对应的 responseQueue 由对应的 processor 线程完成回复。
 
-### **四、log 结构**1）Topic、partition 和 replica 关系
+### **四、log 结构** 1）Topic、partition 和 replica 关系
 
 2）
 
@@ -62,7 +62,7 @@
 
 10）每个 partition 会有多个 replica 进行同步，一个 Leader 多个 follower，这些副本主从地位是由 leader controller 负责处理，只有 leader replica 才能处理请求，其它 follower 同步数据。
 
-### **五、Controller**1）每个 broker 都拥有一个 kafkacontroller，controller 主要负责管理整个集群，但是每个集群中都只有一个 leader controller 有资格来管理集群
+### **五、Controller** 1）每个 broker 都拥有一个 kafkacontroller，controller 主要负责管理整个集群，但是每个集群中都只有一个 leader controller 有资格来管理集群
 
 2）Leader controller 是借助 zookeeper 来选择的，每个 controller 初始化时都会向 zookeeper 注册竞争成为 leader 的路径的监听，第一个成功写入 zookeeper 的 controller 将会成为 leader，其它 controller 就会收到新 leader 的通知，将自己设为 follower；
 
@@ -80,7 +80,7 @@
 
 9）集群所有的元数据是存放在 zookeeper 上，当 zookeeper 数据发生变化时，通过通知到 leaderController，controller 处理数据，并在内存中保存一份副本，做差值处理。
 
-### **六、replica 管理**1）所有 partition 都有多个 replica 来管理，这样使数据更安全，不容易丢失
+### **六、replica 管理** 1）所有 partition 都有多个 replica 来管理，这样使数据更安全，不容易丢失
 
 2）replica 的 leader follower 地位是由 leaderController 来管理的；
 
@@ -92,7 +92,7 @@
 
 6）选 leader 有可能来自 replica 下线、需要改变 leader 或者为了负载均衡进行重分配。
 
-### **七、groupCoordinator 消费数据管理**1）
+### **七、groupCoordinator 消费数据管理** 1）
 
 ![img](assets/v2-145845fc2b00c44fa8fe3f68f818f9d2_1440w.jpg)
 
@@ -106,7 +106,7 @@
 
 6）如用户加入、新增、删除消费者组信息时，会将创建消息保存致 Log 中，并在内存中运行生成数据存放于 2）中的数据结构。
 
-### **八、生产者发送数据**1）生产者通过 topic 和 key 决定往哪个 partition 写入数据
+### **八、生产者发送数据** 1）生产者通过 topic 和 key 决定往哪个 partition 写入数据
 
 2）生产者需要携带 ack 用来决定应该什么时候回复，分别有 0,1,-1，当为 0 时说明不需要回复，当为 1 时表示集群接收了就回复，当为-1 时需要所有 isr（正常同步的）都接收确认了才能回复，接收数据后，会将这条消息存入延迟执行队列，当检测其它 isr 来抓取数据时，会更新并检查是否可以回复生产者。
 

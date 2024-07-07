@@ -2,7 +2,7 @@
 
 innodb事务日志包括redo log和undo log。redo log是重做日志，提供前滚操作，undo log是回滚日志，提供回滚操作。
 
-undo log不是redo log的逆向过程，其实它们都算是用来恢复的日志： **1.redo log通常是物理日志，记录的是数据页的物理修改，而不是某一行或某几行修改成怎样怎样，它用来恢复提交后的物理数据页(恢复数据页，且只能恢复到最后一次提交的位置)。 **** 2.undo用来回滚行记录到某个版本。undo log一般是逻辑日志，根据每行记录进行记录。**
+undo log不是redo log的逆向过程，其实它们都算是用来恢复的日志： **1.redo log通常是物理日志，记录的是数据页的物理修改，而不是某一行或某几行修改成怎样怎样，它用来恢复提交后的物理数据页(恢复数据页，且只能恢复到最后一次提交的位置)。**  **2.undo用来回滚行记录到某个版本。undo log一般是逻辑日志，根据每行记录进行记录。**
 
 # 1.redo log
 
@@ -10,7 +10,7 @@ undo log不是redo log的逆向过程，其实它们都算是用来恢复的日�
 
 二进制日志相关内容，参考：[MariaDB/MySQL的二进制日志](https://www.cnblogs.com/f-ck-need-u/p/9001061.html#blog5)。
 
-redo log不是二进制日志。虽然二进制日志中也记录了innodb表的很多操作，**也能实现重做的功能，**但是它们之间有很大区别。
+redo log不是二进制日志。虽然二进制日志中也记录了innodb表的很多操作， **也能实现重做的功能，** 但是它们之间有很大区别。
 
 1. 二进制日志是在 **存储引擎的上层** 产生的，不管是什么存储引擎，对数据库进行了修改都会产生二进制日志。而redo log是innodb层产生的，只记录该存储引擎中表的修改。 **并且二进制日志先于** redo log **被记录** 。具体的见后文group commit小结。
 1. 二进制日志记录操作的方法是逻辑性的语句。即便它是基于行格式的记录方式，其本质也还是逻辑的SQL设置，如该行记录的每列的值是多少。而redo log是在物理格式上的日志，它记录的是数据库中每个页的修改。
@@ -30,7 +30,7 @@ redo log包括两部分：一是内存中的日志缓冲(redo log buffer)，该�
 
 ![img](assets/733013-20180508101949424-938931340.png)
 
-> 在此处需要注意一点，一般所说的log file并不是磁盘上的物理日志文件，而是操作系统缓存中的log file，官方手册上的意思也是如此(例如：With a value of 2, the contents of the **InnoDB log buffer are written to the log file **after each transaction commit and** the log file is flushed to disk approximately once per second**)。但说实话，这不太好理解，既然都称为file了，应该已经属于物理文件了。所以在本文后续内容中都以os buffer或者file system buffer来表示官方手册中所说的Log file，然后log file则表示磁盘上的物理日志文件，即log file on disk。
+> 在此处需要注意一点，一般所说的log file并不是磁盘上的物理日志文件，而是操作系统缓存中的log file，官方手册上的意思也是如此(例如：With a value of 2, the contents of the **InnoDB log buffer are written to the log file** after each transaction commit and **the log file is flushed to disk approximately once per second** )。但说实话，这不太好理解，既然都称为file了，应该已经属于物理文件了。所以在本文后续内容中都以os buffer或者file system buffer来表示官方手册中所说的Log file，然后log file则表示磁盘上的物理日志文件，即log file on disk。
 >
 > 另外，之所以要经过一层os buffer，是因为open日志文件的时候，open没有使用O_DIRECT标志位，该标志位意味着绕过操作系统层的os buffer，IO直写到底层存储设备。不使用该标志位意味着将日志进行缓冲，缓冲到了一定容量，或者显式fsync()才会将缓冲中的刷到存储设备。使用该标志位意味着每次都要发起系统调用。比如写abcde，不使用o_direct将只发起一次系统调用，使用o_object将发起5次系统调用。
 
@@ -46,8 +46,7 @@ MySQL支持用户自定义在commit时如何将log buffer中的日志刷log file
 
 在主从复制结构中，要保证事务的持久性和一致性，需要对日志相关变量设置为如下：
 
-- **如果启用了二进制日志，则设置sync_binlog=1，即每提交一次事务同步写到磁盘中。**
-- **总是设置innodb_flush_log_at_trx_commit=1，即每提交一次事务都写到磁盘中。**上述两项变量的设置保证了：每次提交事务都写入二进制日志和事务日志，并在提交时将它们刷新到磁盘中。
+- **如果启用了二进制日志，则设置sync_binlog=1，即每提交一次事务同步写到磁盘中。** - **总是设置innodb_flush_log_at_trx_commit=1，即每提交一次事务都写到磁盘中。** 上述两项变量的设置保证了：每次提交事务都写入二进制日志和事务日志，并在提交时将它们刷新到磁盘中。
 
 选择刷日志的时间会严重影响数据修改时的性能，特别是刷到磁盘的过程。下例就测试了 innodb_flush_log_at_trx_commit 分别为0、1、2时的差距。
 
@@ -107,7 +106,7 @@ Query OK, 0 rows affected (2.10 sec)
 
 ![img](assets/733013-20180508105836098-1767966445.png)
 
-尽管设置为0和2可以大幅度提升插入性能，但是在故障的时候可能会丢失1秒钟数据，这1秒钟很可能有大量的数据，从上面的测试结果看，100W条记录也只消耗了20多秒，1秒钟大约有4W-5W条数据，尽管上述插入的数据简单，但却说明了数据丢失的大量性。**更好的插入数据的做法是将值设置为**1**，然后修改存储过程，将每次循环都提交修改为只提交一次**，**这样既能保证数据的一致性，也能提升性能，修改如下：
+尽管设置为0和2可以大幅度提升插入性能，但是在故障的时候可能会丢失1秒钟数据，这1秒钟很可能有大量的数据，从上面的测试结果看，100W条记录也只消耗了20多秒，1秒钟大约有4W-5W条数据，尽管上述插入的数据简单，但却说明了数据丢失的大量性。 **更好的插入数据的做法是将值设置为** 1 **，然后修改存储过程，将每次循环都提交修改为只提交一次** ，**这样既能保证数据的一致性，也能提升性能，修改如下：
 
 ```
 drop procedure if exists proc;
@@ -216,7 +215,7 @@ log buffer中未刷到磁盘的日志称为脏日志(dirty log)。
 
 刷日志到磁盘有以下几种规则：
 
-**1.发出commit动作时。已经说明过，commit发出后是否刷日志由变量 innodb_flush_log_at_trx_commit 控制。 **** 2.每秒刷一次。这个刷日志的频率由变量 innodb_flush_log_at_timeout 值决定，默认是1秒。要注意，这个刷日志频率和commit动作无关。 **** 3.当log buffer中已经使用的内存超过一半时。 **** 4.当有checkpoint时，checkpoint在一定程度上代表了刷到磁盘时日志所处的LSN位置。**
+**1.发出commit动作时。已经说明过，commit发出后是否刷日志由变量 innodb_flush_log_at_trx_commit 控制。**  **2.每秒刷一次。这个刷日志的频率由变量 innodb_flush_log_at_timeout 值决定，默认是1秒。要注意，这个刷日志频率和commit动作无关。**  **3.当log buffer中已经使用的内存超过一半时。**  **4.当有checkpoint时，checkpoint在一定程度上代表了刷到磁盘时日志所处的LSN位置。**
 
 ## 1.7 数据页刷盘的规则及checkpoint
 
@@ -224,7 +223,7 @@ log buffer中未刷到磁盘的日志称为脏日志(dirty log)。
 
 上一节介绍了日志是何时刷到磁盘的，不仅仅是日志需要刷盘，脏数据页也一样需要刷盘。
 
-**在innodb中，数据刷盘的规则只有一个：checkpoint。 **但是触发checkpoint的情况却有几种。** 不管怎样， **checkpoint** 触发后，会将buffer**中脏数据页和脏日志页都刷到磁盘。**
+**在innodb中，数据刷盘的规则只有一个：checkpoint。** 但是触发checkpoint的情况却有几种。 **不管怎样，** checkpoint **触发后，会将buffer** 中脏数据页和脏日志页都刷到磁盘。**
 
 innodb存储引擎中checkpoint分为两种：
 
@@ -272,10 +271,7 @@ Last checkpoint at  2225502463
 
 其中：
 
-- **log sequence number就是当前的redo log(in buffer)中的lsn；**
-- **log flushed up to是刷到redo log file on disk中的lsn；**
-- **pages flushed up to是已经刷到磁盘数据页上的LSN；**
-- **last checkpoint at是上一次检查点所在位置的LSN。**
+-  **log sequence number就是当前的redo log(in buffer)中的lsn；** -  **log flushed up to是刷到redo log file on disk中的lsn；** -  **pages flushed up to是已经刷到磁盘数据页上的LSN；** - **last checkpoint at是上一次检查点所在位置的LSN。**
 
 innodb从执行修改语句开始：
 
@@ -365,11 +361,11 @@ undo log有两个作用：提供回滚和多个行版本控制(MVCC)。
 
 在数据修改的时候，不仅记录了redo，还记录了相对应的undo，如果因为某些原因导致事务失败或回滚了，可以借助该undo进行回滚。
 
-undo log和redo log记录物理日志不一样，它是逻辑日志。**可以认为当delete一条记录时，undo log中会记录一条对应的insert记录，反之亦然，当update一条记录时，它记录一条对应相反的update记录。 **当执行rollback时，就可以从undo log中的逻辑记录读取到相应的内容并进行回滚。有时候应用到行版本控制的时候，也是通过undo log来实现的：当读取的某一行被其他事务锁定时，它可以从undo log中分析出该行记录以前的数据是什么，从而提供该行版本信息，让用户实现非锁定一致性读取。** undo log **是采用段(segment)** 的方式来记录的，每个undo**操作在记录的时候占用一个undo log segment**。**
+undo log和redo log记录物理日志不一样，它是逻辑日志。 **可以认为当delete一条记录时，undo log中会记录一条对应的insert记录，反之亦然，当update一条记录时，它记录一条对应相反的update记录。** 当执行rollback时，就可以从undo log中的逻辑记录读取到相应的内容并进行回滚。有时候应用到行版本控制的时候，也是通过undo log来实现的：当读取的某一行被其他事务锁定时，它可以从undo log中分析出该行记录以前的数据是什么，从而提供该行版本信息，让用户实现非锁定一致性读取。 **undo log** 是采用段(segment) **的方式来记录的，每个undo** 操作在记录的时候占用一个undo log segment **。**
 
-## 另外， **undo log** 也会产生redo log**，因为undo log**也要实现持久性保护。**2.2 undo log的存储方式
+## 另外， **undo log** 也会产生redo log **，因为undo log** 也要实现持久性保护。**2.2 undo log的存储方式
 
-innodb存储引擎对undo的管理采用段的方式。**rollback segment **称为回滚段，每个回滚段中有1024** 个undo log segment**。**
+innodb存储引擎对undo的管理采用段的方式。 **rollback segment** 称为回滚段，每个回滚段中有1024 **个undo log segment** 。**
 
 在以前老版本，只支持1个rollback segment，这样就只能记录1024个undo log segment。后来MySQL5.5可以支持128个rollback segment，即支持128\*1024个undo操作，还可以通过变量 innodb_undo_logs (5.6版本以前该变量是 innodb_rollback_segments )自定义多少个rollback segment，默认值为128。
 
@@ -439,7 +435,7 @@ undo相关的变量在MySQL5.6中已经变得很少。如下：它们的意义�
 
 在MySQL5.6中进行了改进。提交事务时，在存储引擎层的上一层结构中会将事务按序放入一个队列，队列中的第一个事务称为leader，其他事务称为follower，leader控制着follower的行为。虽然顺序还是一样先刷二进制，再刷事务日志，但是机制完全改变了：删除了原来的prepare_commit_mutex行为，也能保证即使开启了二进制日志，group commit也是有效的。
 
-MySQL5.6中分为3个步骤：**flush阶段、sync阶段、commit阶段。**
+MySQL5.6中分为3个步骤： **flush阶段、sync阶段、commit阶段。**
 
 ![img](assets/733013-20180508203426454-427168291.png)
 

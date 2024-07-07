@@ -6,7 +6,7 @@ Vert.x 是一个轻量级、高性能、模块化的响应式编程技术，天�
 
 工程师对于性能的追求是无止境的，而响应式编程是提升系统性能的一大利器。追求极致的你是否愿意跟我一起来一探究竟呢？
 
-本文将带你一起入门 Vert.x ，通过 **Vert.x 是什么 **来理解这个工具的框架，然后再通过** 主要功能探究**来学习主要功能，最后通过一个小实战项目来巩固所学的知识。文中提到的代码都可以通过 <https://github.com/roytrack/vertx-gitchat> 来下载。下面我们开始吧~
+本文将带你一起入门 Vert.x ，通过 **Vert.x 是什么** 来理解这个工具的框架，然后再通过 **主要功能探究** 来学习主要功能，最后通过一个小实战项目来巩固所学的知识。文中提到的代码都可以通过 <https://github.com/roytrack/vertx-gitchat> 来下载。下面我们开始吧~
 
 ### Vert.x 是什么
 
@@ -57,7 +57,7 @@ Vert.x 生态系统是由一系列模块组成的，一部分是官方维护，�
 Vert.x Core 作为最核心部分，提供了以下功能：
 
 1. TCP 客户端和服务器；
-1. HTTP 客户端和服务器，并且支持 WebSocket ，这部分我们会在下面**常用两个协议 ( HTTP & WebSocket )**进一步展开讲；
+1. HTTP 客户端和服务器，并且支持 WebSocket ，这部分我们会在下面 **常用两个协议 ( HTTP & WebSocket )** 进一步展开讲；
 1. 事件总线，用来进行信息传递，实质是一种基于 TCP 连接的消息队列，支持点对点和发布订阅两种机制；
 1. 共享数据,通过本地的 map 结构和集群级别的分布式 map；
 1. 定时器和延迟操作，通过 vertx.setPeriodic 实现周期定时执行， vertx.setTimer 来实现一次性的调用（延时操作）；
@@ -70,7 +70,7 @@ Vert.x Core 作为最核心部分，提供了以下功能：
 
 Vert.x Core 只包含一个非常轻量级的 jar 包，里面有以上的核心功能。
 
-Vert.x Web 基于 Vert.x Core，提供了一系列更丰富的功能以便更容易地开发实际的 Web 应用。它继承了 Vert.x 2.x 里的 [Yoke](https://pmlopes.github.io/yoke/) 的特点，灵感来自于 Node.js 的框架 [Express](https://expressjs.com/) 和 Ruby 的框架 [Sinatra](http://www.sinatrarb.com/) 等等。Vert.x Web 的设计是强大的，非侵入式的，并且是完全可插拔的。Vert.x Web 非常适合编写**RESTful HTTP 微服务**。
+Vert.x Web 基于 Vert.x Core，提供了一系列更丰富的功能以便更容易地开发实际的 Web 应用。它继承了 Vert.x 2.x 里的 [Yoke](https://pmlopes.github.io/yoke/) 的特点，灵感来自于 Node.js 的框架 [Express](https://expressjs.com/) 和 Ruby 的框架 [Sinatra](http://www.sinatrarb.com/) 等等。Vert.x Web 的设计是强大的，非侵入式的，并且是完全可插拔的。Vert.x Web 非常适合编写 **RESTful HTTP 微服务** 。
 
 Vert.x Stack 包含一系列提供鉴权、网络、数据访问等的官方扩展 jar 包。
 
@@ -99,7 +99,7 @@ server.requestHandler(request -> {
 
 这样引入的优势是，Vert.x 可以通过少量的线程，处理大量的并发事件。如果这里面并发事件同时出现了与线程数相同的阻塞操作，例如读取文件，那么所有线程都被阻塞，整个程序就被挂起、拒绝服务了。
 
-在大部分情况下，Vert.x 在一个线程里调用对应的 handlers，这个线程就叫做一个**Event Loop**。
+在大部分情况下，Vert.x 在一个线程里调用对应的 handlers，这个线程就叫做一个 **Event Loop** 。
 
 ![img](assets/event-loop.png)
 
@@ -137,7 +137,7 @@ public class BlockWarningDemo extends AbstractVerticle {
 1. 进行消耗很多时间的大量计算；
 1. 文件句柄的获取与读写。
 
-那么这些阻塞的操作我们怎么做呢？使用 vertx.executeBlocking 或者使用一类新的 Verticle ， 叫做**Worker Verticle**。
+那么这些阻塞的操作我们怎么做呢？使用 vertx.executeBlocking 或者使用一类新的 Verticle ， 叫做 **Worker Verticle** 。
 
 根本上就是让这些阻塞操作在一组内部或者自定义的线程池上执行，而不要在处理事件的 Event Loop 操作。待处理完毕后，再通过 future 对应的 handler 来回调 _Event Loop_ 进行后续处理。
 
@@ -153,7 +153,7 @@ Vert.x 提供了很多功能，我们学习起来可能会有点选择困难症�
 
 > 你可以将 Actor 当作是一群人，他们互相之间不会面对面地交流，而只是通过邮件的方式进行沟通。
 
-Verticle 可以**近似**的看做 Actor 模型中的 actor （之所以说近似，因为各个 Verticle 还是可以通过共享 map 来通信。）。不同的 verticle 实体部署在一个 Vert.x 实例中，通过 _Event Bus_ 来进行消息传递。
+Verticle 可以 **近似** 的看做 Actor 模型中的 actor （之所以说近似，因为各个 Verticle 还是可以通过共享 map 来通信。）。不同的 verticle 实体部署在一个 Vert.x 实例中，通过 _Event Bus_ 来进行消息传递。
 
 定义自己的 Verticle 需要扩展 AbstractVerticle ，逻辑可以写在重载的不带参数的 start 、 stop 方法中，表示在 Verticle 部署后，卸载后执行的逻辑。 如果重载带参数 Future 的 start 、 stop 方法，则表示在部署或者卸载 Verticle 前要做一些逻辑，做完后将 future 设置为成功或者失败，标志着 Verticle 相应动作成功或失败。
 

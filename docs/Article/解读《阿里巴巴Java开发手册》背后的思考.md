@@ -26,21 +26,21 @@ Java 语言之所以强大，就是因为他很成熟的生态体系。包括日
 
 ### 常用日志框架
 
-#### **j.u.l**![img](assets/15430468008617.png)￼ j.u.l 是 java.util.logging 包的简称，是 JDK 在 1.4 版本中引入的 Java 原生日志框架。Java Logging API 提供了七个日志级别用来控制输出。这七个级别分别是：SEVERE、WARNING、INFO、CONFIG、FINE、FINER、FINEST
+#### **j.u.l** ![img](assets/15430468008617.png)￼ j.u.l 是 java.util.logging 包的简称，是 JDK 在 1.4 版本中引入的 Java 原生日志框架。Java Logging API 提供了七个日志级别用来控制输出。这七个级别分别是：SEVERE、WARNING、INFO、CONFIG、FINE、FINER、FINEST
 
-#### **Log4j**![img](assets/15430468310499.png)￼
+#### **Log4j** ![img](assets/15430468310499.png)￼
 
 Log4j 是 Apache 的一个开源项目，通过使用 Log4j，我们可以控制日志信息输送的目的地是控制台、文件、GUI 组件，甚至是套接口服务器、NT 的事件记录器、UNIX Syslog 守护进程等；我们也可以控制每一条日志的输出格式；通过定义每一条日志信息的级别，我们能够更加细致地控制日志的生成过程。最令人感兴趣的就是，这些可以通过一个配置文件来灵活地进行配置，而不需要修改应用的代码。
 
 Log4 也有七种日志级别：OFF、FATAL、ERROR、WARN、INFO、DEBUG 和 TRACE。
 
-#### **LogBack**![img](assets/15430469302562.jpg)￼
+#### **LogBack** ![img](assets/15430469302562.jpg)￼
 
 LogBack 也是一个很成熟的日志框架，其实 LogBack 和 Log4j 出自一个人之手，这个人就是 Ceki Gülcü。
 
 logback 当前分成三个模块：logback-core,logback- classic 和 logback-access。logback-core 是其它两个模块的基础模块。logback-classic 是 Log4j 的一个改良版本。此外 logback-classic 完整实现 SLF4J API 使你可以很方便地更换成其它日记系统如 Log4j 或 j.u.l。logback-access 访问模块与 Servlet 容器集成提供通过 Http 来访问日记的功能。
 
-#### **Log4j2**前面介绍过 Log4j，这里要单独介绍一下 Log4j2，之所以要单独拿出来说，而没有和 Log4j 放在一起介绍，是因为作者认为，Log4j2 已经不仅仅是 Log4j 的一个升级版本了，而是从头到尾被重写的，这可以认为这其实就是完全不同的两个框架
+#### **Log4j2** 前面介绍过 Log4j，这里要单独介绍一下 Log4j2，之所以要单独拿出来说，而没有和 Log4j 放在一起介绍，是因为作者认为，Log4j2 已经不仅仅是 Log4j 的一个升级版本了，而是从头到尾被重写的，这可以认为这其实就是完全不同的两个框架
 
 关于 Log4j2 解决了 Log4j 的哪些问题，Log4j2 相比较于 Log4j、j.u.l 和 logback 有哪些优势，我们在后续的文章中介绍。
 
@@ -221,7 +221,7 @@ Boolean isSuccess
 
 我们可以发现，虽然 Model3 和 Model4 中的成员变量的名称不同，一个是 success，另外一个是 isSuccess，但是他们自动生成的 getter 和 setter 方法名称都是`isSuccess`和`setSuccess`。
 
-**Java Bean 中关于 setter/getter 的规范**关于 Java Bean 中的 getter/setter 方法的定义其实是有明确的规定的，根据[JavaBeans(TM) Specification](https://download.oracle.com/otndocs/jcp/7224-javabeans-1.01-fr-spec-oth-JSpec/)规定，如果是普通的参数 propertyName，要以以下方式定义其 setter/getter：
+**Java Bean 中关于 setter/getter 的规范** 关于 Java Bean 中的 getter/setter 方法的定义其实是有明确的规定的，根据[JavaBeans(TM) Specification](https://download.oracle.com/otndocs/jcp/7224-javabeans-1.01-fr-spec-oth-JSpec/)规定，如果是普通的参数 propertyName，要以以下方式定义其 setter/getter：
 
 ```java
 public <PropertyType> get<PropertyName>();
@@ -241,7 +241,7 @@ public void set<PropertyName>(boolean m);
 
 那这样做会带来什么问题呢。
 
-在一般情况下，其实是没有影响的。但是有一种特殊情况就会有问题，那就是发生序列化的时候。**序列化带来的影响**关于序列化和反序列化请参考[Java 对象的序列化与反序列化](https://www.hollischuang.com/archives/1150)。我们这里拿比较常用的 JSON 序列化来举例，看看看常用的 fastJson、jackson和 Gson 之间有何区别：
+在一般情况下，其实是没有影响的。但是有一种特殊情况就会有问题，那就是发生序列化的时候。 **序列化带来的影响** 关于序列化和反序列化请参考[Java 对象的序列化与反序列化](https://www.hollischuang.com/archives/1150)。我们这里拿比较常用的 JSON 序列化来举例，看看看常用的 fastJson、jackson和 Gson 之间有何区别：
 
 ```java
     public class BooleanMainTest {
@@ -347,7 +347,7 @@ Model3[isSuccess=false]
 
 ![-w665](assets/15449492627754.jpg)￼
 
-所以，**在定义 POJO 中的布尔类型的变量时，不要使用 isSuccess 这种形式，而要直接使用 success！**
+所以， **在定义 POJO 中的布尔类型的变量时，不要使用 isSuccess 这种形式，而要直接使用 success！**
 
 ### Boolean 还是 boolean？
 
@@ -422,9 +422,9 @@ default model : Model[success=null, failure=false]
 
 这种使用包装类型定义变量的方式，通过异常来阻断程序，进而可以被识别到这种线上问题。如果使用基本数据类型的话，系统可能不会报错，进而认为无异常。
 
-**以上，就是建议在 POJO 和 RPC 的返回值中使用包装类型的原因。**但是关于这一点，作者之前也有过不同的看法：对于布尔类型的变量，我认为可以和其他类型区分开来，作者并不认为使用 null 进而导致 NPE 是一种最好的实践。因为布尔类型只有 true/false 两种值，我们完全可以和外部调用方约定好当返回值为 false 时的明确语义。
+**以上，就是建议在 POJO 和 RPC 的返回值中使用包装类型的原因。** 但是关于这一点，作者之前也有过不同的看法：对于布尔类型的变量，我认为可以和其他类型区分开来，作者并不认为使用 null 进而导致 NPE 是一种最好的实践。因为布尔类型只有 true/false 两种值，我们完全可以和外部调用方约定好当返回值为 false 时的明确语义。
 
-后来，作者单独和《阿里巴巴 Java 开发手册》、《码出高效》的作者——孤尽 单独 1V1(qing) Battle(jiao)了一下。最终达成共识，还是**尽量使用包装类型 **。** 但是，作者还是想强调一个我的观点，尽量避免在你的代码中出现不确定的 null 值。 **** null 何罪之有？**关于 null 值的使用，我在[使用 Optional 避免NullPointerException](https://www.hollischuang.com/archives/883)、[9 Things about Null in Java](https://www.hollischuang.com/archives/74)等文中就介绍过。
+后来，作者单独和《阿里巴巴 Java 开发手册》、《码出高效》的作者——孤尽 单独 1V1(qing) Battle(jiao)了一下。最终达成共识，还是 **尽量使用包装类型** 。 **但是，作者还是想强调一个我的观点，尽量避免在你的代码中出现不确定的 null 值。**  **null 何罪之有？** 关于 null 值的使用，我在[使用 Optional 避免NullPointerException](https://www.hollischuang.com/archives/883)、[9 Things about Null in Java](https://www.hollischuang.com/archives/74)等文中就介绍过。
 
 `null`是很模棱两可的，很多时候会导致令人疑惑的的错误，很难去判断返回一个`null`代表着什么意思。
 
@@ -459,11 +459,11 @@ default model : Model[success=null, failure=false]
 ![-w934](assets/15455608799770-1590419303239.jpg)￼
 
 背景知识
-----**Serializable 和 Externalizable**
+---- **Serializable 和 Externalizable**
 
-类通过实现 `java.io.Serializable` 接口以启用其序列化功能。**未实现此接口的类将无法进行序列化或反序列化。**可序列化类的所有子类型本身都是可序列化的。
+类通过实现 `java.io.Serializable` 接口以启用其序列化功能。 **未实现此接口的类将无法进行序列化或反序列化。** 可序列化类的所有子类型本身都是可序列化的。
 
-如果读者看过`Serializable`的源码，就会发现，他只是一个空的接口，里面什么东西都没有。**Serializable 接口没有方法或字段，仅用于标识可序列化的语义。**但是，如果一个类没有实现这个接口，想要被序列化的话，就会抛出`java.io.NotSerializableException`异常。
+如果读者看过`Serializable`的源码，就会发现，他只是一个空的接口，里面什么东西都没有。 **Serializable 接口没有方法或字段，仅用于标识可序列化的语义。** 但是，如果一个类没有实现这个接口，想要被序列化的话，就会抛出`java.io.NotSerializableException`异常。
 
 它是怎么保证只有实现了该接口的方法才能进行序列化与反序列化的呢？
 
@@ -496,7 +496,7 @@ Java中还提供了`Externalizable`接口，也可以实现它来提供序列化
 
 当使用`Externalizable`接口来进行序列化与反序列化的时候需要开发人员重写`writeExternal()`与`readExternal()`方法。否则所有变量的值都会变成默认值。
 
-**transient **`transient` 关键字的作用是控制变量的序列化，在变量声明前加上该关键字，可以阻止该变量被序列化到文件中，在被反序列化后，`transient` 变量的值被设为初始值，如 int 型的是 0，对象型的是 null。** 自定义序列化策略**在序列化过程中，如果被序列化的类中定义了`writeObject` 和 `readObject` 方法，虚拟机会试图调用对象类里的 `writeObject` 和 `readObject` 方法，进行用户自定义的序列化和反序列化。
+**transient** `transient` 关键字的作用是控制变量的序列化，在变量声明前加上该关键字，可以阻止该变量被序列化到文件中，在被反序列化后，`transient` 变量的值被设为初始值，如 int 型的是 0，对象型的是 null。 **自定义序列化策略** 在序列化过程中，如果被序列化的类中定义了`writeObject` 和 `readObject` 方法，虚拟机会试图调用对象类里的 `writeObject` 和 `readObject` 方法，进行用户自定义的序列化和反序列化。
 
 如果没有这样的方法，则默认调用是 `ObjectOutputStream` 的 `defaultWriteObject` 方法以及 `ObjectInputStream` 的 `defaultReadObject` 方法。
 
@@ -605,7 +605,7 @@ java.io.InvalidClassException: com.hollis.User1; local class incompatible: strea
 
 这是因为，在进行反序列化时，JVM 会把传来的字节流中的`serialVersionUID`与本地相应实体类的`serialVersionUID`进行比较，如果相同就认为是一致的，可以进行反序列化，否则就会出现序列化版本不一致的异常，即是`InvalidCastException`。
 
-这也是《阿里巴巴 Java 开发手册》中规定，在兼容性升级中，在修改类的时候，不要修改`serialVersionUID`的原因。**除非是完全不兼容的两个版本 **。所以，** serialVersionUID其实是验证版本一致性的。**如果读者感兴趣，可以把各个版本的 JDK 代码都拿出来看一下，那些向下兼容的类的`serialVersionUID`是没有变化过的。比如 String 类的`serialVersionUID`一直都是`-6849794470754667710L`。
+这也是《阿里巴巴 Java 开发手册》中规定，在兼容性升级中，在修改类的时候，不要修改`serialVersionUID`的原因。 **除非是完全不兼容的两个版本** 。所以， **serialVersionUID其实是验证版本一致性的。** 如果读者感兴趣，可以把各个版本的 JDK 代码都拿出来看一下，那些向下兼容的类的`serialVersionUID`是没有变化过的。比如 String 类的`serialVersionUID`一直都是`-6849794470754667710L`。
 
 但是，作者认为，这个规范其实还可以再严格一些，那就是规定：
 
@@ -753,11 +753,11 @@ ObjectInputStream.readObject -> readObject0 -> readOrdinaryObject -> readClassDe
 
 字符串拼接是我们在 Java 代码中比较经常要做的事情，就是把多个字符串拼接到一起。
 
-我们都知道，**String 是 Java 中一个不可变的类**，所以他一旦被实例化就无法被修改。
+我们都知道， **String 是 Java 中一个不可变的类** ，所以他一旦被实例化就无法被修改。
 
 > 不可变类的实例一旦创建，其成员变量的值就不能被修改。这样设计有很多好处，比如可以缓存 hashcode、使用更加便利以及更加安全等。
 
-但是，既然字符串是不可变的，那么字符串拼接又是怎么回事呢？**字符串不变性与字符串拼接**其实，所有的所谓字符串拼接，都是重新生成了一个新的字符串。下面一段字符串拼接代码：
+但是，既然字符串是不可变的，那么字符串拼接又是怎么回事呢？ **字符串不变性与字符串拼接** 其实，所有的所谓字符串拼接，都是重新生成了一个新的字符串。下面一段字符串拼接代码：
 
 ```yml
 <pre><code class="language-text">String s = "abcd";
@@ -771,7 +771,7 @@ s = s.concat("ef");
 
 s 中保存的是一个重新创建出来的 String 对象的引用。
 
-那么，在 Java 中到底如何进行字符串拼接呢？字符串拼接有很多种方式，这里简单介绍几种比较常用的。**使用+拼接字符串**在 Java 中，拼接字符串最简单的方式就是直接使用符号`+`来拼接。如：
+那么，在 Java 中到底如何进行字符串拼接呢？字符串拼接有很多种方式，这里简单介绍几种比较常用的。 **使用+拼接字符串** 在 Java 中，拼接字符串最简单的方式就是直接使用符号`+`来拼接。如：
 
 ```java
 String wechat = "Hollis";
@@ -779,11 +779,11 @@ String introduce = "每日更新Java相关技术文章";
 String hollis = wechat + "," + introduce;
 ```
 
-这里要特别说明一点，有人把 Java 中使用`+`拼接字符串的功能理解为**运算符重载 **。其实并不是，** Java 是不支持运算符重载的 **。这其实只是 Java 提供的一个** 语法糖**。后面再详细介绍。
+这里要特别说明一点，有人把 Java 中使用`+`拼接字符串的功能理解为 **运算符重载** 。其实并不是， **Java 是不支持运算符重载的** 。这其实只是 Java 提供的一个 **语法糖** 。后面再详细介绍。
 
 > 运算符重载：在计算机程序设计中，运算符重载（英语：operator overloading）是多态的一种。运算符重载，就是对已有的运算符重新进行定义，赋予其另一种功能，以适应不同的数据类型。
 >
-> 语法糖：语法糖（Syntactic sugar），也译为糖衣语法，是由英国计算机科学家彼得·兰丁发明的一个术语，指计算机语言中添加的某种语法，这种语法对语言的功能没有影响，但是更方便程序员使用。语法糖让程序更加简洁，有更高的可读性。**concat**除了使用`+`拼接字符串之外，还可以使用 String 类中的方法 concat 方法来拼接字符串。如：
+> 语法糖：语法糖（Syntactic sugar），也译为糖衣语法，是由英国计算机科学家彼得·兰丁发明的一个术语，指计算机语言中添加的某种语法，这种语法对语言的功能没有影响，但是更方便程序员使用。语法糖让程序更加简洁，有更高的可读性。 **concat** 除了使用`+`拼接字符串之外，还可以使用 String 类中的方法 concat 方法来拼接字符串。如：
 
 ```java
 String wechat = "Hollis";
@@ -791,7 +791,7 @@ String introduce = "每日更新Java相关技术文章";
 String hollis = wechat.concat(",").concat(introduce);
 ```
 
-**StringBuffer **关于字符串，Java 中除了定义了一个可以用来定义** 字符串常量 **的`String`类以外，还提供了可以用来定义** 字符串变量**的`StringBuffer`类，它的对象是可以扩充和修改的。
+**StringBuffer** 关于字符串，Java 中除了定义了一个可以用来定义 **字符串常量** 的`String`类以外，还提供了可以用来定义 **字符串变量** 的`StringBuffer`类，它的对象是可以扩充和修改的。
 
 使用`StringBuffer`可以方便的对字符串进行拼接。如：
 
@@ -1270,7 +1270,7 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
 
 但是，很多时候，我们是有需求需要过滤集合的，比如删除其中一部分元素，那么应该如何做呢？有几种方法可供参考：
 
-**1、直接使用普通 for 循环进行操作**我们说不能在 foreach 中进行，但是使用普通的 for 循环还是可以的，因为普通 for 循环并没有用到 Iterator 的遍历，所以压根就没有进行 fail-fast 的检验。
+**1、直接使用普通 for 循环进行操作** 我们说不能在 foreach 中进行，但是使用普通的 for 循环还是可以的，因为普通 for 循环并没有用到 Iterator 的遍历，所以压根就没有进行 fail-fast 的检验。
 
 ```java
         List<String> userNames = new ArrayList<String>() {{
@@ -1289,7 +1289,7 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
 
 这种方案其实存在一个问题，那就是 remove 操作会改变 List 中元素的下标，可能存在漏删的情况。
 
-**2、直接使用 Iterator 进行操作**除了直接使用普通 for 循环以外，我们还可以直接使用 Iterator 提供的 remove 方法。
+**2、直接使用 Iterator 进行操作** 除了直接使用普通 for 循环以外，我们还可以直接使用 Iterator 提供的 remove 方法。
 
 ```java
         List<String> userNames = new ArrayList<String>() {{
@@ -1311,7 +1311,7 @@ fail-fast，即快速失败，它是 Java 集合的一种错误检测机制。�
 
 ![-w375](assets/15515125763808-1.jpg)￼
 
-**3、使用 Java 8 中提供的 filter 过滤**Java 8 中可以把集合转换成流，对于流有一种 filter 操作， 可以对原始 Stream 进行某项测试，通过测试的元素被留下来生成一个新 Stream。
+**3、使用 Java 8 中提供的 filter 过滤** Java 8 中可以把集合转换成流，对于流有一种 filter 操作， 可以对原始 Stream 进行某项测试，通过测试的元素被留下来生成一个新 Stream。
 
 ```java
         List<String> userNames = new ArrayList<String>() {{
@@ -1502,7 +1502,7 @@ return (n \< 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
 
 Step 2 比较简单，就是做一下极限值的判断，然后把 Step 1 得到的数值 +1。
 
-Step 1 怎么理解呢？**其实是对一个二进制数依次向右移位，然后与原值取或。**其目的对于一个数字的二进制，从第一个不为 0 的位开始，把后面的所有位都设置成 1。
+Step 1 怎么理解呢？ **其实是对一个二进制数依次向右移位，然后与原值取或。** 其目的对于一个数字的二进制，从第一个不为 0 的位开始，把后面的所有位都设置成 1。
 
 随便拿一个二进制数，套一遍上面的公式就发现其目的了：
 

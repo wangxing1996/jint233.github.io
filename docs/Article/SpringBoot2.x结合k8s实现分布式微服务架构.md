@@ -42,12 +42,11 @@ ConfigMap，看到这个名字可以理解：它是用于保存配置信息的�
 
 创建一个 ConfigMap 有多种方式如下。
 
-**1. key-value 字符串创建**```
+**1. key-value 字符串创建** ```
 kubectl create configmap test-config --from-literal=baseDir=/usr
 
 ```
-上面的命令创建了一个名为 test-config，拥有一条 key 为 baseDir，value 为 "/usr" 的键值对数据。** 2\. 根据 yml 描述文件创建**
-```
+上面的命令创建了一个名为 test-config，拥有一条 key 为 baseDir，value 为 "/usr" 的键值对数据。 **2. 根据 yml 描述文件创建** ```
 
 apiVersion: v1
 
@@ -679,8 +678,7 @@ public void setMessage(String message) {
 
 ```
 这就是配置 ConfigMap 中的属性的类。剩下的可以自己定义一个接口类，来实现服务生产者。
-最后，我们需要在 K8s 下部署的话，需要准备几个脚本。
-**1\. 创建 ConfigMap **```
+最后，我们需要在 K8s 下部署的话，需要准备几个脚本。 **1. 创建 ConfigMap** ```
 kind: ConfigMap
 
 apiVersion: v1
@@ -724,7 +722,7 @@ data:
       message: Say Hello to the Prod
 ```
 
-设置了不同环境的配置，注意，这里的 namespace 需要与服务部署的 namespace 一致，这里默认的是 default，而且在创建服务之前，先得创建这个。**2. 创建服务部署脚本**```
+设置了不同环境的配置，注意，这里的 namespace 需要与服务部署的 namespace 一致，这里默认的是 default，而且在创建服务之前，先得创建这个。 **2. 创建服务部署脚本** ```
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -822,7 +820,7 @@ kubectl scale --replicas=3 deployment cas-server-deployment
 
 这里，我建议使用 Deployment 类型的来创建 pod，因为 Deployment 类型更好的支持弹性伸缩与滚动更新。
 
-同时，我们通过 `--spring.profiles.active=dev` 来指定当前 pod 的运行环境。** 3\. 创建一个 Service**
+同时，我们通过 `--spring.profiles.active=dev` 来指定当前 pod 的运行环境。 **3. 创建一个 Service**
 
 最后，如果服务想被发现，需要创建一个 Service：
 ```

@@ -254,16 +254,16 @@ gfsh 的作用：
 Monitor and Manage Apache Geode
 ```
 
-**注意：命令行可以 tab 键自动补全，及其方便操作。**#### connect
+**注意：命令行可以 tab 键自动补全，及其方便操作。** #### connect
 
-要管理 Goode 集群我们需要连接到主 locator 上， 有两种方式。**1. 直接使用 JMX 进行连接**当我们知道哪个是主的时候，就直接使用 JMX 进行连接即可。
+要管理 Goode 集群我们需要连接到主 locator 上， 有两种方式。 **1. 直接使用 JMX 进行连接** 当我们知道哪个是主的时候，就直接使用 JMX 进行连接即可。
 
 ```
 gfsh>connect --jmx-manager=192.168.33.15
 Connecting to Manager at [host=192.168.33.15, port=1099] ..
 Successfully connected to: [host=192.168.33.15, port=1099]
 Cluster-254 gfsh>
-```** 2\. 连接任意一个 locator**
+``` **2. 连接任意一个 locator**
 
 指定 locator 的 ip \[端口\] 就可以了。
 
@@ -742,7 +742,7 @@ id=1574827945765
 
 与 Spring 结合有两种方式。
 
-**1\. 使用 spring-data-geode**
+**1. 使用 spring-data-geode**
 
 spring-data-geode 符合 data 系列的一贯作风，提供 template 和 repository 对象化操作。我们以 Spring Boot 为例。
 
@@ -999,7 +999,7 @@ Caused by: java.lang.UnsupportedOperationException: Operations on persist-backup
 -Dgemfire.ALLOW_PERSISTENT_TRANSACTIONS=true
 ```
 
-**但是请注意：**这个系统配置仅仅是消除了上边报出来的异常，是的程序能继续执行，但是对于磁盘写入的原子性并不能保证！
+**但是请注意：** 这个系统配置仅仅是消除了上边报出来的异常，是的程序能继续执行，但是对于磁盘写入的原子性并不能保证！
 
 ```
 @Test
@@ -1163,7 +1163,7 @@ rm -rf apache-geode-1.9.2.tgz
 
 #### 重启 locator
 
-##### **停止旧的主 locator**1.  链接上管理器
+##### **停止旧的主 locator** 1.  链接上管理器
 
 2. 找到主 locator 的 name
 1. 执行 `stop locator --name=locator_33_15`
@@ -1194,7 +1194,7 @@ rm -rf apache-geode-1.9.2.tgz
     gfsh>
 ```
 
-##### **修改 /etc/profile 更改环境变量**\\1. 执行 `vi /ect/profile`
+##### **修改 /etc/profile 更改环境变量** \\1. 执行 `vi /ect/profile`
 
 \\2. 修改文件将原来 1.8 的版本改为 1.9.2
 
@@ -1220,7 +1220,7 @@ Native version: native code unavailable
 Running on: /192.168.33.15, 4 cpu(s), amd64 Linux 2.6.32-696.23.1.el6.x86_64
 ```
 
-##### **启动新 locator**\\1. 启动新的主 locator，执行启动脚本 start_locator_33_15.sh
+##### **启动新 locator** \\1. 启动新的主 locator，执行启动脚本 start_locator_33_15.sh
 
 ```
 Locator in /opt/geode_work18/locator_33_15 on 192.168.33.15[10334] as locator_33_15 is currently online.
@@ -1361,7 +1361,7 @@ public class MultiGetFunction implements Function {
 }
 ```
 
-**2. deploy 到服务器**我们写好后打成 jar 包上传到服务器，gfsh 执行 deploy 命令：
+**2. deploy 到服务器** 我们写好后打成 jar 包上传到服务器，gfsh 执行 deploy 命令：
 
 ```
 deploy --jar=/tmp/upload_dir/ddh/geode-study.jar
@@ -1373,7 +1373,7 @@ server_33_23 | geode-study.jar | /opt/geode_work/server_33_23/geode-study.v5.jar
 server_33_29 | geode-study.jar | /opt/geode_work/server_33_29/geode-study.v5.jar
 ```
 
-我们在做 deploy 的时候，Geode 会自动将实现了 function 接口的类型进行函数注册。**3. 执行函数**方式一：
+我们在做 deploy 的时候，Geode 会自动将实现了 function 接口的类型进行函数注册。 **3. 执行函数** 方式一：
 
 ```
 Cluster-254 gfsh>execute function --id=func-a --region=test99 --filter=KEY_4,KEY_7
@@ -1421,11 +1421,11 @@ http://192.168.33.15:7070/pulse
 
 在 locator 变为 leader 之后会自动启用 pulse，用户名密码为 admin/admin。
 
-pulse 中可以在不同维护查看数据。**1. 总览**内存，成员数，服务数，region 数量，集群读写等等。
+pulse 中可以在不同维护查看数据。 **1. 总览** 内存，成员数，服务数，region 数量，集群读写等等。
 
-![在这里插入图片描述](assets/133ac250-1689-11ea-94bc-f516225b4bcb.png)**2. ip 维度**这里多了一个机器的链接详情：
+![在这里插入图片描述](assets/133ac250-1689-11ea-94bc-f516225b4bcb.png) **2. ip 维度** 这里多了一个机器的链接详情：
 
-![在这里插入图片描述](assets/1d2a1810-1689-11ea-8812-dd393aeead92.png)**3. region 维度**
+![在这里插入图片描述](assets/1d2a1810-1689-11ea-8812-dd393aeead92.png) **3. region 维度**
 
 region 维度主要对 region 进行描述：
 
@@ -1501,14 +1501,14 @@ metricList.add(build);
 
 当计算机因关闭、断电、硬件故障或操作系统故障而崩溃时，其所有应用程序和缓存服务器及 其本地缓存都将丢失。其他计算机上的系统成员会收到通知，说明此计算机的成员已意外离开集群。
 
-**要从机器崩溃中恢复：**1.  确定在此计算机上运行的进程。
+**要从机器崩溃中恢复：** 1.  确定在此计算机上运行的进程。
 2\.  重新启动机器。
 3\.  如果 Geode 定位器在此处运行，请先启动它。注意：在启动任何应用程序或缓存服务器之前，必须至少运行一个定位器。
 4\.  按常规顺序启动应用程序和缓存服务器。
 
 #### 防止和恢复磁盘完全错误
 
-监视 Geode 成员的磁盘使用情况非常重要。 如果成员缺少足够的磁盘空间用于磁盘存储，则该成员会尝试关闭磁盘存储及其关联的缓存，并记录错误消息。由于成员磁盘空间不足而导致的关闭可能导致数据丢失，数据文件损坏，日志文件损坏以及可能对您的应用程序产生负面影响 的其他错误情况。为成员提供足够的磁盘空间后，可以重新启动该成员。**换言之，一定要做磁盘容量监控！**#### java.lang.OutOfMemoryError
+监视 Geode 成员的磁盘使用情况非常重要。 如果成员缺少足够的磁盘空间用于磁盘存储，则该成员会尝试关闭磁盘存储及其关联的缓存，并记录错误消息。由于成员磁盘空间不足而导致的关闭可能导致数据丢失，数据文件损坏，日志文件损坏以及可能对您的应用程序产生负面影响 的其他错误情况。为成员提供足够的磁盘空间后，可以重新启动该成员。 **换言之，一定要做磁盘容量监控！** #### java.lang.OutOfMemoryError
 
 如果应用程序经常内存不足，您可能需要对其进行分析以确定原因，可以尝试 -Xmx 重置最大堆大小来增加直接内存。
 
@@ -1544,7 +1544,7 @@ list is: [[ent(27134):60330/45855, ent(27130):60333/36743]]
 
 描述：成员（27130）60333/36743 由于可疑验证失败而面临被迫退出集群的危险。在达到 ack-wait-threshold 之后，将在警告级别发出此警报。
 
-操作员应检查过程以确定其是否健康。 在名为 ent 的机器上，慢响应器的进程 ID 是 27130。慢响应者的端口是 60333/36743。 查找字符串，Starting distribution manager ent：60333/36743，并检查拥有包含此字符串的日志文件的进程。**如上只是摘抄了几个官方常见异常**，[具体请查看这里](https://geode.apache.org/docs/guide/19/managing/troubleshooting/chapter_overview.html)。
+操作员应检查过程以确定其是否健康。 在名为 ent 的机器上，慢响应器的进程 ID 是 27130。慢响应者的端口是 60333/36743。 查找字符串，Starting distribution manager ent：60333/36743，并检查拥有包含此字符串的日志文件的进程。 **如上只是摘抄了几个官方常见异常** ，[具体请查看这里](https://geode.apache.org/docs/guide/19/managing/troubleshooting/chapter_overview.html)。
 
 实际在近一年多的使用中，并未发现不可思议的异常与灾难。
 
@@ -1566,7 +1566,7 @@ list is: [[ent(27134):60330/45855, ent(27130):60333/36743]]
 
 > [https://gitee.com/gavinage/geode_study](https://gitee.com/gavinage/geode_study)
 
-#### Geode 扩展功能**memCache 适配器**```
+#### Geode 扩展功能 **memCache 适配器** ```
 
 gfsh>start server
 --name=\<server_name>
@@ -1574,8 +1574,8 @@ gfsh>start server
 --memcached-port=\<port_number>
 --memcached-protocol=BINARY|ASCII
 
-```** HTTP 分布式 session **之前接触的分布式 session 方案是 Redis-cluster + Tomcat 来做的， 其实道理是一样的， Geode 替换了 Redis 就成功 geode-session-Tomcat 了。
-Geode 使用了不小的篇幅来描述该扩展功能，[详见](https://geode.apache.org/docs/guide/110/tools_modules/http_session_mgmt/quick_start.html)。** Redis 适配器 **```
+``` **HTTP 分布式 session** 之前接触的分布式 session 方案是 Redis-cluster + Tomcat 来做的， 其实道理是一样的， Geode 替换了 Redis 就成功 geode-session-Tomcat 了。
+Geode 使用了不小的篇幅来描述该扩展功能，[详见](https://geode.apache.org/docs/guide/110/tools_modules/http_session_mgmt/quick_start.html)。 **Redis 适配器** ```
 gfsh> start server --name=server1 --redis-bind-address=localhost \
  --redis-port=11211 --J=-Dgemfireredis.regiontype=PARTITION_PERSISTENT
 ```
@@ -1584,7 +1584,7 @@ gfsh> start server --name=server1 --redis-bind-address=localhost \
 
 > Geode 相比较 Redis 具有多线程、高并发、扩展性强、结果报告， 并且 Geode wan 复制模式能够水平扩展，跨数据中心还能维护数据一致性。
 
-虽然这么厉害，但是经过简单测试，还是不要冒险改用 Redis，老老实实用 Redis。**Lucene 支持**
+虽然这么厉害，但是经过简单测试，还是不要冒险改用 Redis，老老实实用 Redis。 **Lucene 支持**
 
 Geode 底层引入了 Lucene 的包并支持创建 index、查询 index，换句话说 Geode 引入了 Lucene 的一些特性在它的内部，依然持有和 Redis 一样的观点，改用 ES 还是老老实实去用 ES 吧。
 

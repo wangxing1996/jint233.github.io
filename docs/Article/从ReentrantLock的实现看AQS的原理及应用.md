@@ -19,7 +19,7 @@ ReentrantLock意思为可重入锁，指的是一个线程能够对一个临界�
 下面通过伪代码，进行更加直观的比较：
 
 ```java
-// **************************Synchronized的使用方式**************************// 1.用于代码块
+// ****  ****  ****  ****  ****  ****  **Synchronized的使用方式**  ****  ****  ****  ****  ****  **** // 1.用于代码块
 synchronized (this) {}
 // 2.用于对象
 synchronized (object) {}
@@ -29,8 +29,7 @@ public synchronized void test () {}
 for (int i = 0; i < 100; i++) {
  synchronized (this) {}
 }
-//**************************ReentrantLock的使用方式**************************
-public void test () throw Exception {
+// ****  ****  ****  ****  ****  ****  **ReentrantLock的使用方式**  ****  ****  ****  ****  ****  **** public void test () throw Exception {
  // 1.初始化选择公平锁、非公平锁
  ReentrantLock lock = new ReentrantLock(true);
  // 2.可用于代码块

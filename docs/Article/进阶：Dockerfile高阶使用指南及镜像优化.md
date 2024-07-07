@@ -216,11 +216,11 @@ IMAGE               CREATED             CREATED BY                              
 ...
 ```
 
-很明显，刚才增加的 ENV 可以直接通过 docker history/docker image history 看到。 **不建议真的这样做**。
+很明显，刚才增加的 ENV 可以直接通过 docker history/docker image history 看到。 **不建议真的这样做** 。
 
-由此，得出了我们的第一个结论，**Docker 镜像的构建历史是不安全的，通过 ENV 设置的信息可在 history 中看到**。
+由此，得出了我们的第一个结论， **Docker 镜像的构建历史是不安全的，通过 ENV 设置的信息可在 history 中看到** 。
 
-这也引出了我们的第一个问题：**Docker 镜像的构建记录是可查看的，如何管理构建过程中需要的密码/密钥等敏感信息？**### 高阶特性：密码管理
+这也引出了我们的第一个问题： **Docker 镜像的构建记录是可查看的，如何管理构建过程中需要的密码/密钥等敏感信息？** ### 高阶特性：密码管理
 
 为了应对类似前面这样的问题，当开启 BuildKit 时，我们可以使用高阶用法，即：Dockerfile 的实验特性。
 
@@ -272,7 +272,7 @@ RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 RUN --mount=type=ssh,required git clone [email protected]:tao12345666333/moe.git \
         && cd moe \
         && git checkout -b release
-```** 注意** ：使用此功能的时候，需要使用 [`ssh-agent(1)`](https://linux.die.net/man/1/ssh-agent) 进行认证代理，所以需要提前安装。
+``` **注意** ：使用此功能的时候，需要使用 [`ssh-agent(1)`](https://linux.die.net/man/1/ssh-agent) 进行认证代理，所以需要提前安装。
 
 构建方式如下：
 
@@ -356,7 +356,7 @@ rpc error: code = Unknown desc = executor failed running \[/bin/sh -c git clone 
 
 在上面的内容中，我们学习到了通过 `docker image history` 可以查看镜像的构建历史，但构建历史是透明的，凡是可以拿到该镜像的人均可查看到其构建历史；所以它是不安全的。
 
-尤其是当我们通过 ENV 或者 RUN 指令等，将密码/配置信息等传递进去，或者是将自己的私钥之类的文件拷贝到镜像中， **这些操作都是不安全的，不应该这样使用 **，在启用 BuildKit 之后，我们可以通过使用新的实验性语法做到更安全的操作。
+尤其是当我们通过 ENV 或者 RUN 指令等，将密码/配置信息等传递进去，或者是将自己的私钥之类的文件拷贝到镜像中， **这些操作都是不安全的，不应该这样使用** ，在启用 BuildKit 之后，我们可以通过使用新的实验性语法做到更安全的操作。
 
 实验性语法是在 Dockerfile 的头部增加了一个表示当前语法规则的 `# syntax = docker/dockerfile:experimental` （事实上，我们将它称之为 frontend）它其实是一个真实存在的 Docker 镜像，在构建过程中，会将它拉取下来使用，这里的详细内容我们可以之后对 frontend 详解的时候再进行讨论。
 
@@ -500,7 +500,7 @@ remote/spring-boot   1                   644867602b8a        About a minute ago 
 
 ```
 
-镜像构建成功了。**注意** 这里给 `docker buildx build` 命令传递了 `--load` 参数，表示我们要将构建好的镜像加载到我们现在在用的 dockerd 当中。
+镜像构建成功了。 **注意** 这里给 `docker buildx build` 命令传递了 `--load` 参数，表示我们要将构建好的镜像加载到我们现在在用的 dockerd 当中。
 
 此时再查看 builder 的状态：
 
@@ -638,7 +638,7 @@ a2c1e139697b        About a minute ago                                          
 
 ```
 
-可以看到之前的每层大小都已经变成了 0，这是因为把所有的层都合并到了最终的镜像上去了。**特别注意：** `--squash` 虽然在 1.13.0 版本中就已经加入了 Docker 中，但他至今仍然是实验形式；所以你需要按照我在本篇文章开始部分的介绍那样，打开实验性功能的支持。
+可以看到之前的每层大小都已经变成了 0，这是因为把所有的层都合并到了最终的镜像上去了。 **特别注意：** `--squash` 虽然在 1.13.0 版本中就已经加入了 Docker 中，但他至今仍然是实验形式；所以你需要按照我在本篇文章开始部分的介绍那样，打开实验性功能的支持。
 
 但直接传递 `--squash` 的方式，相对来说足够的简单，也更安全。
 

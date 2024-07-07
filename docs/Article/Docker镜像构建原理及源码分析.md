@@ -65,7 +65,7 @@ API docs preview will be running at http://localhost:9000
 
 > A tar archive compressed with one of the following algorithms: identity (no compression), gzip, bzip2, xz. string
 
-请求体是一个 `tar` 归档文件，可选择无压缩、`gzip`、`bzip2`、`xz` 压缩等形式。关于这几种压缩格式就不再展开介绍了，但值得注意的是 **如果使用了压缩，则传输体积会变小，即网络消耗会相应减少。但压缩/解压缩需要耗费 CPU 等计算资源**这在我们对大规模镜像构建做优化时是个值得权衡的点。
+请求体是一个 `tar` 归档文件，可选择无压缩、`gzip`、`bzip2`、`xz` 压缩等形式。关于这几种压缩格式就不再展开介绍了，但值得注意的是 **如果使用了压缩，则传输体积会变小，即网络消耗会相应减少。但压缩/解压缩需要耗费 CPU 等计算资源** 这在我们对大规模镜像构建做优化时是个值得权衡的点。
 
 #### 请求头
 
@@ -85,7 +85,7 @@ API docs preview will be running at http://localhost:9000
 
 通过 API 我们也知道了该接口所需的请求体是一个 `tar` 归档文件（可选择压缩算法进行压缩），同时它的请求头中会携带用户在镜像仓库中的认证信息。
 
-这提醒我们，**如果在使用远程 Dockerd 构建时，请注意安全，尽量使用 tls 进行加密，以免数据泄漏。**
+这提醒我们， **如果在使用远程 Dockerd 构建时，请注意安全，尽量使用 tls 进行加密，以免数据泄漏。**
 
 ### CLI
 
@@ -181,7 +181,7 @@ func BuildKitEnabled(si ServerInfo) (bool, error) {
 
 当然你也可能会想，从技术上来讲，压缩和流式没有什么必然的冲突，是可实现的。事实的确如此，如果从技术的角度上来讲两者并非完全不能一起存在，无非就是增加解压缩的动作。但是当开启 `stream` 模式，对每个文件都进行压缩和解压的操作那将会是很大的资源浪费，同时也增加了其复杂度，所以在 CLI 中便直接进行了限制，不允许同时使用 `compress` 和 `stream`
 
-- **不可同时使用 stdin 读取 Dockerfile 和 build context。**在进行构建时，如果我们将 `Dockerfile` 的名字传递为 `-` 时，表示从 `stdin` 读取其内容。
+- **不可同时使用 stdin 读取 Dockerfile 和 build context。** 在进行构建时，如果我们将 `Dockerfile` 的名字传递为 `-` 时，表示从 `stdin` 读取其内容。
 
 例如，某个目录下有三个文件 `foo` `bar` 和 `Dockerfile`，通过管道将 `Dockerfile` 的内容通过 `stdin` 传递给 `docker build`
 
@@ -226,9 +226,9 @@ Successfully built ce88644a7395
 invalid argument: can't use stdin for both build context and dockerfile
 ```
 
-就会报错了。所以，**不能同时使用 stdin 读取 Dockerfile 和 build context** 。
+就会报错了。所以， **不能同时使用 stdin 读取 Dockerfile 和 build context** 。
 
-- **build context 支持四种行为。**```go
+- **build context 支持四种行为。** ```go
   switch {
   case options.contextFromStdin():
   // 省略
@@ -246,10 +246,9 @@ invalid argument: can't use stdin for both build context and dockerfile
 从 `stdin` 传入，上文已经演示过了，传递给 `stdin` 的是 `tar` 归档文件；
 当然也可以是指定一个具体的 `PATH`，我们通常使用的 `docker build .` 便是这种用法；
 或者可以指定一个 `git` 仓库的地址，CLI 会调用 `git` 命令将仓库 `clone` 至一个临时目录，进行使用；
-最后一种是，给定一个 `URL` 地址，该地址可以是** 一个具体的 Dockerfile 文件地址 **或者是** 一个 tar 归档文件的下载地址** 。
+最后一种是，给定一个 `URL` 地址，该地址可以是 **一个具体的 Dockerfile 文件地址** 或者是 **一个 tar 归档文件的下载地址** 。
 这几种基本就是字面上的区别，至于 CLI 的行为差异，主要是最后一种，当 `URL` 地址是一个具体的 `Dockerfile` 文件地址，在这种情况下 `build context` 相当于只有 `Dockerfile` 自身，所以并不能使用 `COPY` 之类的指定，至于 `ADD` 也只能使用可访问的外部地址。
-*   **可使用 .dockerignore 忽略不需要的文件**
-我在之前的 Chat \[高效构建 Docker 镜像的最佳实践\] 中有分享过相关的内容。这里我们看看它的实现逻辑。
+* **可使用 .dockerignore 忽略不需要的文件** 我在之前的 Chat \[高效构建 Docker 镜像的最佳实践\] 中有分享过相关的内容。这里我们看看它的实现逻辑。
 ```go
 // cli/command/image/build/dockerignore.go#L13
 func ReadDockerignore(contextDir string) ([]string, error) {
@@ -273,8 +272,7 @@ func ReadDockerignore(contextDir string) ([]string, error) {
   这样有利于优化 CLI 与 `dockerd` 之间的传输压力之类的。
 - `docker` CLI 还会去读取 `~/.docker/config.json` 中的内容。
   这与前面 API 部分所描述的内容基本是一致的。将认证信息通过 `X-Registry-Config` 头传递给 `dockerd` 用于在需要拉取镜像时进行身份校验。
-- **调用 API 进行实际构建任务**
-  当一切所需的校验和信息都准备就绪之后，则开始调用 `dockerCli.Client` 封装的 API 接口，将请求发送至 `dockerd`，进行实际的构建任务。
+- **调用 API 进行实际构建任务** 当一切所需的校验和信息都准备就绪之后，则开始调用 `dockerCli.Client` 封装的 API 接口，将请求发送至 `dockerd`，进行实际的构建任务。
 
 ```go
 response, err := dockerCli.Client().ImageBuild(ctx, body, buildOptions)
@@ -622,7 +620,7 @@ if err != nil {
 }
 ```
 
-**newImageBuildOptions 函数就是构造构建参数的，将通过 API 提交过来的参数转换为构建动作实际需要的参数形式。 **`go buildOptions.AuthConfigs = getAuthConfigs(r.Header)`** getAuthConfigs 函数用于从请求头拿到认证信息**```go
+**newImageBuildOptions 函数就是构造构建参数的，将通过 API 提交过来的参数转换为构建动作实际需要的参数形式。** `go buildOptions.AuthConfigs = getAuthConfigs(r.Header)` **getAuthConfigs 函数用于从请求头拿到认证信息** ```go
 imgID, err := br.backend.Build(ctx, backend.BuildConfig{
 Source:         body,
 Options:        buildOptions,
@@ -634,8 +632,7 @@ return errf(err)
 
 ```
 
-这里就需要注意了: 真正的构建过程要开始了。** 使用 backend 的 Build 函数来完成真正的构建过程**
-```go
+这里就需要注意了: 真正的构建过程要开始了。 **使用 backend 的 Build 函数来完成真正的构建过程** ```go
 // api/server/backend/build/backend.go#L52
 func (b *Backend) Build(ctx context.Context, config backend.BuildConfig) (string, error) {
     options := config.Options

@@ -39,7 +39,7 @@ Pronto 团队为每种类型的机器和每个支持的 Elasticsearch 版本运�
 
 在开始索引数据和运行查询之前，我们先考虑一下。索引到底表示什么？Elastic 的官方答案是“具有某种相似特征的文档集合”。因此，下一个问题是“应该使用哪些特征来对数据进行分组？应该把所有文档放入一个索引还是多个索引？”，答案是，这取决于使用的查询。以下是关于如何根据最常用的查询组织索引的一些建议。
 
-- **如果查询有一个过滤字段并且它的值是可枚举的，那么把数据分成多个索引。**例如，你有大量的全球产品信息被采集到 Elasticsearch 中，大多数查询都有一个过滤条件“地区”，并且很少有机会运行跨地区查询。如下查询体可以被优化：
+- **如果查询有一个过滤字段并且它的值是可枚举的，那么把数据分成多个索引。** 例如，你有大量的全球产品信息被采集到 Elasticsearch 中，大多数查询都有一个过滤条件“地区”，并且很少有机会运行跨地区查询。如下查询体可以被优化：
 
 ```
 {
@@ -62,22 +62,20 @@ Pronto 团队为每种类型的机器和每个支持的 Elasticsearch 版本运�
 
 在这种情况下，如果索引按照美国、欧盟等地区分成几个较小的索引，可以从查询中删除过滤子句，查询性能会更好。如果我们需要运行一个跨地区查询，我们可以将多个索引或通配符传递给 Elasticsearch。
 
-- **如果查询有一个过滤字段并且它的值是不可枚举的，建议使用路由。**通过使用过滤字段值作为路由键，我们可以将具有相同过滤字段值的文档索引至同一个分片，并移除过滤子句。
+- **如果查询有一个过滤字段并且它的值是不可枚举的，建议使用路由。** 通过使用过滤字段值作为路由键，我们可以将具有相同过滤字段值的文档索引至同一个分片，并移除过滤子句。
 
 例如，Elasticsearch 集群中存有数以百万记的订单数据，大多数查询都包含有买方 ID 作为限定从句。为每个买家创建索引是不可能的，所以我们不能通过买方 ID 将数据拆分成多个索引。一个合适的解决方案是，使用路由将具有相同买方 ID 的所有订单放入相同分片中。然后几乎所有的查询都可以在匹配路由键的分片内完成。
 
-- **如果查询具有日期范围过滤子句，则按日期建立数据。**这适用于大多数日志记录和监控场景。我们可以按天、周或月组织索引，然后可以获得指定的日期范围内的索引列表，这样，Elasticsearch 只需要查询一个较小的数据集而不是整个数据集。另外，当数据过期时，删除旧的索引也很容易。
-- **明确设置映射。**虽然 Elasticsearch 可以动态创建映射，但创建的映射可能并不适用于所有场景。例如，Elasticsearch 5.x 中的默认字符串字段映射是“keyword”和“text”类型。这在很多情况下是没有必要的。
+- **如果查询具有日期范围过滤子句，则按日期建立数据。** 这适用于大多数日志记录和监控场景。我们可以按天、周或月组织索引，然后可以获得指定的日期范围内的索引列表，这样，Elasticsearch 只需要查询一个较小的数据集而不是整个数据集。另外，当数据过期时，删除旧的索引也很容易。
+- **明确设置映射。** 虽然 Elasticsearch 可以动态创建映射，但创建的映射可能并不适用于所有场景。例如，Elasticsearch 5.x 中的默认字符串字段映射是“keyword”和“text”类型。这在很多情况下是没有必要的。
 - **如果文档使用用户定义的 ID 或路由进行索引，要避免造成分片不平衡。** Elasticsearch 使用随机 ID 生成器和散列算法来确保文档均匀地分配给分片。当使用用户定义的 ID 或路由时，ID 或路由键可能不够随机，造成一些分片明显比其他分片大。在这种情况下，这个分片上的读 / 写操作会比其他的慢得多。我们可以优化 ID/ 路由键或使用 [index.routing_partition_size](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html#routing-index-partition) （5.3 和更高版本中可用）。
-- **确保分片均匀分布在节点上。**一个节点如果比其他节点的分片多，则会比其他节点承担更多的负载，成为整个系统的瓶颈。
+- **确保分片均匀分布在节点上。** 一个节点如果比其他节点的分片多，则会比其他节点承担更多的负载，成为整个系统的瓶颈。
 
 ### 索引性能调优
 
 对于日志记录和监控等重度索引场景，索引性能是关键指标。这里有一些建议：
 
-- **使用批量请求。**
-- **使用多线程发送请求。**
-- **增加刷新时间间隔。**每次刷新事件发生时，Elasticsearch 都会创建一个新的 Lucene 段，并在稍后进行合并。增加刷新时间间隔将降低创建和合并的开销。请注意，文档只有在刷新后才能搜索到。
+- **使用批量请求。** - **使用多线程发送请求。** - **增加刷新时间间隔。** 每次刷新事件发生时，Elasticsearch 都会创建一个新的 Lucene 段，并在稍后进行合并。增加刷新时间间隔将降低创建和合并的开销。请注意，文档只有在刷新后才能搜索到。
 
 ![img](assets/d296638b00d0b40908c4ab5712aa1952.png)
 
@@ -85,7 +83,7 @@ Pronto 团队为每种类型的机器和每个支持的 Elasticsearch 版本运�
 
 从上图可以看出，随着刷新时间间隔的增加，吞吐量增加，响应时间减少。我们可以使用下面的请求来检查我们有多少段以及刷新和合并花了多少时间。
 
-`Index/_stats?filter_path= indices.**.refresh,indices.**.segments,indices.**.merges`- **减少副本数量。**对于每个索引请求，Elasticsearch 需要将文档写入主分片和所有副本分片。显然，副本过多会减慢索引速度，但另一方面，这将提高搜索性能。我们将在本文后面讨论这个问题。
+`Index/_stats?filter_path= indices. **.refresh,indices.** .segments,indices. **.merges`-** 减少副本数量。**对于每个索引请求，Elasticsearch 需要将文档写入主分片和所有副本分片。显然，副本过多会减慢索引速度，但另一方面，这将提高搜索性能。我们将在本文后面讨论这个问题。
 
 ![img](assets/47d20b17cdc09959f3e1eedb03a296de.png) 性能和副本数之间的关系
 
@@ -101,14 +99,14 @@ Pronto 团队为每种类型的机器和每个支持的 Elasticsearch 版本运�
 
 ![img](assets/2be7679a1b248987f612dc3a4fd1110b.png) 查询和过滤器性能比较
 
-- **增加刷新时间间隔。**正如我们在[索引性能调优](https://www.ebayinc.com/stories/blogs/tech/elasticsearch-performance-tuning-practice-at-ebay/#tune_indexing_performance)中所提到的，Elasticsearch 每次刷新时都会创建一个新的段。增加刷新时间间隔将有助于减少段数并降低搜索的 IO 成本。并且，一旦发生刷新并且数据改变，缓存将会失效。增加刷新时间间隔可以使 Elasticsearch 更高效地利用缓存。
+- **增加刷新时间间隔。** 正如我们在[索引性能调优](https://www.ebayinc.com/stories/blogs/tech/elasticsearch-performance-tuning-practice-at-ebay/#tune_indexing_performance)中所提到的，Elasticsearch 每次刷新时都会创建一个新的段。增加刷新时间间隔将有助于减少段数并降低搜索的 IO 成本。并且，一旦发生刷新并且数据改变，缓存将会失效。增加刷新时间间隔可以使 Elasticsearch 更高效地利用缓存。
 - **增加副本数。** Elasticsearch 可以在主分片或副本分片上执行搜索。副本越多，搜索可用的节点就越多。
 
 ![img](assets/40d1a26c967a0f4c37f612f1f8e9ca9a.png) 搜索性能和副本数之间的关系
 
 从上图可以看出，搜索吞吐量几乎与副本数量成线性关系。注意在这个测试中，测试集群有足够的数据节点来确保每个分片都有一个专有节点。如果这个条件不能满足，搜索吞吐量就不会这么好。
 
-- **尝试不同的分片数。**“应该为索引设置多少分片呢？”这可能是最常见的问题。遗憾的是，没有适合所有应用场景的分片数。这完全取决于你的情况。
+- **尝试不同的分片数。** “应该为索引设置多少分片呢？”这可能是最常见的问题。遗憾的是，没有适合所有应用场景的分片数。这完全取决于你的情况。
 
 分片太少会使搜索无法扩展。例如，如果分片数设置为 1，则索引中的所有文档都将存储在一个分片中。对于每个搜索，只有一个节点能够参与计算。如果索引中的文件数量很多，查询会很耗时。从另一方面来说，创建的索引分片太多也会对性能造成不利影响，因为 Elasticsearch 需要在所有分片上运行查询（除非在请求中指定了路由键），然后提取并合并所有返回的结果。
 
@@ -124,7 +122,7 @@ Pronto 团队为每种类型的机器和每个支持的 Elasticsearch 版本运�
 
 在这种情况下，我们建议你尝试一个小于最优值的分片数，因为如果分片多，并且使每个分片都有一个独占数据节点，那么就需要很多节点。
 
-- **节点查询缓存。**[节点查询缓存](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-cache.html)只缓存过滤器上下文中使用的查询。与查询子句不同，过滤子句是“是”或“否”的问题。Elasticsearch 使用位集（bit set）机制来缓存过滤结果，以便后面使用相同的过滤器的查询进行加速。请注意，Elasticsearch 只对保存超过 10,000（或文档总数的 3％，以较大者为准）个文档的段启用查询缓存。有关更多详细信息，请参阅[缓存](https://www.elastic.co/guide/en/elasticsearch/guide/current/filter-caching.html#_independent_query_caching)。
+- **节点查询缓存。** [节点查询缓存](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-cache.html)只缓存过滤器上下文中使用的查询。与查询子句不同，过滤子句是“是”或“否”的问题。Elasticsearch 使用位集（bit set）机制来缓存过滤结果，以便后面使用相同的过滤器的查询进行加速。请注意，Elasticsearch 只对保存超过 10,000（或文档总数的 3％，以较大者为准）个文档的段启用查询缓存。有关更多详细信息，请参阅[缓存](https://www.elastic.co/guide/en/elasticsearch/guide/current/filter-caching.html#_independent_query_caching)。
 
 我们可以使用下面的请求来检查一个节点查询缓存是否生效。
 
@@ -200,14 +198,14 @@ GET index_name/_stats?filter_path=indices.**.request_cache
 }
 ```
 
-- **仅检索必要的字段。**如果文档很大，而你只需要几个字段，请使用 [stored_fields](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-stored-fields.html) 检索需要的字段而不是所有字段。
-- **避免搜索停用词。**诸如“a”和“the”等停用词可能导致查询命中结果数暴增。假设你有一百万个文档。搜索“fox”可能会返回几十个命中文档，但搜索“the fox”可能会返回索引中的所有文档，因为“the”几乎出现在所有文档中。Elasticsearch 需要对所有命中的结果进行评分和排序，以致像“the fox”这样的查询会减慢整个系统。你可以使用停用词过滤器来删除停用词，或使用“and”运算符将查询更改为“the AND fox”，获得更精确的结果。
+- **仅检索必要的字段。** 如果文档很大，而你只需要几个字段，请使用 [stored_fields](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-stored-fields.html) 检索需要的字段而不是所有字段。
+- **避免搜索停用词。** 诸如“a”和“the”等停用词可能导致查询命中结果数暴增。假设你有一百万个文档。搜索“fox”可能会返回几十个命中文档，但搜索“the fox”可能会返回索引中的所有文档，因为“the”几乎出现在所有文档中。Elasticsearch 需要对所有命中的结果进行评分和排序，以致像“the fox”这样的查询会减慢整个系统。你可以使用停用词过滤器来删除停用词，或使用“and”运算符将查询更改为“the AND fox”，获得更精确的结果。
 
 如果某些单词在索引中经常使用，但不在默认停用词列表中，则可以使用[截止频率](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html#query-dsl-match-query-cutoff)来动态处理它们。
 
-- **如果不关心文档返回的顺序，则按 \_doc 排序。** Elasticsearch 默认使用“\_score”字段按评分排序。如果不关心顺序，可以使用"sort":"\_doc"让 Elasticsearch 按索引顺序返回命中文档，可以节省排序开销。
-- **避免使用脚本查询（script query）计算动态字段，建议在索引时计算并在文档中添加该字段。**例如，我们有一个包含大量用户信息的索引，我们需要查询以"1234"开头的所有用户。你可能运行一个脚本查询，如"source":“doc\[‘num’\].value.startsWith（‘1234’）”。这个查询非常耗费资源，并且减慢整个系统。索引时考虑添加一个名为“num_prefix”的字段。然后我们可以查询"name_prefix":“1234”。
-- **避免使用通配符查询。**运行性能测试
+- **如果不关心文档返回的顺序，则按 _doc 排序。** Elasticsearch 默认使用“\_score”字段按评分排序。如果不关心顺序，可以使用"sort":"\_doc"让 Elasticsearch 按索引顺序返回命中文档，可以节省排序开销。
+- **避免使用脚本查询（script query）计算动态字段，建议在索引时计算并在文档中添加该字段。** 例如，我们有一个包含大量用户信息的索引，我们需要查询以"1234"开头的所有用户。你可能运行一个脚本查询，如"source":“doc\[‘num’\].value.startsWith（‘1234’）”。这个查询非常耗费资源，并且减慢整个系统。索引时考虑添加一个名为“num_prefix”的字段。然后我们可以查询"name_prefix":“1234”。
+- **避免使用通配符查询。** 运行性能测试
 
 ______________________________________________________________________
 
@@ -234,4 +232,4 @@ Pronto 团队建立了基于 [Gatling](https://gatling.io/) 的在线性能分�
 
 本文总结了在设计满足高期望的采集和搜索性能的 Elasticsearch 集群时应该考虑的索引 / 分片 / 副本设计以及一些其他配置，还说明了 Pronto 如何在策略上帮助客户进行初始规模调整、索引设计和调优以及性能测试。截至今天，Pronto 团队已经帮助包括订单管理系统（OMS）和搜索引擎优化（SEO）在内的众多客户实现了苛刻的性能目标，从而为 eBay 的关键业务作出了贡献。
 
-Elasticsearch 的性能取决于很多因素，包括文档结构、文档大小、索引设置 / 映射、请求率、数据集大小和查询命中次数等等。针对一种情况的建议不一定适用于另一种情况，因此，彻底进行性能测试、收集数据、根据负载调整配置以及优化集群以满足性能要求非常重要。**查看英文原文：** [https://www.ebayinc.com/stories/blogs/tech/elasticsearch-performance-tuning-practice-at-ebay/](https://www.ebayinc.com/stories/blogs/tech/elasticsearch-performance-tuning-practice-at-ebay/)
+Elasticsearch 的性能取决于很多因素，包括文档结构、文档大小、索引设置 / 映射、请求率、数据集大小和查询命中次数等等。针对一种情况的建议不一定适用于另一种情况，因此，彻底进行性能测试、收集数据、根据负载调整配置以及优化集群以满足性能要求非常重要。 **查看英文原文：** [https://www.ebayinc.com/stories/blogs/tech/elasticsearch-performance-tuning-practice-at-ebay/](https://www.ebayinc.com/stories/blogs/tech/elasticsearch-performance-tuning-practice-at-ebay/)

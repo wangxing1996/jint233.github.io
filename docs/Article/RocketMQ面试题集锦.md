@@ -70,7 +70,9 @@ Producer 在发送消息的时候指定什么时刻发送，然后消息被发�
 
 顺序消息在日常的功能场景中很常见，比如点外卖生成外卖订单、付款、送餐的消息需要保证严格的顺序。
 
-**全局顺序消息：** RocketMQ 的一个 Topic 下默认有八个读队列和八个写队列，如果要保证全局顺序消息的话需要在生产端只保留一个读写队列，然后消费端只有一个消费线程，这样会降低 RocketMQ 的高可用和高吞吐量。 **分区顺序消息：** 分区顺序消息同样需要生产端和消费端配合，生产端根据同一个订单 ID 把消息路由到同一个 MessageQueue，消费端控制从同一个 MessageQueue 取出的消息不被并发处理。 **生成端发送分区顺序消息：** ```
+**全局顺序消息：** RocketMQ 的一个 Topic 下默认有八个读队列和八个写队列，如果要保证全局顺序消息的话需要在生产端只保留一个读写队列，然后消费端只有一个消费线程，这样会降低 RocketMQ 的高可用和高吞吐量。 **分区顺序消息：** 分区顺序消息同样需要生产端和消费端配合，生产端根据同一个订单 ID 把消息路由到同一个 MessageQueue，消费端控制从同一个 MessageQueue 取出的消息不被并发处理。 **生成端发送分区顺序消息：** 
+
+```java
 SendResult sendResult = Producer.send(msg , new MessageQueueSelector() {
 Override
 public MessageQueue select(List <MessageQueue> mqs , Message msg ,Object arg) {
@@ -81,11 +83,11 @@ int index = bizId%mqs.size();
 return mqs.get(index) ;
 }
 }, orderid);
-
 ```
+
 消费端消费分区消息：
-```
 
+```java
 consumer.registerMessageListener(new MessageListenerOrderly() {
 Override
 public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs ,ConsumeOrderlyContext context) {
@@ -93,8 +95,8 @@ System.out.printf("Receive order msg:" + new String(msgs.get(0).getBody()));
 return ConsumeOrderlyStatus.SUCCESS ;
 }
 });
-
 ```
+
 MessageListenerOrderly 底层会将 MessageQueue 锁住保证了同一个 MessageQueue 的消息不会并发消费。
 14\. 如何解决消息队列的延时以及过期失效问题？
 =========================
@@ -122,14 +124,16 @@ RocketMQ 会把消息持久化到 CommitLog 文件里面，并且在以下的几
 *   写磁盘的过程：把用户态内存空间的数据 CPU 拷贝到内存态 IO 缓冲区，然后再把内核态的数据 DMA 拷贝到磁盘；
 *   不管是读还是写都需要两次数据拷贝，如果采用 MMAP 技术就可以把磁盘里面的文件映射到用户态空间的虚拟内存中，省去了内核态到用户态的 CPU 拷贝。
 ![在这里插入图片描述](assets/2cb23e20-9ea6-11ea-a7cd-ef13827cf727.png) **内存映射 MMAP（零拷贝技术）** NIO 可以采用 MappedByteBuffer 数据容器进行读写数据，而 MappedByteBuffer#map() 底层采用了 MMAP 技术进行了文件映射。
-```
 
+```plaintext
 ```
 MappedByteBuffer mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, position, fileSize)
 ize);
 ```
 
-```
+
+
+```plaintext
 上文提到了 MMAP 技术就是进行文件映射和内存映射，把磁盘里面的文件映射到用户态的虚拟内存，还有将 PageCache 映射到用户态的虚拟内存，从而减少内核态到用户态的 CPU 拷贝。
 MappedByteBuffer#write() 方法会将数据直接写入到 PageCache 中，然后操作系统会异步刷盘将 PageCache 中的数据写入到磁盘。
 从磁盘读取数据的时候，首先会从 PageCache 中查看是否有数据，如果有的话就直接从 PageCache 加载数据，如果没有的话就去磁盘加载数据到 PageCache 中，PageCache 技术还会将要加载的数据的附近的其他数据块也一并加载进 PageCache，下文继续分析 PageCache 技术。
@@ -155,3 +159,4 @@ MMAP 虽然可以提高磁盘读写的性能，但是仍然有诸多缺陷和限
 ==
 RocketMQ 的底层设计还是很有趣的，大家有空还是要看下其源代码，将其巧妙的设计转化为自己的技能。
 ```
+

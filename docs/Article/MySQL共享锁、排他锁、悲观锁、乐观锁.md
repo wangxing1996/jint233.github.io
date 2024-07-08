@@ -16,7 +16,7 @@
 
 |--乐观锁（抽象性，不真实存在这个锁） **二、InnoDB与MyISAM** 　　Mysql 在5.5之前默认使用 MyISAM 存储引擎，之后使用 InnoDB 。查看当前存储引擎：
 
-```
+```plaintext
 show variables like '%storage_engine%';
 ```
 
@@ -32,13 +32,13 @@ mysql InnoDB引擎默认的修改数据语句， **update** , **delete** , **ins
 
 **|--共享锁** ：对某一资源加共享锁，自身可以读该资源，其他人也可以读该资源（也可以再继续加共享锁，即 共享锁可多个共存），但无法修改。要想修改就必须等所有共享锁都释放完之后。语法为：
 
-```
+```sql
 select * from table lock in share mode
 ```
 
 **|--排他锁** ：对某一资源加排他锁，自身可以进行增删改查，其他人无法进行任何操作。语法为：
 
-```
+```sql
 select * from table for update
 ```
 
@@ -104,14 +104,14 @@ ______________________________________________________________________
 
 T1:begin tran
 
-```
+```sql
  　　select * from table lock in share mode
  　　update table set column1='hello'
 ```
 
 T2:begin tran
 
-```
+```sql
  　　select * from table lock in share mode
  　　update table set column1='world'
 ```
@@ -124,13 +124,13 @@ ______________________________________________________________________
 
 T1:_begin tran_
 
-```
+```sql
  　　*update table set column1='hello' where id=10*
 ```
 
 T2:_begin tran_
 
-```
+```sql
  　　*update table set column1='world' where id=20*
 ```
 
@@ -148,14 +148,14 @@ ______________________________________________________________________
 
 T1:begin tran
 
-```
+```sql
  　　select * from table for update
  　　update table set column1='hello'
 ```
 
 T2:begin tran
 
-```
+```sql
  　　select * from table for update
  　　update table set column1='world'
 ```
@@ -170,14 +170,14 @@ ______________________________________________________________________
 
 T1:begin tran
 
-```
+```sql
  select * from table [加更新锁操作]
  update table set column1='hello'
 ```
 
 T2:begin tran
 
-```
+```sql
  select * from table [加更新锁操作]
  update table set column1='world'
 ```

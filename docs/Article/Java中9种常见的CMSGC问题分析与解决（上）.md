@@ -133,7 +133,7 @@ Java 中对象地址操作主要使用 Unsafe 调用了 C 的 allocate 和 free 
 
 如上图所示，我们很清晰的就能知道是什么原因引起的 GC，以及每次的时间花费情况，但是要分析 GC 的问题，先要读懂 GC Cause，即 JVM 什么样的条件下选择进行 GC 操作，具体 Cause 的分类可以看一下 Hotspot 源码：src/share/vm/gc/shared/gcCause.hpp 和 src/share/vm/gc/shared/gcCause.cpp 中。
 
-```text
+```cpp
 const char* GCCause::to_string(GCCause::Cause cause) {
   switch (cause) {
     case _java_lang_system_gc:
@@ -209,7 +209,7 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
 shouldConcurrentCollect
 
-```text
+```cpp
 bool CMSCollector::shouldConcurrentCollect() {
   LogTarget(Trace, gc) log;
   if (_full_gc_requested) {
@@ -345,7 +345,7 @@ Mutator 的类型根据对象存活时间比例图来看主要分为两种，在
 
 ConcurrentMarkSweepGeneration::compute_new_size()
 
-```text
+```cpp
 void ConcurrentMarkSweepGeneration::compute_new_size() {
   assert_locked_or_safepoint(Heap_lock);
   // If incremental collection failed, we just want to expand
@@ -369,7 +369,7 @@ void ConcurrentMarkSweepGeneration::compute_new_size() {
 
 GenCollectedHeap::expand_heap_and_allocate()
 
-```text
+```cpp
 HeapWord* GenCollectedHeap::expand_heap_and_allocate(size_t size, bool   is_tlab) {
   HeapWord* result = NULL;
   if (_old_gen->should_allocate(size, is_tlab)) {
@@ -395,7 +395,7 @@ HeapWord* GenCollectedHeap::expand_heap_and_allocate(size_t size, bool   is_tlab
 
 DisableExplicitGC
 
-```text
+```cpp
 JVM_ENTRY_NO_ENV(void, JVM_GC(void))
   JVMWrapper("JVM_GC");
   if (!DisableExplicitGC) {
@@ -406,7 +406,7 @@ JVM_END
 
 GenCollectedHeap::collect()
 
-```text
+```cpp
 void GenCollectedHeap::collect(GCCause::Cause cause) {
   if (cause == GCCause::_wb_young_gc) {
     // Young collection for the WhiteBox API.
@@ -426,12 +426,15 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
 #endif
   }
 }
-``` **保留 System.gc** 此处补充一个知识点， **CMS GC 共分为 Background 和 Foreground 两种模式** ，前者就是我们常规理解中的并发收集，可以不影响正常的业务线程运行，但 Foreground Collector 却有很大的差异，他会进行一次压缩式 GC。此压缩式 GC 使用的是跟 Serial Old GC 一样的 Lisp2 算法，其使用 Mark-Compact 来做 Full GC，一般称之为 MSC（Mark-Sweep-Compact），它收集的范围是 Java 堆的 Young 区和 Old 区以及 MetaSpace。由上面的算法章节中我们知道 compact 的代价是巨大的，那么使用 Foreground Collector 时将会带来非常长的 STW。如果在应用程序中 System.gc 被频繁调用，那就非常危险了。 **去掉 System.gc** 如果禁用掉的话就会带来另外一个内存泄漏问题，此时就需要说一下 DirectByteBuffer，它有着零拷贝等特点，被 Netty 等各种 NIO 框架使用，会使用到堆外内存。堆内存由 JVM 自己管理，堆外内存必须要手动释放，DirectByteBuffer 没有 Finalizer，它的 Native Memory 的清理工作是通过 `sun.misc.Cleaner` 自动完成的，是一种基于 PhantomReference 的清理工具，比普通的 Finalizer 轻量些。
+```
+
+**保留 System.gc** 此处补充一个知识点， **CMS GC 共分为 Background 和 Foreground 两种模式** ，前者就是我们常规理解中的并发收集，可以不影响正常的业务线程运行，但 Foreground Collector 却有很大的差异，他会进行一次压缩式 GC。此压缩式 GC 使用的是跟 Serial Old GC 一样的 Lisp2 算法，其使用 Mark-Compact 来做 Full GC，一般称之为 MSC（Mark-Sweep-Compact），它收集的范围是 Java 堆的 Young 区和 Old 区以及 MetaSpace。由上面的算法章节中我们知道 compact 的代价是巨大的，那么使用 Foreground Collector 时将会带来非常长的 STW。如果在应用程序中 System.gc 被频繁调用，那就非常危险了。 **去掉 System.gc** 如果禁用掉的话就会带来另外一个内存泄漏问题，此时就需要说一下 DirectByteBuffer，它有着零拷贝等特点，被 Netty 等各种 NIO 框架使用，会使用到堆外内存。堆内存由 JVM 自己管理，堆外内存必须要手动释放，DirectByteBuffer 没有 Finalizer，它的 Native Memory 的清理工作是通过 `sun.misc.Cleaner` 自动完成的，是一种基于 PhantomReference 的清理工具，比普通的 Finalizer 轻量些。
 
 为 DirectByteBuffer 分配空间过程中会显式调用 System.gc ，希望通过 Full GC 来强迫已经无用的 DirectByteBuffer 对象释放掉它们关联的 Native Memory，下面为代码实现：
 
 reserveMemory
-```text
+
+```java
 // These methods should be called whenever direct memory is allocated or
 // freed.  They allow the user to control the amount of direct memory
 // which a process may access.  All sizes are specified in bytes.
@@ -478,7 +481,7 @@ P.S. HotSpot 对 System.gc 有特别处理，最主要的地方体现在一次 S
 
 MetaSpace
 
-```text
+```cpp
 class Metaspace : public AllStatic {
   friend class MetaspaceShared;
  public:
@@ -527,7 +530,7 @@ MetaSpace 的对象为什么无法释放，我们看下面两点：
 
 MetaspaceGC::compute_new_size()
 
-```text
+```cpp
 void MetaspaceGC::compute_new_size() {
   assert(_shrink_factor <= 100, "invalid shrink factor");
   uint current_shrink_factor = _shrink_factor;
@@ -624,7 +627,7 @@ void MetaspaceGC::compute_new_size() {
 
 了解大概什么原因后，如何定位和解决就很简单了，可以 dump 快照之后通过 JProfiler 或 MAT 观察 Classes 的 Histogram（直方图） 即可，或者直接通过命令即可定位， jcmd 打几次 Histogram 的图，看一下具体是哪个包下的 Class 增加较多就可以定位了。不过有时候也要结合InstBytes、KlassBytes、Bytecodes、MethodAll 等几项指标综合来看下。如下图便是笔者使用 jcmd 排查到一个 Orika 的问题。
 
-```text
+```plaintext
 jcmd <PID> GC.class_stats|awk '{print$13}'|sed  's/\(.*\)\.\(.*\)/\1/g'|sort |uniq -c|sort -nrk1
 ```
 
@@ -669,7 +672,7 @@ GC 日志中出现“Desired survivor size 107347968 bytes, **new threshold 1(ma
 
 compute_tenuring_threshold
 
-```text
+```cpp
 uint ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
   //TargetSurvivorRatio默认50，意思是：在回收之后希望survivor区的占用率达到这个比例
   size_t desired_survivor_size = (size_t)((((double) survivor_capacity)*TargetSurvivorRatio)/100);
@@ -753,7 +756,7 @@ uint ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
 
 run_service()
 
-```text
+```cpp
 void ConcurrentMarkSweepThread::run_service() {
   assert(this == cmst(), "just checking");
   if (BindCMSThreadToCPU && !os::bind_to_processor(CPUForCMSThread)) {
@@ -773,7 +776,7 @@ void ConcurrentMarkSweepThread::run_service() {
 
 sleepBeforeNextCycle()
 
-```text
+```cpp
 void ConcurrentMarkSweepThread::sleepBeforeNextCycle() {
   while (!should_terminate()) {
     if(CMSWaitDuration >= 0) {
@@ -798,7 +801,7 @@ void ConcurrentMarkSweepThread::sleepBeforeNextCycle() {
 
 shouldConcurrentCollect()
 
-```text
+```cpp
 bool CMSCollector::shouldConcurrentCollect() {
   LogTarget(Trace, gc) log;
   if (_full_gc_requested) {
@@ -926,7 +929,7 @@ CMS 在回收的过程中，STW 的阶段主要是 Init Mark 和 Final Remark �
 
 CMSCollector::checkpointRootsInitialWork()
 
-```text
+```cpp
 void CMSCollector::checkpointRootsInitialWork() {
   assert(SafepointSynchronize::is_at_safepoint(), "world should be stopped");
   assert(_collectorState == InitialMarking, "just checking");
@@ -1005,7 +1008,7 @@ void CMSCollector::checkpointRootsInitialWork() {
 
 CMSParInitialMarkTask::work
 
-```text
+```cpp
 void CMSParInitialMarkTask::work(uint worker_id) {
   elapsedTimer _timer;
   ResourceMark rm;
@@ -1047,7 +1050,7 @@ void CMSParInitialMarkTask::work(uint worker_id) {
 
 CMSCollector::checkpointRootsFinalWork()
 
-```text
+```cpp
 void CMSCollector::checkpointRootsFinalWork() {
   GCTraceTime(Trace, gc, phases) tm("checkpointRootsFinalWork", _gc_timer_cm);
   assert(haveFreelistLocks(), "must have free list locks");
@@ -1138,7 +1141,7 @@ Final Remark 是最终的第二次标记，这种情况只有在 Background GC �
 
 - **【方向】** 观察详细 GC 日志，找到出问题时 Final Remark 日志，分析下 Reference 处理和元数据处理 real 耗时是否正常，详细信息需要通过 -XX:+PrintReferenceGC 参数开启。 **基本在日志里面就能定位到大概是哪个方向出了问题，耗时超过 10% 的就需要关注** 。
 
-```text
+```plaintext
 2019-02-27T19:55:37.920+0800: 516952.915: [GC (CMS Final Remark) 516952.915: [ParNew516952.939: [SoftReference, 0 refs, 0.0003857 secs]516952.939: [WeakReference, 1362 refs, 0.0002415 secs]516952.940: [FinalReference, 146 refs, 0.0001233 secs]516952.940: [PhantomReference, 0 refs, 57 refs, 0.0002369 secs]516952.940: [JNI Weak Reference, 0.0000662 secs]
 [class unloading, 0.1770490 secs]516953.329: [scrub symbol table, 0.0442567 secs]516953.373: [scrub string table, 0.0036072 secs][1 CMS-remark: 1638504K(2048000K)] 1667558K(4352000K), 0.5269311 secs] [Times: user=1.20 sys=0.03, real=0.53 secs]
 ```
@@ -1149,7 +1152,7 @@ Final Remark 是最终的第二次标记，这种情况只有在 Background GC �
 
 CMSCollector::refProcessingWork()
 
-```text
+```cpp
 if (should_unload_classes()) {
     {
       GCTraceTime(Debug, gc, phases) t("Class Unloading", _gc_timer_cm);
@@ -1250,10 +1253,12 @@ gperftools 是 Google 开发的一款非常实用的工具集，它的原理是�
 
 ![img](../%E6%96%87%E7%AB%A0/assets/v2-cacb2478ec2ca17cbf30a38582f14568_1440w.jpg) **4.9 场景九：JNI 引发的 GC 问题** ------------------------- **4.9.1 现象** 在 GC 日志中，出现 GC Cause 为 GCLocker Initiated GC。
 
-```text
+```plaintext
 2020-09-23T16:49:09.727+0800: 504426.742: [GC (GCLocker Initiated GC) 504426.742: [ParNew (promotion failed): 209716K->6042K(1887488K), 0.0843330 secs] 1449487K->1347626K(3984640K), 0.0848963 secs] [Times: user=0.19 sys=0.00, real=0.09 secs]
 2020-09-23T16:49:09.812+0800: 504426.827: [Full GC (GCLocker Initiated GC) 504426.827: [CMS: 1341583K->419699K(2097152K), 1.8482275 secs] 1347626K->419699K(3984640K), [Metaspace: 297780K->297780K(1329152K)], 1.8490564 secs] [Times: user=1.62 sys=0.20, real=1.85 secs]
-``` **4.9.2 原因**
+```
+
+**4.9.2 原因**
 
 JNI（Java Native Interface）意为 Java 本地调用，它允许 Java 代码和其他语言写的 Native 代码进行交互。
 
@@ -1265,7 +1270,8 @@ JNI 如果需要获取 JVM 中的 String 或者数组，有两种方式：
 由于 Native 代码直接使用了 JVM 堆区的指针，如果这时发生 GC，就会导致数据错误。因此，在发生此类 JNI 调用时，禁止 GC 的发生，同时阻止其他线程进入 JNI 临界区，直到最后一个线程退出临界区时触发一次 GC。
 
 GC Locker 实验：
-```text
+
+```java
 public class GCLockerTest {
   static final int ITERS = 100;
   static final int ARR_SIZE =  10000;
@@ -1296,7 +1302,7 @@ public class GCLockerTest {
 
 ______________________________________________________________________
 
-```text
+```cpp
 #include <jni.h>
 #include "GCLockerTest.h"
 static jbyte* sink;

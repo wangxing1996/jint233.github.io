@@ -10,7 +10,7 @@
 
 以下操作会刷新日志文件，刷新日志文件时会关闭旧的日志文件并重新打开日志文件。对于有些日志类型，如二进制日志，刷新日志会滚动日志文件，而不仅仅是关闭并重新打开。
 
-```
+```plaintext
 mysql> FLUSH LOGS;
 shell> mysqladmin flush-logs
 shell> mysqladmin refresh
@@ -26,7 +26,7 @@ shell> mysqladmin refresh
 
 如果不知道错误日志的位置，可以查看变量log_error来查看。
 
-```
+```plaintext
 mysql> show variables like 'log_error';
 +---------------+----------------------------------------+
 | Variable_name | Value                                  |
@@ -41,7 +41,7 @@ mysql> show variables like 'log_error';
 
 以下是MySQL 5.6.35启动的日志信息。
 
-```
+```cpp
 2017-03-29 01:15:14 2362 [Note] Plugin 'FEDERATED' is disabled.
 2017-03-29 01:15:14 2362 [Note] InnoDB: Using atomics to ref count buffer pool pages
 2017-03-29 01:15:14 2362 [Note] InnoDB: The InnoDB memory heap is disabled
@@ -74,7 +74,7 @@ Version: '5.6.35'  socket: '/mydata/data/mysql.sock'  port: 3306  MySQL Communit
 
 和查询日志有关的变量有：
 
-```
+```plaintext
 `long_query_time = 10 ``# 指定慢查询超时时长，超出此时长的属于慢查询，会记录到慢查询日志中``log_output={TABLE|FILE|NONE}  ``# 定义一般查询日志和慢查询日志的输出格式，不指定时默认为file`
 ```
 
@@ -82,7 +82,7 @@ TABLE表示记录日志到表中，FILE表示记录日志到文件中，NONE表�
 
 和一般查询日志相关的变量有：
 
-```
+```plaintext
 `general_log=off ``# 是否启用一般查询日志，为全局变量，必须在global上修改。``sql_log_off=off ``# 在session级别控制是否启用一般查询日志，默认为off，即启用``general_log_file=``/mydata/data/hostname``.log  ``# 默认是库文件路径下主机名加上.log`
 ```
 
@@ -92,7 +92,7 @@ TABLE表示记录日志到表中，FILE表示记录日志到文件中，NONE表�
 
 首先开启一般查询日志。
 
-```
+```plaintext
 mysql> set @@global.general_log=1;
 [[email protected] data]# ll *.log
 -rw-rw---- 1 mysql mysql 5423 Mar 20 16:29 mysqld.log
@@ -101,7 +101,7 @@ mysql> set @@global.general_log=1;
 
 执行几个语句。
 
-```
+```sql
 mysql> select host,user from mysql.user;
 mysql> show variables like "%error%";
 mysql> insert into ttt values(233);
@@ -111,7 +111,7 @@ mysql> set @a:=3;
 
 查看一般查询日志的内容。
 
-```
+```sql
 [[email protected] data]# cat xuexi.log 
 /usr/local/mysql/bin/mysqld, Version: 5.6.35-log (MySQL Community Server (GPL)). started with:
 Tcp port: 3306  Unix socket: /mydata/data/mysql.sock
@@ -137,25 +137,25 @@ mysql记录慢查询日志是在查询执行完毕且已经完全释放锁之后
 
 和慢查询有关的变量：
 
-```
+```plaintext
 `long_query_time=10 ``# 指定慢查询超时时长(默认10秒)，超出此时长的属于慢查询``log_output={TABLE|FILE|NONE} ``# 定义一般查询日志和慢查询日志的输出格式，默认为file``log_slow_queries={``yes``|no}    ``# 是否启用慢查询日志，默认不启用``slow_query_log={1|ON|0|OFF}  ``# 也是是否启用慢查询日志，此变量和log_slow_queries修改一个另一个同时变化``slow_query_log_file=``/mydata/data/hostname-slow``.log  ``#默认路径为库文件目录下主机名加上-slow.log``log_queries_not_using_indexes=OFF ``# 查询没有使用索引的时候是否也记入慢查询日志`
 ```
 
 现在启用慢查询日志。
 
-```
+```plaintext
 mysql> set @@global.slow_query_log=on;
 ```
 
 因为默认超时时长为10秒，所以进行一个10秒的查询。
 
-```
+```sql
 mysql> select sleep(10);
 ```
 
 查看慢查询日志文件。这里看到虽然sleep了10秒，但是最后查询时间超出了847微秒，因此这里也记录了该查询。
 
-```
+```sql
 [[email protected] data]# cat xuexi-slow.log 
 /usr/local/mysql/bin/mysqld, Version: 5.6.35-log (MySQL Community Server (GPL)). started with:
 Tcp port: 3306  Unix socket: /mydata/data/mysql.sock
@@ -170,13 +170,13 @@ select sleep(10);
 
 随着时间的推移，慢查询日志文件中的记录可能会变得非常多，这对于分析查询来说是非常困难的。好在提供了一个专门归类慢查询日志的工具mysqldumpslow。
 
-```
+```plaintext
 `[[email protected] data]``# mysqldumpslow --help``  ``-d           debug ``  ``-``v`           `verbose：显示详细信息``  ``-t NUM       just show the ``top` `n queries：仅显示前n条查询``  ``-a           don``'t abstract all numbers to N and strings to '``S'：归类时不要使用N替换数字，S替换字符串``  ``-g PATTERN   ``grep``: only consider stmts that include this string：通过``grep``来筛选``select``语句。`
 ```
 
 该工具归类的时候，默认会将 **同文本但变量值不同的查询语句视为同一类，并使用N代替其中的数值变量，使用S代替其中的字符串变量** 。可以使用-a来禁用这种替换。如：
 
-```
+```sql
 [[email protected] data]# mysqldumpslow xuexi-slow.log 
 Reading mysql slow query log from xuexi-slow.log
 Count: 1  Time=10.00s (10s)  Lock=0.00s (0s)  Rows=1.0 (1), root[root]@localhost
@@ -189,7 +189,7 @@ Count: 1  Time=10.00s (10s)  Lock=0.00s (0s)  Rows=1.0 (1), root[root]@localhost
 
 显然，这里归类后的结果只是精确到0.01秒的，如果想要显示及其精确的秒数，则使用-d选项启用调试功能。
 
-```
+```sql
 [[email protected] data]#  mysqldumpslow -d xuexi-slow.log   
 Reading mysql slow query log from xuexi-slow.log
 [[/usr/local/mysql/bin/mysqld, Version: 5.6.35-log (MySQL Community Server (GPL)). started with:
@@ -242,7 +242,7 @@ MariaDB/MySQL默认没有启动二进制日志，要启用二进制日志使用 
 
 或者在配置文件中的\[mysqld\]部分设置log-bin也可以。注意：对于mysql 5.7，直接启动binlog可能会导致mysql服务启动失败，这时需要在配置文件中的mysqld为mysql实例分配server_id。
 
-```
+```plaintext
 `[mysqld]``# server_id=1234``log-bin=[on|filename]`
 ```
 
@@ -262,7 +262,7 @@ MySQL中查看二进制日志的方法主要有几种。
 
 2.使用show显示对应的信息。
 
-```
+```plaintext
 `SHOW {BINARY | MASTER} LOGS      ``# 查看使用了哪些日志文件``SHOW BINLOG EVENTS [IN ``'log_name'``] [FROM pos]   ``# 查看日志中进行了哪些操作``SHOW MASTER STATUS         ``# 显式主服务器中的二进制日志信息`
 ```
 
@@ -270,19 +270,19 @@ MySQL中查看二进制日志的方法主要有几种。
 
 二进制日志可以使用mysqlbinlog命令查看。
 
-```
+```plaintext
 `mysqlbinlog [option] log-file1 log-file2...`
 ```
 
 以下是常用的几个选项：
 
-```
+```plaintext
 `-d,--database=name：只查看指定数据库的日志操作``-o,--offset=``#：忽略掉日志中的前n个操作命令``-r,--result-``file``=name：将输出的日志信息输出到指定的文件中，使用重定向也一样可以。``-s,--short-form：显示简单格式的日志，只记录一些普通的语句，会省略掉一些额外的信息如位置信息和时间信息以及基于行的日志。可以用来调试，生产环境千万不可使用``--``set``-charset=char_name：在输出日志信息到文件中时，在文件第一行加上``set` `names char_name``--start-datetime,--stop-datetime：指定输出开始时间和结束时间内的所有日志信息``--start-position=``#,--stop-position=#：指定输出开始位置和结束位置内的所有日志信息``-``v``,-vv：显示更详细信息，基于row的日志默认不会显示出来，此时使用-``v``或-vv可以查看`
 ```
 
 在进行测试之前，先对日志进行一次刷新，以方便解释二进制日志的信息。
 
-```
+```plaintext
 shell> mysqladmin -uroot -p refresh
 ```
 
@@ -290,7 +290,7 @@ shell> mysqladmin -uroot -p refresh
 
 下面是每个二进制日志文件的初始信息。可以看到记录了时间和位置信息(at 4)。
 
-```
+```plaintext
 [[email protected] data]# mysqlbinlog mysql-bin.000001 
 /*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!40019 SET @@session.max_insert_delayed_threads=0*/;
@@ -314,7 +314,7 @@ ROLLBACK /* added by mysqlbinlog */;
 
 现在在数据库中执行下面的操作：
 
-```
+```sql
 use test;
 create table student(studentid int not null primary key,name varchar(30) not null,gender enum('female','mail'));
 alter table student change gender gender enum('female','male');
@@ -323,7 +323,7 @@ insert into student values(1,'malongshuai','male'),(2,'gaoxiaofang','female');
 
 再查看二进制日志信息。
 
-```
+```sql
 [[email protected] data]# mysqlbinlog mysql-bin.000001 
 /*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
 /*!40019 SET @@session.max_insert_delayed_threads=0*/;
@@ -391,7 +391,7 @@ ROLLBACK /* added by mysqlbinlog */;
 
 使用-r命令将日志文件导入到指定文件中，使用重定向也可以实现同样的结果。并使用-s查看简化的日志文件。
 
-```
+```plaintext
 [[email protected] data]# mysqlbinlog mysql-bin.000001 -r /tmp/binlog.000001
 [[email protected] data]# mysqlbinlog mysql-bin.000001 -s>/tmp/binlog.sample
 ```
@@ -404,7 +404,7 @@ ROLLBACK /* added by mysqlbinlog */;
 
 使用-o可以忽略前N个条目，例如上面的操作涉及了6个操作。忽略掉前3个后的日志显示如下：可以看到直接从位置441开始显示了。
 
-```
+```sql
 [[email protected] data]# mysqlbinlog mysql-bin.000001 -o 3
 ...前面固定部分省略...
 '/*!*/;
@@ -436,7 +436,7 @@ DELIMITER ;
 
 使用-d可以只显示指定数据库相关的操作。例如先切换到其他数据库进行一番操作，然后再使用-d查看日志。
 
-```
+```sql
 mysql> use mysql;
 mysql> create table mytest(id int);
 [[email protected] data]# mysqlbinlog mysql-bin.000001 -d mysql
@@ -476,7 +476,7 @@ mysqlbinlog最有用的两个选项就是指定时间和位置来输出日志。
 
 指定时间时，将输出指定时间范围内的日志。指定的时间可以不和日志中记录的日志相同。
 
-```
+```sql
 [[email protected] data]# mysqlbinlog mysql-bin.000001 --start-datetime='2017-03-28 00:00:01' --stop-datetime='2017-03-29 05:21:23'
 ...前面固定部分省略...
 '/*!*/;
@@ -505,7 +505,7 @@ DELIMITER ;
 
 同理指定位置也一样，但是指定位置时有个要求是如果指定起始位置，则必须指定日志文件中明确的起始位置。例如，日志文件中有位置120、305、441，可以指定起始和结束位置为120、500，但是不可以指定起止位置为150、500，因为日志文件中不存在150这个位置。
 
-```
+```cpp
 [[email protected] data]# mysqlbinlog mysql-bin.000001 --start-position=150 --stop-position=441
 ...前面固定部分省略...
 '/*!*/;
@@ -543,7 +543,7 @@ DELIMITER ;
 
 可以通过查看二进制的index文件来查看当前正在使用哪些二进制日志。
 
-```
+```plaintext
 [[email protected] data]# cat mysql-bin.index 
 ./mysql-bin.000003
 ./mysql-bin.000004
@@ -553,7 +553,7 @@ DELIMITER ;
 
 也可以在mysql环境中使用 show {binary | master} logs 来查看。binary和master是同义词。
 
-```
+```plaintext
 mysql> show binary logs;
 +------------------+-----------+
 | Log_name         | File_size |
@@ -569,7 +569,7 @@ mysql> show binary logs;
 
 **该语句用于查看日志中进行了哪些操作。**
 
-```
+```plaintext
 mysql> show binlog events in 'mysql-bin.000005';
 ```
 
@@ -577,7 +577,7 @@ mysql> show binlog events in 'mysql-bin.000005';
 
 可以指定起始位置。同样，起始位置必须指定正确，不能指定不存在的位置。
 
-```
+```python
 mysql> show binlog events in 'mysql-bin.000005' from 961;
 +------------------+------+------------+-----------+-------------+--------------------------------+
 | Log_name         | Pos  | Event_type | Server_id | End_log_pos | Info                           |
@@ -593,7 +593,7 @@ mysql> show binlog events in 'mysql-bin.000005' from 961;
 
 该语句用于显示主服务器中的二进制日志信息。如果是主从结构，它只会显示主从结构中主服务器的二进制日志信息。
 
-```
+```plaintext
 mysql> show master status;    
 +------------------+----------+--------------+------------------+-------------------+
 | File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
@@ -608,20 +608,23 @@ mysql> show master status;
 
 删除二进制日志有几种方法。不管哪种方法，都会将删除后的信息同步到二进制index文件中。
 
-**1.reset master**  **将会删除所有日志，并让日志文件重新从000001**  **开始。** ```
-mysql> reset master;
+**1.reset master**  **将会删除所有日志，并让日志文件重新从000001**  **开始。** 
 
-``` **2.PURGE { BINARY | MASTER } LOGS { TO 'log_name' | BEFORE datetime_expr }** purge master logs to "binlog\_name.00000X" 将会清空00000X之前的所有日志文件。例如删除000006之前的日志文件。
+```plaintext
+mysql> reset master;
 ```
 
+**2.PURGE { BINARY | MASTER } LOGS { TO 'log_name' | BEFORE datetime_expr }** purge master logs to "binlog\_name.00000X" 将会清空00000X之前的所有日志文件。例如删除000006之前的日志文件。
+
+```plaintext
 mysql> purge master logs to "mysql-bin.000006";
 mysql> purge binary logs to "mysql-bin.000006";
-
 ```
+
 master和binary是同义词
 purge master logs before 'yyyy-mm-dd hh:mi:ss' 将会删除指定日期之前的所有日志。但是若指定的时间处在正在使用中的日志文件中，将无法进行purge。
-```
 
+```plaintext
 mysql> purge master logs before '2017-03-29 07:36:40';
 mysql> show warnings;
 +---------+------+---------------------------------------------------------------------------+
@@ -629,24 +632,25 @@ mysql> show warnings;
 +---------+------+---------------------------------------------------------------------------+
 | Warning | 1868 | file ./mysql-bin.000003 was not purged because it is the active log file. |
 +---------+------+---------------------------------------------------------------------------+
+```
 
-``` **3.**  **使用--expire_logs_days=N**  **选项指定过了多少天日志自动过期清空。** 5.4 二进制日志的记录格式
+**3.**  **使用--expire_logs_days=N**  **选项指定过了多少天日志自动过期清空。** 5.4 二进制日志的记录格式
 --------------
 在MySQL 5.1之前，MySQL只有一种基于语句statement形式的日志记录格式。即将所有的相关操作记录为SQL语句形式。但是这样的记录方式对某些特殊信息无法同步记录，例如uuid，now()等这样动态变化的值。
 从MySQL 5.1开始，MySQL支持statement、row、mixed三种形式的记录方式。row形式是基于行来记录，也就是将相关行的每一列的值都在日志中保存下来，这样的结果会导致日志文件变得非常大，但是保证了动态值的确定性。还有一种mixed形式，表示如何记录日志由MySQL自己来决定。
 日志的记录格式由变量 binlog\_format 来指定。其值有：row,statement,mixed。innodb引擎的创始人之一在博客上推荐使用row格式。
 下面将记录格式改为row。
-```
 
+```sql
 mysql> alter table student add birthday datetime default  now();
 mysql> flush logs;
 mysql> set binlog_format='row';
 mysql> insert into student values(7,'xiaowoniu','female',now());
-
 ```
+
 查看产生的日志。
-```
 
+```plaintext
 \[\[email protected\] data\]# mysqlbinlog mysql-bin.000005
 ...前面固定部分省略...
 '/*!*/;
@@ -689,11 +693,11 @@ gPraWB4BAAAAOAAAADoBAAAAAF4AAAAAAAEAAgAE//AHAAAACXhpYW93b25pdQGZnDqBmCz35ow=
 COMMIT/*!*/;
 DELIMITER ;
 ...后面固定部分省略...
-
 ```
+
 发现是一堆看不懂的东西，使用-vv可将这些显示出来。可以看出，结果中记录的非常详细，这也是为什么基于row记录日志会导致日志文件极速变大。
-```
 
+```sql
 \[\[email protected\] data\]# mysqlbinlog mysql-bin.000005 -vv
 ...前面省略...
 BINLOG '
@@ -717,8 +721,8 @@ gPraWB4BAAAAOAAAADoBAAAAAF4AAAAAAAEAAgAE//AHAAAACXhpYW93b25pdQGZnDqBmCz35ow=
 # at 314
 
 ...后面省略...
-
 ```
+
 还有一种mixed模式。这种模式下默认会采用statement的方式记录，只有以下几种情况会采用row的形式来记录日志。 1.表的存储引擎为NDB，这时对表的DML操作都会以row的格式记录。 2.使用了uuid()、user()、current\_user()、found\_rows()、row\_count()等不确定函数。但测试发现对now()函数仍会以statement格式记录，而sysdate()函数会以row格式记录。 3.使用了insert delay语句。 4.使用了临时表。
 5.5 二进制日志相关的变量
 --------------
@@ -745,23 +749,23 @@ gPraWB4BAAAAOAAAADoBAAAAAF4AAAAAAAEAAgAE//AHAAAACXhpYW93b25pdQGZnDqBmCz35ow=
 ----------------
 只需指定二进制日志的起始位置（可指定终止位置）并将其保存到sql文件中，由mysql命令来载入恢复即可。当然直接通过管道送给mysql命令也可。
 至于是基于位置来恢复还是基于时间点来恢复，这两种行为都可以。选择时间点来恢复比较直观些，并且跨日志文件恢复时更方便。
-```
 
+```plaintext
 mysqlbinlog --stop-datetime="2014-7-2 15:27:48" /tmp/mysql-bin.000008 | mysql -u user -p password
-
 ```
+
 恢复多个二进制日志文件时：
-```
 
+```plaintext
 mysqlbinlog mysql-bin.\[\*\] | mysql -uroot -p password
-
 ```
+
 或者将它们导入到一个文件中后恢复。
-```
 
+```plaintext
 mysqlbinlog mysql-bin.000001 > /tmp/a.sql
 mysqlbinlog mysql-bin.000002 >>/tmp/a.sql
 mysql -u root -p password -e "source /tmp/a.sql"
-
 ```
+
 ```

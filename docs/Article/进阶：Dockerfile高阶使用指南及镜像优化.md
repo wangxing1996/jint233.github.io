@@ -272,7 +272,9 @@ RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 RUN --mount=type=ssh,required git clone [email protected]:tao12345666333/moe.git \
         && cd moe \
         && git checkout -b release
-``` **注意** ：使用此功能的时候，需要使用 [`ssh-agent(1)`](https://linux.die.net/man/1/ssh-agent) 进行认证代理，所以需要提前安装。
+```
+
+**注意** ：使用此功能的时候，需要使用 [`ssh-agent(1)`](https://linux.die.net/man/1/ssh-agent) 进行认证代理，所以需要提前安装。
 
 构建方式如下：
 
@@ -349,7 +351,6 @@ IMAGE               CREATED             CREATED BY                              
 ______________________________________________________________________
 
 rpc error: code = Unknown desc = executor failed running \[/bin/sh -c git clone \[email protected\]:tao12345666333/moe.git         && cd moe         && git checkout -b release\]: exit code: 128
-
 ```
 
 ### 小结
@@ -429,7 +430,6 @@ stop        Stop builder instance
 use         Set the current builder instance
 version     Show buildx version information
 Run 'docker buildx COMMAND --help' for more information on a command.
-
 ```
 
 buildx 主要作用其实是为了扩展 BuildKit 的能力，包括多 builder 实例的管理；多 node 构建以支持扩平台构建等能力。
@@ -439,7 +439,6 @@ buildx 主要作用其实是为了扩展 BuildKit 的能力，包括多 builder 
 我们来演示多实例构建。首先需要创建一个 builder 实例。
 
 ```bash
-
 (MoeLove) ➜  docker buildx create --name d1809 172.17.0.3
 d1809
 (MoeLove) ➜  docker buildx ls
@@ -450,7 +449,6 @@ d1903 *   docker-container
 d19030  tcp://172.17.0.2:2375 running  linux/amd64
 default   docker
 default default               running  linux/amd64
-
 ```
 
 `docker buildx create` 通过 `--name` 来指定 builder 的名称，最后跟的是 host/IP 地址，默认使用 2375 端口。
@@ -458,7 +456,6 @@ default default               running  linux/amd64
 如果要使用新创建的 builder 需要先通过 `docker buildx use` 命令来进行切换，当前在使用的 builder 通过 `ls` 命令的时候会带有一个 `*` 标记。当然你也可能注意到了它当前的状态是 inactive，这是因为只有当它真正开始构建任务了或者是执行过构建任务了 agent 才会启动，将它注册回来。
 
 ```bash
-
 (MoeLove) ➜  ~ docker buildx use d1809
 (MoeLove) ➜  ~ docker buildx ls
 NAME/NODE DRIVER/ENDPOINT       STATUS   PLATFORMS
@@ -468,13 +465,11 @@ d1903     docker-container
 d19030  tcp://172.17.0.2:2375 running  linux/amd64
 default   docker
 default default               running  linux/amd64
-
 ```
 
 接下来还是以前面的 Spring Boot 的项目为例进行构建：
 
 ```bash
-
 (MoeLove) ➜  spring-boot-hello-world git:(master) docker buildx build --load -t remote/spring-boot:1 .
 \[+\] Building 31.1s (6/14)
 \[+\] Building 686.6s (16/16) FINISHED
@@ -497,7 +492,6 @@ default default               running  linux/amd64
 (MoeLove) ➜  spring-boot-hello-world git:(master) docker image ls remote/spring-boot
 REPOSITORY           TAG                 IMAGE ID            CREATED              SIZE
 remote/spring-boot   1                   644867602b8a        About a minute ago   103MB
-
 ```
 
 镜像构建成功了。 **注意** 这里给 `docker buildx build` 命令传递了 `--load` 参数，表示我们要将构建好的镜像加载到我们现在在用的 dockerd 当中。
@@ -505,7 +499,6 @@ remote/spring-boot   1                   644867602b8a        About a minute ago 
 此时再查看 builder 的状态：
 
 ```bash
-
 (MoeLove) ➜  spring-boot-hello-world git:(master) docker buildx ls
 NAME/NODE DRIVER/ENDPOINT       STATUS  PLATFORMS
 d1809 *   docker-container
@@ -514,7 +507,6 @@ d1903     docker-container
 d19030  tcp://172.17.0.2:2375 running linux/amd64
 default   docker
 default default               running linux/amd64
-
 ```
 
 可以看到它状态已经上报回来了，处于了 running 状态了。
@@ -522,11 +514,9 @@ default default               running linux/amd64
 我们到这个 builder 实际对应的机器上查看该机器上容器的状态：
 
 ```bash
-
 / # docker ps
 CONTAINER ID        IMAGE                  COMMAND             CREATED             STATUS              PORTS               NAMES
 ff4a9e18658e        moby/buildkit:master   "buildkitd"         About an hour ago   Up About an hour                        buildx_buildkit_d18090
-
 ```
 
 可以看到实际上是在该机器的 Docker 中运行了一个 BuildKit 的后端容器，以此来进行构建相关的操作。
@@ -558,7 +548,6 @@ buildx 是 Docker 的一个 CLI 插件，默认安装完 19.03 后将会同时�
 我们对前面所举例中的 Spring Boot 项目的 Dockerfile 做点小改动：
 
 ```bash
-
 FROM maven:3.6.1-jdk-8-alpine AS builder
 WORKDIR /app
 COPY pom.xml /app/
@@ -575,18 +564,15 @@ COPY --from=builder /app/target/gs-spring-boot-0.1.0.jar /
 COPY --from=builder /app/target/gs-spring-boot-0.1.0.jar /tmp/
 RUN rm /tmp/gs-spring-boot-0.1.0.jar
 CMD \[ "java", "-jar", "/gs-spring-boot-0.1.0.jar" \]
-
 ```
 
 给它增加了两句完全没有必要的操作，现在构建该镜像。
 
 ```bash
-
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker image ls remote/spring-boot\
 REPOSITORY           TAG                 IMAGE ID            CREATED             SIZE
 remote/spring-boot   2                   11559170c3fd        7 minutes ago       121MB
 remote/spring-boot   1                   644867602b8a        About an hour ago   103MB
-
 ```
 
 可以看到使用上面修改后的 Dockerfile 构建的镜像比之前的镜像大了 18M；我们之前也讲过了，镜像是层的叠加，后面操作删掉的文件，并不会减少镜像的体积。
@@ -601,19 +587,16 @@ remote/spring-boot   1                   644867602b8a        About an hour ago  
 => => exporting layers                                                                                     0.0s
 => => writing image sha256:2d5ba7eb86d2ad5594f82a896637c91137d150dab61fe8dc3acbdfcd164f6686                0.0s
 => => naming to docker.io/remote/spring-boot:3                                                             0.0s
-
 ```
 
 查看构建好的镜像大小：
 
 ```bash
-
 (MoeLove) ➜  spring-boot-hello-world git:(master) ✗ docker image ls remote/spring-boot
 REPOSITORY           TAG                 IMAGE ID            CREATED             SIZE
 remote/spring-boot   3                   a2c1e139697b        5 seconds ago       103MB
 remote/spring-boot   2                   11559170c3fd        12 minutes ago      121MB
 remote/spring-boot   1                   644867602b8a        About an hour ago   103MB
-
 ```
 
 可以看到镜像的体积又恢复了正常，这表示我们对之前层的删除操作生效了。我们来看看构建历史：
@@ -635,7 +618,6 @@ a2c1e139697b        About a minute ago                                          
 <missing>           2 weeks ago          /bin/sh -c #(nop)  ENV LANG=C.UTF-8             0B
 <missing>           2 weeks ago          /bin/sh -c #(nop)  CMD \["/bin/sh"\]              0B
 <missing>           2 weeks ago          /bin/sh -c #(nop) ADD file:a86aea1f3a7d68f6a…   0B
-
 ```
 
 可以看到之前的每层大小都已经变成了 0，这是因为把所有的层都合并到了最终的镜像上去了。 **特别注意：** `--squash` 虽然在 1.13.0 版本中就已经加入了 Docker 中，但他至今仍然是实验形式；所以你需要按照我在本篇文章开始部分的介绍那样，打开实验性功能的支持。

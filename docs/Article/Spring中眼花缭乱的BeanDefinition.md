@@ -29,7 +29,7 @@ Spring官网中对BeanDefinition的解释还是很详细的，但是不是那么
 
 AttributeAccessor是一个接口：
 
-```
+```python
 /**
  * Interface defining a generic contract for attaching and accessing metadata
  * to/from arbitrary objects.
@@ -52,7 +52,7 @@ public interface AttributeAccessor {
 
 BeanMetadataElement也是一个接口，里面只定义了一个方法：
 
-```
+```plaintext
 /**
  * Interface to be implemented by bean metadata elements
  * that carry a configuration source object.
@@ -68,7 +68,7 @@ public interface BeanMetadataElement {
 
 我们还是来看下类上的注释：接口提供了一个方法来获取Bean的源对象，这个源对象就是源文件，怎么样，是不是不太好理解，没关系，我们马上写个代码来看下：
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -99,7 +99,7 @@ AttributeAccessorSupport类是一个抽象类，实现了AttributeAccessor接口
 
 那Spring自己有使用这个map吗，答案是有的，我们来看下，Spring在这个map中放了什么数据：
 
-```
+```java
     public static void main(String[] args) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
         BeanDefinition appConfig = context.getBeanDefinition("appConfig");
@@ -142,7 +142,7 @@ AbstractBeanDefinition有三个子类，下面我们来看看这三个子类。
 
 GenericBeanDefinition替代了ChildBeanDefinition，ChildBeanDefinition从字面上，就可以看出有“子BeanDefinition”的意思，难道BeanDefinition还有“父子关系”吗？当然有。
 
-```
+```java
 public class ChildService {
     private int id;
     private String name;
@@ -211,7 +211,7 @@ public class ParentService {
 
 运行结果：
 
-```
+```plaintext
 name:codebear
 scope:singleton
 -------------------
@@ -232,7 +232,7 @@ CodeBear
 
 如果没有父子关系，单独作为BeanDefinition，也可以用GenericBeanDefinition来表示：
 
-```
+```java
        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
         GenericBeanDefinition genericBeanDefinition = new GenericBeanDefinition();
         genericBeanDefinition.setBeanClass(AuthorService.class);
@@ -247,7 +247,7 @@ CodeBear
 
 运行结果：
 
-```
+```plaintext
 Root bean: class [com.codebear.springcycle.AuthorService]; scope=prototype; abstract=false; lazyInit=false; autowireMode=0; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=null; factoryMethodName=null; initMethodName=null; destroyMethodName=null
 Root bean: class [com.codebear.springcycle.AuthorService]; scope=prototype; abstract=false; lazyInit=false; autowireMode=0; dependencyCheck=0; autowireCandidate=true; primary=false; factoryBeanName=null; factoryMethodName=null; initMethodName=null; destroyMethodName=null
 ```
@@ -270,7 +270,7 @@ GenericBeanDefinition替代了低版本Spring的ChildBeanDefinition，GenericBea
 
 RootBeanDefinition也可以用来充当父BeanDefinition，就像下面的酱紫：
 
-```
+```java
  public static void main(String[] args) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
         RootBeanDefinition genericBeanDefinition = new RootBeanDefinition();
@@ -286,7 +286,7 @@ RootBeanDefinition也可以用来充当父BeanDefinition，就像下面的酱紫
 
 但是RootBeanDefinition不可以充当子BeanDefinition：
 
-```
+```java
   public static void main(String[] args) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
         RootBeanDefinition genericBeanDefinition = new RootBeanDefinition();
@@ -302,7 +302,7 @@ RootBeanDefinition也可以用来充当父BeanDefinition，就像下面的酱紫
 
 运行结果：
 
-```
+```java
 Exception in thread "main" java.lang.IllegalArgumentException: Root bean cannot be changed into a child bean with parent reference
  at org.springframework.beans.factory.support.RootBeanDefinition.setParentName(RootBeanDefinition.java:260)
  at com.codebear.springcycle.Main.main(Main.java:20)
@@ -312,7 +312,7 @@ Exception in thread "main" java.lang.IllegalArgumentException: Root bean cannot 
 
 查询源码：
 
-```
+```java
  @Override
  public void setParentName(@Nullable String parentName) {
   if (parentName != null) {
@@ -329,7 +329,7 @@ RootBeanDefinition可以作为其他BeanDefinition的父BeanDefinition，也可�
 
 ### ScannedGenericBeanDefinition
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -347,7 +347,7 @@ public class Main {
 
 运行结果：
 
-```
+```plaintext
 class org.springframework.context.annotation.ScannedGenericBeanDefinition
 ```
 
@@ -355,7 +355,7 @@ class org.springframework.context.annotation.ScannedGenericBeanDefinition
 
 ### AnnotatedGenericBeanDefinition
 
-```
+```java
  public static void main(String[] args) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
         System.out.println(context.getBeanDefinition("appConfig").getClass());
@@ -364,7 +364,7 @@ class org.springframework.context.annotation.ScannedGenericBeanDefinition
 
 运行结果：
 
-```
+```plaintext
 class org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition
 ```
 
@@ -372,7 +372,7 @@ class org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinitio
 
 ### ConfigurationClassBeanDefinition
 
-```
+```java
 public class AuthorService {
 }
 @Configuration
@@ -391,7 +391,7 @@ public class AppConfig {
 
 运行结果：
 
-```
+```plaintext
   class org.springframework.context.annotation.ConfigurationClassBeanDefinitionReader$ConfigurationClassBeanDefinition
 ```
 

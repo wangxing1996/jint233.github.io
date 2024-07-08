@@ -20,13 +20,13 @@ InnoDB提供了4种行格式供我们选择，分别是Compact、Redundant、Dyn
 
 我们建表的时候，可以指定某种行格式：
 
-```
+```sql
 CREATE TABLE table_name (列信息) ROW_FORMAT=行格式名称
 ```
 
 也可以修改已经存在的表的行格式：
 
-```
+```sql
 ALTER TABLE  table_name ROW_FORMAT=行格式名称
 ```
 
@@ -34,7 +34,7 @@ ALTER TABLE  table_name ROW_FORMAT=行格式名称
 
 为了后面的故事可以顺利展开，我们先来建一张表：
 
-```
+```sql
 CREATE TABLE  hero(
 `x` VARCHAR(10),
 `y` VARCHAR(10) NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE  hero(
 
 我建了一张表，指定的行格式是COMPACT，采用的字符集是ASCII，也就是我们的中文是无法存进去的，现在我要向这张表添加两行数据：
 
-```
+```sql
 INSERT INTO hero(x, y, z, t) VALUES('a', 'bb', 'cccc', 'ddddd'), ('a', 'b', NULL, NULL);
 ```
 
@@ -196,7 +196,7 @@ W\*M：指定字段类型、字符集下，存储的字符串最多占用的字�
 
 我们用这个最大字节数来试下，能不能成功创建一张表：
 
-```
+```sql
 CREATE TABLE test_max ( test VARCHAR ( 65535 ) ) charset = ascii,
 row_format = Compact
 Row size too large. The maximum row size for the used table type, not counting BLOBs, is 65535. This includes storage overhead, check the manual. You have to change some columns to TEXT or BLOBs
@@ -216,7 +216,7 @@ Row size too large. The maximum row size for the used table type, not counting B
 
 刚刚我们尝试创建的表，字段是允许为NULL的，所以会占用一个字节来存储NULL标识，真实的数据所占的字节数用两个字节来表示，所以最多可以存储65535-2-1=65532个字节。
 
-```
+```sql
 CREATE TABLE test_max ( test VARCHAR ( 65532 ) ) charset = ascii,
 row_format = Compact
 > OK

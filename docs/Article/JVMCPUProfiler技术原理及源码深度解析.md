@@ -28,7 +28,7 @@ JVM Agent是一个按一定规则编写的特殊程序库，可以在启动阶�
 
 执行Java命令，我们可以看到Agent相关的命令行参数：
 
-```
+```java
 Plain Text
     -agentlib:<库名>[=<选项>]
                   加载本机代理库 <库名>, 例如 -agentlib:jdwp
@@ -45,7 +45,7 @@ JVMTI（JVM Tool Interface）是JVM提供的一套标准的C/C++编程接口，�
 
 当我们要基于JVMTI实现一个Agent时，需要实现如下入口函数：
 
-```
+```plaintext
 // $JAVA_HOME/include/jvmti.h
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved);
 ```
@@ -60,7 +60,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved);
 
 在Java Agent中，我们需要在jar包的MANIFEST.MF中将Premain-Class指定为一个入口类，并在该入口类中实现如下方法：
 
-```
+```java
 public static void premain(String args, Instrumentation ins) {
     // implement
 }
@@ -149,7 +149,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
 2.开启一个线程定时循环，定时使用jvmtiEnv指针配合调用如下几个JVMTI函数：
 
-```
+```java
 // 获取所有线程的jthread
 jvmtiError GetAllThreads(jvmtiEnv *env, jint *threads_count_ptr, jthread **threads_ptr);
 // 根据jthread获取该线程信息（name、daemon、priority...）
@@ -188,7 +188,7 @@ jvmtiError GetStackTrace(jvmtiEnv *env,
 
 OracleJDK/OpenJDK内部提供了这么一个函数——AsyncGetCallTrace，它的原型如下：
 
-```
+```python
 // 栈帧
 typedef struct {
  jint lineno;
@@ -214,7 +214,7 @@ void AsyncGetCallTrace(AGCT_CallTrace *trace, jint depth, void *ucontext);
 
 1.编写Agent_OnLoad()，在入口拿到jvmtiEnv和AsyncGetCallTrace指针，获取AsyncGetCallTrace方式如下:
 
-```
+```python
 typedef void (*AsyncGetCallTrace)(AGCT_CallTrace *traces, jint depth, void *ucontext);
 // ...
 AsyncGetCallTrace agct_ptr = (AsyncGetCallTrace)dlsym(RTLD_DEFAULT, "AsyncGetCallTrace");
@@ -229,7 +229,7 @@ if (agct_ptr == NULL) {
 
 2.在OnLoad阶段，我们还需要做一件事，即注册OnClassLoad和OnClassPrepare这两个Hook，原因是jmethodID是延迟分配的，使用AGCT获取Traces依赖预先分配好的数据。我们在OnClassPrepare的CallBack中尝试获取该Class的所有Methods，这样就使JVMTI提前分配了所有方法的jmethodID，如下所示：
 
-```
+```plaintext
 void JNICALL OnClassLoad(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jclass klass) {}
 void JNICALL OnClassPrepare(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jclass klass) {
     jint method_count;
@@ -248,7 +248,7 @@ jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
 
 3.利用SIGPROF信号来进行定时采样：
 
-```
+```plaintext
 // 这里信号handler传进来的的ucontext即AsyncGetCallTrace需要的ucontext
 void signal_handler(int signo, siginfo_t *siginfo, void *ucontext) {
     // 使用AsyncCallTrace进行采样，注意处理num_frames为负的异常情况
@@ -278,7 +278,7 @@ setitimer(ITIMER_PROF, &tv, NULL);
 
 火焰图通常是一个svg文件，部分优秀项目可以根据文本文件自动生成火焰图文件，仅对文本文件的格式有一定要求。FlameGraph项目的核心只是一个Perl脚本，可以根据我们提供的调用栈文本生成相应的火焰图svg文件。调用栈的文本格式相当简单，如下所示：
 
-```
+```plaintext
 base_func;func1;func2;func3 10
 base_func;funca;funcb 15
 ```
@@ -287,7 +287,7 @@ base_func;funca;funcb 15
 
 将样本文件交给flamegraph.pl脚本执行，就能输出相应的火焰图了：
 
-```
+```plaintext
 flamegraph.pl stacktraces.txt > stacktraces.svg
 ```
 
@@ -313,7 +313,7 @@ Attach虽然是HotSpot提供的能力，但JDK在Java层面也对其做了封装
 
 前文已经提到，对于Java Agent来说，PreMain方法在Agent作为启动参数运行的时候执行，其实我们还可以额外实现一个AgentMain方法，并在MANIFEST.MF中将Agent-Class指定为该Class：
 
-```
+```java
 public static void agentmain(String args, Instrumentation ins) {
     // implement
 }
@@ -386,7 +386,7 @@ jattach 1234 load /absolute/path/to/agent/libagent.so true
 
 如下所示的Main函数描述了一次Attach的整体流程：
 
-```
+```cpp
 // async-profiler/src/jattach/jattach.c
 int main(int argc, char** argv) {
     // 解析命令行参数
@@ -417,7 +417,7 @@ int main(int argc, char** argv) {
 
 忽略掉命令行参数解析与检查euid和egid的过程。jattach首先调用了check_socket函数进行了“socket检查？”，check_socket源码如下：
 
-```
+```java
 // async-profiler/src/jattach/jattach.c
 // Check if remote JVM has already opened socket for Dynamic Attach
 static int check_socket(int pid) {
@@ -438,7 +438,7 @@ static int check_socket(int pid) {
 
 回到Main函数，在使用check_socket确定连接尚未建立后，紧接着调用start_attach_mechanism函数，函数名很直观地描述了它的作用，源码如下：
 
-```
+```java
 // async-profiler/src/jattach/jattach.c
 // Force remote JVM to start Attach listener.
 // HotSpot will start Attach listener in response to SIGQUIT if it sees .attach_pid file
@@ -481,7 +481,7 @@ start_attach_mechanism函数首先创建了一个名为“/tmp/.attach_pid”的
 
 继续看jattach的源码，果不其然，它调用了connect_socket函数对“/tmp/.java_pid”进行连接，connect_socket源码如下：
 
-```
+```java
 // async-profiler/src/jattach/jattach.c
 // Connect to UNIX domain socket created by JVM for Dynamic Attach
 static int connect_socket(int pid) {
@@ -504,7 +504,7 @@ static int connect_socket(int pid) {
 
 回到Main函数，主流程紧接着调用write_command函数向该Socket写入了从命令行传进来的参数，并且调用read_response函数接收从目标JVM进程返回的数据。两个很常见的Socket读写函数，源码如下：
 
-```
+```java
 // async-profiler/src/jattach/jattach.c
 // Send command with arguments to socket
 static int write_command(int fd, int argc, char** argv) {
@@ -542,13 +542,13 @@ static int read_response(int fd) {
 
 浏览write_command函数就可知外部进程与目标JVM进程之间发送的数据格式相当简单，基本如下所示：
 
-```
+```plaintext
 <PROTOCOL VERSION>\0<COMMAND>\0<ARG1>\0<ARG2>\0<ARG3>\0
 ```
 
 以先前我们使用的Load命令为例，发送给HotSpot时格式如下：
 
-```
+```plaintext
 1\0load\0/absolute/path/to/agent/libagent.so\0true\0\0
 ```
 
@@ -558,7 +558,7 @@ static int read_response(int fd) {
 
 Load命令仅仅是HotSpot所支持的诸多命令中的一种，用于动态加载基于JVMTI的Agent，完整的命令表如下所示：
 
-```
+```cpp
 static AttachOperationFunctionInfo funcs[] = {
   { "agentProperties",  get_agent_properties },
   { "datadump",         data_dump },

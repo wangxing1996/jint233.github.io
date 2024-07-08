@@ -22,7 +22,7 @@
 
 首先我们创建一个测试表：
 
-```
+```sql
 mysql> create table t1(id decimal,v_name varchar(10));
 mysql> insert into t1 values(1,'a'),(2,'b'),(3,'c');
 mysql> select * from t1;
@@ -38,14 +38,14 @@ mysql> select * from t1;
 
 会话 1，开启事务，更新 id=1 的数据：
 
-```
+```sql
 mysql> begin;
 mysql> update t1 set v_name='aa' where id=1;
 ```
 
 会话 2，开启另一个事务，删除 id=1 的数据：
 
-```
+```sql
 mysql> begin;
 mysql> delete from t1 where id=1;
 ```
@@ -54,7 +54,7 @@ mysql> delete from t1 where id=1;
 
 我们再开一个会话 3，查查当前的 processlist，看看是否能发现什么？
 
-```
+```sql
 mysql> show processlist;
 +----+------+-----------+------+---------+------+----------+---------------------------+
 | Id | User | Host      | db   | Command | Time | State    | Info                      |
@@ -69,7 +69,7 @@ mysql> show processlist;
 
 **定位锁等待**
 
-```
+```sql
 mysql> select * from information_schema.innodb_lock_waits;
 +-------------------+-------------------+-----------------+------------------+
 | requesting_trx_id | requested_lock_id | blocking_trx_id | blocking_lock_id |
@@ -83,7 +83,7 @@ mysql> select * from information_schema.innodb_lock_waits;
 
 **定位锁**
 
-```
+```sql
 mysql> select * from information_schema.innodb_locks;
 +-------------+-------------+-----------+-----------+-------------+-----------------+------------+-----------+----------+----------------+
 | lock_id     | lock_trx_id | lock_mode | lock_type | lock_table  | lock_index      | lock_space | lock_page | lock_rec | lock_data      |
@@ -96,7 +96,9 @@ mysql> select * from information_schema.innodb_locks;
 
 结果显示有两个锁相关内容。
 
-**定位事务** ```
+**定位事务** 
+
+```sql
 mysql> select trx_id,trx_started,trx_requested_lock_id,trx_query,trx_mysql_thread_id from information_schema.innodb_trx;
 +--------+---------------------+-----------------------+---------------------------+---------------------+
 | trx_id | trx_started         | trx_requested_lock_id | trx_query                 | trx_mysql_thread_id |
@@ -105,10 +107,11 @@ mysql> select trx_id,trx_started,trx_requested_lock_id,trx_query,trx_mysql_threa
 | 2206   | 2021-01-18 15:18:08 | NULL                  | NULL                      |                  38 |
 +--------+---------------------+-----------------------+---------------------------+---------------------+
 2 rows in set (0.01 sec)
-
 ```
-结果有两个事务，MySQL 事务线程 id 为 38 和 41，很直观的看到 41 是我们的 delete 事务，被 38 锁定。 **定位线程** ```
 
+结果有两个事务，MySQL 事务线程 id 为 38 和 41，很直观的看到 41 是我们的 delete 事务，被 38 锁定。 **定位线程** 
+
+```sql
 mysql> select * from performance_schema.threads where processlist_id=38;
 +-----------+---------------------------+------------+----------------+------------------+------------------+----------------+---------------------+------------------+-------------------+------------------+------------------+------+--------------+---------+-----------------+--------------+
 | THREAD_ID | NAME                      | TYPE       | PROCESSLIST_ID | PROCESSLIST_USER | PROCESSLIST_HOST | PROCESSLIST_DB | PROCESSLIST_COMMAND | PROCESSLIST_TIME | PROCESSLIST_STATE | PROCESSLIST_INFO | PARENT_THREAD_ID | ROLE | INSTRUMENTED | HISTORY | CONNECTION_TYPE | THREAD_OS_ID |
@@ -116,10 +119,11 @@ mysql> select * from performance_schema.threads where processlist_id=38;
 |        63 | thread/sql/one_connection | FOREGROUND |             38 | root             | localhost        | test           | Sleep               |               35 | NULL              | NULL             |             NULL | NULL | YES          | YES     | Socket          |        15070 |
 +-----------+---------------------------+------------+----------------+------------------+------------------+----------------+---------------------+------------------+-------------------+------------------+------------------+------+--------------+---------+-----------------+--------------+
 1 row in set (0.00 sec)
-
 ```
-结果找到 MySQL 事务线程 38 对应的服务器线程 63。 **定位加锁 SQL** ```
 
+结果找到 MySQL 事务线程 38 对应的服务器线程 63。 **定位加锁 SQL** 
+
+```sql
 mysql> select * from performance_schema.events_statements_current where thread_id=63;
 +-----------+----------+--------------+----------------------+--------------------------+---------------------+---------------------+------------+-----------+--------------------------------------+----------------------------------+----------------------------------------------+----------------+-------------+---------------+-------------+-----------------------+-------------+-------------------+------------------------------------------+--------+----------+---------------+-----------+---------------+-------------------------+--------------------+------------------+------------------------+--------------+--------------------+-------------+-------------------+------------+-----------+-----------+---------------+--------------------+------------------+--------------------+---------------------+
 | THREAD_ID | EVENT_ID | END_EVENT_ID | EVENT_NAME           | SOURCE                   | TIMER_START         | TIMER_END           | TIMER_WAIT | LOCK_TIME | SQL_TEXT                             | DIGEST                           | DIGEST_TEXT                                  | CURRENT_SCHEMA | OBJECT_TYPE | OBJECT_SCHEMA | OBJECT_NAME | OBJECT_INSTANCE_BEGIN | MYSQL_ERRNO | RETURNED_SQLSTATE | MESSAGE_TEXT                             | ERRORS | WARNINGS | ROWS_AFFECTED | ROWS_SENT | ROWS_EXAMINED | CREATED_TMP_DISK_TABLES | CREATED_TMP_TABLES | SELECT_FULL_JOIN | SELECT_FULL_RANGE_JOIN | SELECT_RANGE | SELECT_RANGE_CHECK | SELECT_SCAN | SORT_MERGE_PASSES | SORT_RANGE | SORT_ROWS | SORT_SCAN | NO_INDEX_USED | NO_GOOD_INDEX_USED | NESTING_EVENT_ID | NESTING_EVENT_TYPE | NESTING_EVENT_LEVEL |
@@ -127,7 +131,7 @@ mysql> select * from performance_schema.events_statements_current where thread_i
 |        63 |       32 |           32 | statement/sql/update | socket_connection.cc:101 | 2757904906303653000 | 2757904906543381000 |  239728000 | 145000000 | update t1 set v_name='aa' where id=1 | 356a053ffb5eae2a35981b05090faa01 | UPDATE `t1` SET `v_name` = ? WHERE `id` = ?  | test           | NULL        | NULL          | NULL        |                  NULL |           0 | 00000             | Rows matched: 1  Changed: 0  Warnings: 0 |      0 |        0 |             0 |         0 |             3 |                       0 |                  0 |                0 |                      0 |            0 |                  0 |           0 |                 0 |          0 |         0 |         0 |             0 |                  0 |             NULL | NULL               |                   0 |
 +-----------+----------+--------------+----------------------+--------------------------+---------------------+---------------------+------------+-----------+--------------------------------------+----------------------------------+----------------------------------------------+----------------+-------------+---------------+-------------+-----------------------+-------------+-------------------+------------------------------------------+--------+----------+---------------+-----------+---------------+-------------------------+--------------------+------------------+------------------------+--------------+--------------------+-------------+-------------------+------------+-----------+-----------+---------------+--------------------+------------------+--------------------+---------------------+
 1 row in set (0.00 sec)
-
 ```
+
 结果中我们找到了加锁的 update 的 SQL 语句。 **总结** 在 MySQL 数据库中出现了锁，不要着急，我们通过这个方法可以快速定位加锁的 SQL，你学会了吗？
 ```

@@ -12,7 +12,7 @@ MySQL基于GTID复制官方手册：[https://dev.mysql.com/doc/refman/5.7/en/rep
 
 - `uuid`是每个mysql服务器都唯一的，记录在`$datadir/auto.cnf`中。如果复制结构中，任意两台服务器uuid重复的话(比如直接冷备份时，auto.conf中的内容是一致的)，在启动复制功能的时候会报错。这时可以删除auto.conf文件再重启mysqld。
 
-```
+```plaintext
 mysql> show variables like "%uuid%";       
 +---------------+--------------------------------------+
 | Variable_name | Value                                |
@@ -94,7 +94,7 @@ slave1_gtid
 
 master的配置文件：
 
-```
+```plaintext
 [mysqld]
 datadir=/data
 socket=/data/mysql.sock
@@ -112,7 +112,7 @@ gtid_mode=on                  # gtid复制需要加上的必须项
 
 slave的配置文件：
 
-```
+```plaintext
 [mysqld]
 datadir=/data
 socket=/data/mysql.sock
@@ -157,7 +157,7 @@ mysql> start slave user='repl' password='[email protected]!';
 
 查看io线程和sql线程是否正常。
 
-```
+```plaintext
 # slave上执行，为了排版，缩减了一些无关紧要的字段
 mysql> show processlist;
 +----+-------------+---------+--------------------------------------------------------+
@@ -173,7 +173,7 @@ mysql> show processlist;
 
 在master上插入一些数据。这里使用[上一篇文章](https://www.cnblogs.com/f-ck-need-u/p/9155003.html)中使用的存储过程`proc_num1`和`proc_num2`分别向数值辅助表`backup.num_isam`和`backup.num_innodb`中插入一些数据，该存储过程的代码见：[https://www.cnblogs.com/f-ck-need-u/p/9155003.html#blognum。](https://www.cnblogs.com/f-ck-need-u/p/9155003.html#blognum%E3%80%82)
 
-```
+```plaintext
 # 向MyISAM数值辅助表backup.num_isam插入100W行数据
 call proc_num1(1000000);
 # 向InnoDB数值辅助表backup.num_innodb插入100W行数据
@@ -182,7 +182,7 @@ call proc_num2(1000000);
 
 在slave上查看slave的状态，以下是同步结束后的状态信息。
 
-```
+```plaintext
 # slave上执行：
 mysql> show slave status\G ****  ****  ****  ****  ****  ****  ***1. row**  ****  ****  ****  ****  ****  **** *
                Slave_IO_State: Waiting for master to send event
@@ -256,7 +256,7 @@ GTID复制是基于事务ID的，确切地说是binlog中的GTID，所以事务I
 
 目前master上的binlog使用情况如下，不难发现绝大多数操作都集中在`master-bin.000004`这个binlog中。
 
-```
+```plaintext
 [[email protected] ~]# ls -l /data/*bin*
 -rw-r----- 1 mysql mysql      177 Jun  8 15:07 /data/master-bin.000001
 -rw-r----- 1 mysql mysql      727 Jun  8 15:42 /data/master-bin.000002
@@ -267,7 +267,7 @@ GTID复制是基于事务ID的，确切地说是binlog中的GTID，所以事务I
 
 purge已有的binlog。
 
-```
+```plaintext
 mysql> flush logs;
 mysql> purge master logs to 'master-bin.000005';
 [[email protected] ~]# cat /data/master-bin.index 
@@ -320,7 +320,7 @@ slave2_gtid
 
 其中slave2的配置文件和slave1的配置文件完全相同：
 
-```
+```plaintext
 [mysqld]
 datadir=/data
 socket=/data/mysql.sock
@@ -337,23 +337,24 @@ gtid_mode=on                      # 必须项
 
 **1.备份master。** 我选择的是xtrabackup的innobackupex工具，因为它速度快，操作简单，而且在线备份也比较安全。如果不知道xtrabackup备份的使用方法，见我的另一篇文章：[xtrabackup用法和原理详述](https://www.cnblogs.com/f-ck-need-u/p/9018716.html)。当然，你也可以采用mysqldump和冷备份的方式，因为gtid复制的特性，这些备份方式也都很安全。
 
-```
+```plaintext
 # master上执行，备份所有数据：
 [[email protected] ~]# mkdir /backdir   # 备份目录
 [[email protected] ~]# innobackupex -uroot [email protected]! -S /data/mysql.sock /backdir/  # 准备数据
 [[email protected] ~]# innobackupex --apply-log /backdir/2018-06-09_20-02-24/   # 应用数据
 [[email protected] ~]# scp -pr /backdir/2018-06-09_20-02-24/ 192.168.100.23:/tmp
-``` **2.将备份恢复到slave2。**
-
-在slave2上执行：
 ```
 
+**2.将备份恢复到slave2。**
+
+在slave2上执行：
+
+```plaintext
 \[\[email protected\] ~\]# systemctl stop mysqld
 \[\[email protected\] ~\]# rm -rf /data/\*    # 恢复前必须先清空数据目录
 \[\[email protected\] ~\]# innobackupex --copy-back /tmp/2018-06-09_20-02-24/  # 恢复备份数据
 \[\[email protected\] ~\]# chown -R mysql.mysql /data
 \[\[email protected\] ~\]# systemctl start mysqld
-
 ```
 
 **3.设置gtid_purged，连接master，开启复制功能。**
@@ -361,8 +362,8 @@ gtid_mode=on                      # 必须项
 由于xtrabackup备份数据集却不备份binlog，所以必须先获取此次备份结束时的最后一个事务ID，并在slave上明确指定跳过这些事务，否则slave会再次从master上复制这些binlog并执行，导致数据重复执行。
 
 可以从slave2数据目录中的`xtrabackup_info`文件中获取。如果不是xtrabackup备份的，那么可以直接从master的`show global variables like "gtid_executed";`中获取，它表示master中已执行过的事务。
-```
 
+```plaintext
 \[\[email protected\] ~\]# cat /data/xtrabackup_info
 uuid = fc3de8c1-6bdc-11e8-832d-000c29ed4cf4
 name =
@@ -383,14 +384,13 @@ format = file
 compact = N
 compressed = N
 encrypted = N
-
 ```
 
 其中`binlog_pos`中的GTID对应的就是已备份的数据对应的事务。换句话说，这里的gtid集合1-54表示这54个事务不需要进行复制。
 
 或者在master上直接查看executed的值，注意不是gtid\_purged的值，master上的gtid\_purged表示的是曾经删除掉的binlog。
-```
 
+```plaintext
 mysql> show global variables like '%gtid%';
 +----------------------------------+-------------------------------------------+
 | Variable_name                    | Value                                     |
@@ -404,28 +404,25 @@ mysql> show global variables like '%gtid%';
 | gtid_purged                      | a659234f-6aea-11e8-a361-000c29ed4cf4:1-54 |
 | session_track_gtids              | OFF                                       |
 +----------------------------------+-------------------------------------------+
-
 ```
 
 可以 **在启动slave线程之前使用gtid_purged变量来指定需要跳过的gtid集合。** 但因为要设置gtid\_purged必须保证全局变量gtid\_executed为空，所以先在slave上执行`reset master`(注意，不是reset slave)，再设置gtid\_purged。
-```
 
+```plaintext
 # slave2上执行
 
 mysql> reset master;
 mysql> set @@global.gtid_purged='a659234f-6aea-11e8-a361-000c29ed4cf4:1-54';
-
 ```
 
 设置好gtid\_purged之后，就可以开启复制线程了。
-```
 
+```plaintext
 mysql> change master to
 master_host='192.168.100.21',
 master_port=3306,
 master_auto_position=1;
 mysql> start slave user='repl' password='\[email protected\]!';
-
 ```
 
 查看slave的状态，看是否正确启动了复制功能。如果没错，再在master上修改一部分数据，检查是否同步到slave1和slave2。
@@ -433,8 +430,8 @@ mysql> start slave user='repl' password='\[email protected\]!';
 **4.回到master，purge掉已同步的binlog。**
 
 当slave指定gtid\_purged并实现了同步之后，为了下次重启mysqld实例不用再次设置gtid\_purged(甚至可能会在启动的时候自动开启复制线程)，所以应该去master上将已经同步的binlog给purged掉。
-```
 
+```plaintext
 # master上执行
 
 mysql> flush logs;    # flush之后滚动到新的日志master-bin.000006
@@ -442,7 +439,6 @@ mysql> flush logs;    # flush之后滚动到新的日志master-bin.000006
 # 在确保所有slave都复制完000006之前的所有事务后，purge掉旧日志
 
 mysql> purge master logs to "master-bin.000006";
-
 ```
 
 6.GTID复制相关的状态信息和变量
@@ -450,12 +446,11 @@ mysql> purge master logs to "master-bin.000006";
 
 6.1 `show slave status`中和gtid复制相关的状态行
 -------------------------------------
-```
 
+```plaintext
 Retrieved_Gtid_Set: a659234f-6aea-11e8-a361-000c29ed4cf4:1-54
 Executed_Gtid_Set: a659234f-6aea-11e8-a361-000c29ed4cf4:1-54
 Auto_Position: 1
-
 ```
 
 其中：
@@ -468,8 +463,8 @@ Auto_Position: 1
 --------------------
 
 例如：
-```
 
+```sql
 \[\[email protected\] ~\]# mysqlbinlog /data/master-bin.000007
 /_!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1_/;
 /_!50003 SET @\[email protected\]@COMPLETION_TYPE,COMPLETION_TYPE=0_/;
@@ -536,7 +531,6 @@ DELIMITER ;
 
 /_!50003 SET \[email protected\]_COMPLETION_TYPE_/;
 /_!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0\_/;
-
 ```
 
 其中：
@@ -551,8 +545,9 @@ DELIMITER ;
 
 *   `gtid_mode`：是否开启gtid复制模式。只允许on/off类的布尔值，不允许其他类型(如1/0)的布尔值，实际上这个变量是枚举类型的。要设置 _gtid\_mode=on_ ，必须同时设置 _enforce\_gtid\_consistency_ 开。在MySQL 5.6中，还必须开启 _log\_slave\_updates_ ，即使是master也要开启。
 
-*   ```
-    enforce_gtid_consistency
+*   
+
+```enforce_gtid_consistency
 ```
 
     ：强制要求只允许复制事务安全的事务。
@@ -576,7 +571,6 @@ DELIMITER ;
 -------------------------
 
 MySQL 5.7中添加了一张记录已执行gtid的表`mysql.gtid_executed`，所以slave上的binlog不是必须开启的。
-
 ```
 
 mysql> select * from mysql.gtid_executed;
@@ -587,8 +581,8 @@ mysql> select * from mysql.gtid_executed;
 | a659234f-6aea-11e8-a361-000c29ed4cf4 |             58 |           58 |
 | a659234f-6aea-11e8-a361-000c29ed4cf4 |             59 |           59 |
 +--------------------------------------+----------------+--------------+
-```
 
+```plaintext
 7.一张图说明GTID复制
 =============
 
@@ -606,3 +600,4 @@ mysql> select * from mysql.gtid_executed;
 
 备份数据到slave上，方式可以是mysqldump、冷备份、xtrabackup备份都行。由于gtid复制的特性，所需要的操作都很少，也很简单，前提是理解了"gtid的生命周期"。
 ```
+

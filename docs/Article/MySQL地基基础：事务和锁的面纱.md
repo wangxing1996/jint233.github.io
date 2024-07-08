@@ -26,7 +26,7 @@
 
 我们定义一个事务：
 
-```
+```sql
 获取 A 账户余额
 select balance from account where username='A';
 在 A 账户里减 1000 元
@@ -71,7 +71,7 @@ MVCC 控制两类操作：
 
 我们举个例子说一下吧，比如:
 
-```
+```sql
 mysql> create table tab1(id decimal,name varchar(10),address varchar(10),status decimal,primary key(id));
 mysql> insert into tab1 values(1,'a','beijing',1); 
 ```
@@ -96,7 +96,7 @@ beijing
 
 现在有一个请求，将数据 a 的地址改为 shanghai，这个数据更新的过程，我们细化一下，将历史数据置为失效，将新的数据插入：
 
-```
+```sql
 mysql> update tab1 set status=0 where name='a';
 mysql> insert into tab1 value(2,'a','shanghai',1);
 ```
@@ -191,7 +191,7 @@ T1 先获取了表中这一行数据，执行了 update，未提交；T2 获取�
 
 创建测试表 t_account：
 
-```
+```sql
 mysql> create table t_account(name varchar(10),balance decimal);
 mysql> insert into t_account values('A',100);
 mysql> insert into t_account values('B',0);
@@ -201,13 +201,13 @@ mysql> insert into t_account values('B',0);
 
 设置事务隔离级别：
 
-```
+```plaintext
 mysql> set global tx_isolation='read-uncommitted';          
 ```
 
 查询事务隔离级别：
 
-```
+```sql
 mysql>  SELECT @@tx_isolation;
 +------------------+
 | @@tx_isolation   |
@@ -215,7 +215,9 @@ mysql>  SELECT @@tx_isolation;
 | READ-UNCOMMITTED |
 +------------------+
 1 row in set (0.00 sec)
-``` **当前事务可以读取另一个未提交事务操作的数据。**
+```
+
+**当前事务可以读取另一个未提交事务操作的数据。**
 
 环境：用户 A 有 100 元钱，给用户 A 增加 100 元，然后用户 A 转账给用户 B。
 
@@ -240,8 +242,8 @@ update t\_account set balance=balance+200 where name='B'; #用户 A 继续给用
 commit; #提交事务
 
 现在我们查询一下用户 A 和用户 B 的余额：
-```
 
+```sql
 mysql> select * from t_account;
 +------+---------+
 | name | balance |
@@ -250,7 +252,6 @@ mysql> select * from t_account;
 | B    |     200 |
 +------+---------+
 2 rows in set (0.00 sec)
-
 ```
 
 问题来了，这个结果不符合预期，用户 A 竟然是 -100 元，用户 B 增加了 200 元，这是因为事务 2 读取了事务 1 未提交的数据。
@@ -258,15 +259,14 @@ mysql> select * from t_account;
 #### 读提交
 
 设置事务隔离级别：
-```
 
+```plaintext
 mysql> set global tx_isolation='read-committed';
-
 ```
 
 查询事务隔离级别：
-```
 
+```sql
 mysql>  SELECT @@tx_isolation;
 +------------------+
 | @@tx_isolation   |
@@ -274,7 +274,6 @@ mysql>  SELECT @@tx_isolation;
 | READ-COMMITTED    |
 +------------------+
 1 row in set (0.00 sec)
-
 ```
 
 **当前事务只能读取另一个提交事务操作的数据。**
@@ -302,15 +301,14 @@ select \* from t\_account where name='A'; #事务 2 查用户的余额，事务 
 #### 可重复读
 
 设置事务隔离级别：
-```
 
+```plaintext
 mysql> set global tx_isolation='repeatable-read';
-
 ```
 
 查询事务隔离级别：
-```
 
+```sql
 mysql>  SELECT @@tx_isolation;
 +------------------+
 | @@tx_isolation   |
@@ -318,7 +316,6 @@ mysql>  SELECT @@tx_isolation;
 | REPEATABLE-READ  |
 +------------------+
 1 row in set (0.00 sec)
-
 ```
 
 **当前事务读取通过第一次读取建立的快照是一致的，即使另外一个事务提交了该数据。除非自己这个事务可以读取在自身事务中修改的数据。**
@@ -424,15 +421,14 @@ select \* from t\_account; #户 A 余额 100，用户 B 余额 200
 #### 序列化
 
 设置事务隔离级别：
-```
 
+```plaintext
 mysql> set global tx_isolation='serializable';
-
 ```
 
 查询事务隔离级别：
-```
 
+```sql
 mysql>  SELECT @@tx_isolation;
 +------------------+
 | @@tx_isolation   |
@@ -440,7 +436,6 @@ mysql>  SELECT @@tx_isolation;
 | SERIALIZABLE     |
 +------------------+
 1 row in set (0.00 sec)
-
 ```
 
 **当前事务 select 和 DML 操作的数据都会加行锁，其他事务访问同样的数据需要等锁释放。**
@@ -484,19 +479,17 @@ select \* from t\_account where name='A'; #用户 A 余额 200
 **共享锁（S）**
 
 允许一个事务读取数据，阻塞其他事务想要获取相同数据。共享锁之间不互斥，读和读操作可以并行。代码展示：
-```
 
+```sql
 select * from table where ... lock in share mode
-
 ```
 
 **排它锁（X）**
 
 持有排他锁的事务可以更新数据，阻塞其他事务获取数据的排他锁和共享锁。排它锁之间互斥，读和写、写和写操作不可以并行。代码展示：
-```
 
+```sql
 select * from table where ... for update;
-
 ```
 
 从 MySQL 数据库的内外区分锁，有两种锁。
@@ -580,44 +573,39 @@ IS
 #### 场景 1：insert 死锁
 
 创建一个测试表：
-```
 
+```sql
 mysql> create table t_insert(id decimal,no decimal,primary key(id),unique key(no));
-
 ```
 
 session1：
-```
 
+```sql
 mysql> begin;
 mysql> insert into t_insert values(1,101);
-
 ```
 
 session2：
-```
 
+```sql
 mysql> begin;
 mysql> insert into t_insert values(2,101);
-
 ```
 
 此时会话一直等待无响应。
 
 session1：
-```
 
+```sql
 mysql> insert into t_insert values(3,100);
-
 ```
 
 结果如下。
 
 此时 session2 立马报出来死锁：
-```
 
+```plaintext
 ERROR 1213 (40001): ==Deadlock== found when trying to get lock; try restarting transaction
-
 ```
 
 数据库中 insert 作为最简单的 SQL，为什么会导致死锁呢？
@@ -631,52 +619,46 @@ session1 在插入(1,101) 的时候会加一个 X 锁；session2 插入(2,101)�
 #### 场景 3：rollback 死锁
 
 创建一个测试表：
-```
 
+```sql
 mysql> create table t_rollback(id decimal,no decimal,primary key(id),unique key(no));
-
 ```
 
 session1：
-```
 
+```sql
 mysql> begin;
 mysql> insert into t_rollback values(1,100);
-
 ```
 
 session2：
-```
 
+```sql
 mysql> begin;
 mysql> insert into t_rollback values(2,100);
-
 ```
 
 此时会话一直等待无响应。
 
 session3
-```
 
+```sql
 mysql> begin;
 mysql> insert into t_rollback values(3,100);
-
 ```
 
 此时会话一直等待无响应。
 
 session1
-```
 
+```plaintext
 mysql> rollback;
-
 ```
 
 结果如下： 此时 session1 执行了 rollback 成功返回，session2 的 insert 返回成功，session3 立马报出来死锁。
-```
 
+```plaintext
 ERROR 1213 (40001): ==Deadlock== found when trying to get lock; try restarting transaction
-
 ```
 
 为什么我回滚了事务，还要报死锁，难道我需要全部回滚吗？
@@ -686,53 +668,47 @@ session1 在插入 (1,100) 的时候会加一个 X 锁；session2 插入 (2,100)
 #### 场景 4：commit 死锁
 
 创建一个测试表：
-```
 
+```sql
 mysql> create table t_commit(id decimal,no decimal,primary key(id),unique key(no));
 mysql> insert into t_commit values(1,100);
-
 ```
 
 session1：
-```
 
+```sql
 mysql> begin;
 mysql> delete from t_commit where id=1;
-
 ```
 
 session2：
-```
 
+```sql
 mysql> begin;
 mysql> insert into t_commit values(1,100);
-
 ```
 
 此时会话一直等待无响应。
 
 session3：
-```
 
+```sql
 mysql> begin;
 mysql> insert into t_commit values(1,100);
-
 ```
 
 此时会话一直等待无响应。
 
 session1：
-```
 
+```plaintext
 mysql> commit;
-
 ```
 
 结果如下：此时 session1 执行了 commit 成功返回，session3 的 insert 返回成功，session2 立马报出来死锁。
-```
 
+```plaintext
 ERROR 1213 (40001): ==Deadlock== found when trying to get lock; try restarting transaction
-
 ```
 
 为什么我提交了事务，还要报死锁，难道我需要全部提交吗？
@@ -746,47 +722,43 @@ ERROR 1213 (40001): ==Deadlock== found when trying to get lock; try restarting t
 用户 B 和用户 C 向用户 A 借钱，用户 A 转账给用户 B 和用户 C，转账的过程中发生了用户 C 账户不存在，那么我们也要把转给用户 B 的钱也取消吗？我们可以不取消，使用一个保存点即可。
 
 查询用户 A 有 1000 元：
-```
 
+```sql
 mysql> select balance from t_account where name='A';
-
 ```
 
 转账 100 元给用户 B：
-```
 
+```sql
 mysql> update t_account set balance=balance-100 where name='A';
 mysql> update t_account set balance=balance+100 where name='B';
-
 ```
 
-**设置事务保存点** ```
+**设置事务保存点** 
 
+```plaintext
 mysql> savepoint T_A_TO_B;
-
 ```
 
 转账 200 元给用户 C：
-```
 
+```sql
 mysql> update t_account set balance=balance-200 where name='A';
 mysql> update t_account set balance=balance+200 where name='C';
 Query OK, 0 rows affected (0.00 sec)
 Rows matched: 0  Changed: 0  Warnings: 0
-
 ```
 
 发现转账给 C 返回有 0 条受影响的行，转账给 C 未成功，此时用户 A 已经少了 200 元了，先退 200 元再排查吧，转账给用户 B 的不需要重新操作了。
-```
 
+```plaintext
 mysql> rollback to T_A_TO_B;
 mysql> commit；
-
 ```
 
 根据提示 0 条受影响的行，也就是说用户 C 不存在呀，我们查询一下个用户信息：
-```
 
+```sql
 mysql> select *from t_account where name='A';
 +------+---------+
 | name | balance |
@@ -803,7 +775,6 @@ mysql> select* from t_account where name='B';
 1 row in set (0.00 sec)
 mysql> select * from t_account where name='C';
 Empty set (0.00 sec)
-
 ```
 
 结果：用户 A 成功转 100 元给用户 B，用户 C 果然不存才，设置了保存点，帮我们省了很多工作，中途不用取消全部操作。
@@ -817,15 +788,14 @@ Empty set (0.00 sec)
 首先，我们用前面的场景 1 模拟一个死锁。
 
 然后，执行如下命令获取死锁信息：
-```
 
+```plaintext
 mysql> show engine innodb status;
-
 ```
 
 在打印的日志中，先看事务 1 的日志：
-```
 
+```sql
 ***(1) TRANSACTION:
 TRANSACTION 2179, ACTIVE 8 sec inserting
 mysql tables in use 1, locked 1
@@ -837,24 +807,22 @@ Record lock, heap no 2 PHYSICAL RECORD: n_fields 2; compact format; info bits 0
 0: len 5; hex 8000000065; asc     e;;
 1: len 5; hex 8000000001; asc      ;;
 TRANSACTION 2179, ACTIVE ==8 sec== inserting
-
 ```
 
 事务 1 持续了 8 秒：
-```
 
+```sql
 mysql ==tables in use 1==, locked 1  涉及一张表\
 LOCK WAIT 2 lock struct(s) 有两个锁\
 insert into t_insert values(2,101) 这是 SQL 语句\
 WAITING FOR THIS LOCK TO BE GRANTED 唯一行锁处于等待\
 RECORD LOCKS space id 37 page no 4 n bits 72 index no 加锁的是索引字段 no\
 lock mode S waiting 锁等待为 S 锁
-
 ```
 
 事务 2 的日志：
-```
 
+```sql
 ***(2) TRANSACTION:
 TRANSACTION 2178, ACTIVE 17 sec inserting
 mysql tables in use 1, locked 1
@@ -870,7 +838,6 @@ RECORD LOCKS space id 37 page no 4 n bits 72 index no of table `test`.`t_insert`
 Record lock, heap no 2 PHYSICAL RECORD: n_fields 2; compact format; info bits 0
 0: len 5; hex 8000000065; asc     e;;
 1: len 5; hex 8000000001; asc      ;;
-
 ```
 
 *   `HOLDS THE LOCK(S)` 持有锁的内容

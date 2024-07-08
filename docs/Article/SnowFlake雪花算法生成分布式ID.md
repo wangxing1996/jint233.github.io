@@ -8,7 +8,7 @@ SnowFlake 的结构如下：
 
 ![在这里插入图片描述](assets/50ba2570-e86c-11ea-8115-8d7d715b7847)
 
-```
+```plaintext
 0 - 0000000000 0000000000 0000000000 0000000000 0 - 00000 - 00000 - 000000000000
 ```
 
@@ -78,7 +78,7 @@ jvmId 变化，基于 mac\\hostip\\jvmid 生成的机器 WorkerId 变化，即�
 
 本文提供 Java 版的算法实现，欢迎评论区留言批评指正。
 
-```
+```java
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.management.ManagementFactory;
@@ -343,7 +343,7 @@ public class IdGenerator {
 
 订单号生成案例
 
-```
+```java
 import java.text.SimpleDateFormat;
 import java.util.Date;
 /**
@@ -399,3 +399,4 @@ public class OrderNoGenerator {
     }
 }
 ```
+

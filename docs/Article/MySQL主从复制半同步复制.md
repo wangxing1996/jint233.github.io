@@ -46,7 +46,7 @@ MySQL的半同步是通过加载google为MySQL提供的半同步插件 _semisync
 
 MySQL的插件位置默认存放在`$basedir/lib/plugin`目录下。例如，yum安装的mysql-server，插件目录为/usr/lib64/mysql/plugin。
 
-```
+```plaintext
 [[email protected] ~]# find / -type f -name "semisync*" 
 /usr/lib64/mysql/plugin/debug/semisync_master.so
 /usr/lib64/mysql/plugin/debug/semisync_slave.so
@@ -56,7 +56,7 @@ MySQL的插件位置默认存放在`$basedir/lib/plugin`目录下。例如，yum
 
 因为要加载插件，所以应该保证需要加载插件的MySQL的全局变量 _have_dynamic_loading_ 已经设置为YES(默认值就是YES)，否则无法动态加载插件。
 
-```
+```sql
 mysql> select @@global.have_dynamic_loading;
 +-------------------------------+
 | @@global.have_dynamic_loading |
@@ -71,7 +71,7 @@ mysql> select @@global.have_dynamic_loading;
 
 INSTALL安装插件的语法为：
 
-```
+```plaintext
 Syntax:
 INSTALL PLUGIN plugin_name SONAME 'shared_library_name'
 UNINSTALL PLUGIN plugin_name
@@ -85,21 +85,21 @@ mysql> install plugin rpl_semi_sync_master soname 'semisync_master.so';
 
 配置文件中加载插件的方式为：
 
-```
+```plaintext
 [mysqld]
 plugin-load='plugin_name=shared_library_name'
 ```
 
 例如，配置文件中加载`semisync_master.so`插件。
 
-```
+```plaintext
 [mysqld]
 plugin-load="rpl_semi_sync_master=sermisync_master.so"
 ```
 
 如果需要加载多个插件，则插件之间使用分号分隔。例如，在本节的slave1既是slave，又是master，需要同时安装两个半同步插件。
 
-```
+```plaintext
 [mysqld]
 plugin-load="rpl_semi_sync_master=semisync_master.so;rpl_sync_slave=semisync_slave.so"
 ```
@@ -118,7 +118,7 @@ mysql> show plugins;
 
 或者查看`information_schema.plugins`表获取更详细的信息。
 
-```
+```sql
 mysql> select * from information_schema.plugins where plugin_name like "%semi%"\G ****  ****  ****  ****  ****  ****  ***1. row**  ****  ****  ****  ****  ****  **** *
            PLUGIN_NAME: rpl_semi_sync_master
         PLUGIN_VERSION: 1.0
@@ -136,7 +136,7 @@ PLUGIN_LIBRARY_VERSION: 1.7
 
 插件装载完成后，半同步功能还未开启，需要手动设置它们启动，或者写入配置文件永久生效。
 
-```
+```plaintext
 # 开启master的半同步
 mysql> set @@global.rpl_semi_sync_master_enabled=1;
 # 开启slave半同步
@@ -145,7 +145,7 @@ mysql> set @@globale.rpl_semi_sync_slave_enabled=1;
 
 或者配合插件加载选项一起写进配置文件永久开启半同步功能。
 
-```
+```plaintext
 [mysqld]
 rpl_semi_sync_master_enabled=1
 [mysqld]
@@ -156,7 +156,7 @@ rpl_semi_sync_slave_enabled=1
 
 安装了 _semisync_master.so_ 和 _semisync_slave.so_ 后，这两个插件分别提供了几个变量。
 
-```
+```plaintext
 mysql> show global variables like "%semi%";
 +-------------------------------------------+------------+
 | Variable_name                             | Value      |
@@ -281,7 +281,7 @@ semi_slave for slave1
 
 以下是master的配置文件。
 
-```
+```plaintext
 [mysqld]
 datadir=/data
 socket=/data/mysql.sock
@@ -296,7 +296,7 @@ rpl_semi_sync_master_enabled=1
 
 以下是slave1的配置文件，注意slave1同时还充当着slave2和slave3的master的角色。
 
-```
+```plaintext
 [mysqld]
 datadir=/data
 socket=/data/mysql.sock
@@ -314,7 +314,7 @@ rpl_semi_sync_master_enabled=1
 
 以下是slave2和slave3的配置文件，它们配置文件除了_server-id_外都一致。
 
-```
+```plaintext
 [mysqld]
 datadir=/data
 socket=/data/mysql.sock
@@ -331,7 +331,7 @@ read-only=on
 
 现在master上创建一个专门用于复制的用户。
 
-```
+```plaintext
 mysql> create user [email protected]'192.168.100.%' identified by '[email protected]!';
 mysql> grant replication slave on *.* to [email protected]'192.168.100.%';
 ```
@@ -340,7 +340,7 @@ mysql> grant replication slave on *.* to [email protected]'192.168.100.%';
 
 以下是slave1上的`change master to`参数：
 
-```
+```plaintext
 mysql> change master to 
             master_host='192.168.100.21',
             master_port=3306,
@@ -352,7 +352,7 @@ mysql> change master to
 
 以下是slave2和slave3的`change master to`参数：
 
-```
+```plaintext
 mysql> change master to 
             master_host='192.168.100.22',
             master_port=3306,
@@ -364,7 +364,7 @@ mysql> change master to
 
 启动各slave上的两个SQL线程。
 
-```
+```plaintext
 mysql> start slave;
 ```
 
@@ -376,7 +376,7 @@ mysql> start slave;
 
 例如以下是开启了半同步复制后的master上的semisync相关变量。
 
-```
+```plaintext
 mysql> show global variables like "%semi%";
 +-------------------------------------------+------------+
 | Variable_name                             | Value      |
@@ -394,7 +394,7 @@ mysql> show global variables like "%semi%";
 
 例如，以下是master上关于semi_sync的状态变量信息。
 
-```
+```plaintext
 mysql> show status like "%semi%";
 +--------------------------------------------+-------+
 | Variable_name                              | Value |
@@ -424,7 +424,7 @@ mysql> show status like "%semi%";
 
 以下是slave1上关于semi_sync的状态变量信息。
 
-```
+```plaintext
 mysql>  show status like "%semi%";
 +--------------------------------------------+-------+
 | Variable_name                              | Value |
@@ -453,7 +453,7 @@ mysql>  show status like "%semi%";
 
 前面已经搭建好了下面的半同步复制结构。
 
-```
+```plaintext
                                      |------> slave2
                 master ---> slave1 ---
                                      |------> slave3
@@ -467,13 +467,13 @@ mysql>  show status like "%semi%";
 
 在slave2和slave3上执行：
 
-```
+```plaintext
 mysql> stop slave io_thread;
 ```
 
 在master上执行：
 
-```
+```sql
 create database test1;
 create table test1.t(id int);
 insert into test1.t values(33);
@@ -481,7 +481,7 @@ insert into test1.t values(33);
 
 在slave1上查看(在上面的步骤之后的10秒内查看)：
 
-```
+```plaintext
 mysql> show status like "%semi%";
 +--------------------------------------------+-------+
 | Variable_name                              | Value |
@@ -506,7 +506,7 @@ mysql> show status like "%semi%";
 
 可以看到在这一小段时间内，slave1还是半同步复制。此时用`show slave status`查看slave1。
 
-```
+```python
 # slave1上执行
 mysql> show slave status \G ****  ****  ****  ****  ****  ****  ***1. row**  ****  ****  ****  ****  ****  **** *Slave_IO_State: Waiting for master to send event
                   Master_Host: 192.168.100.21
@@ -529,7 +529,7 @@ mysql> show slave status \G ****  ****  ****  ****  ****  ****  ***1. row**  ***
 
 但10秒之后再查看。
 
-```
+```plaintext
 mysql> show status like "%semi%";
 +--------------------------------------------+-------+
 | Variable_name                              | Value |
@@ -556,7 +556,7 @@ mysql> show status like "%semi%";
 
 此时查看slave1的错误日志。
 
-```
+```plaintext
 2018-06-11T03:43:21.765384Z 4 [Warning] Timeout waiting for reply of binlog (file: master-bin.000001, pos: 2535), semi-sync up to file master-bin.000001, position 2292.
 2018-06-11T03:43:21.765453Z 4 [Note] Semi-sync replication switched OFF.
 ```

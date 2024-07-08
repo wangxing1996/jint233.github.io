@@ -19,7 +19,7 @@
 
 因此从上面我们能够归纳出一个线程池的构造结构有核心线程数、阻塞队列、最大线程数、拒绝策略，通过代码可以表示为：
 
-```
+```java
 public class LimynlThreadPool{
     /**
      * 线程池名称
@@ -53,7 +53,7 @@ public class LimynlThreadPool{
 
 继续分析，对于普通用户来说使用线程池的目的就是将需要执行的任务提交到线程池中去执行，因此我们还需要定义一个提交任务的入口，为了实现面向接口编程，我们抽象一个接口：
 
-```
+```plaintext
 public interface Executor {
     /**
      * 任务执行入口
@@ -79,7 +79,7 @@ public interface Executor {
 
 此时我们的线程池为：
 
-```
+```java
 public class LimynlThreadPool implements Executor {
     private String name;
     private int coreSize;
@@ -125,7 +125,7 @@ public class LimynlThreadPool implements Executor {
 
 对于线程创建部分主要是看线程池中创建的线程是否达到了最大线程数，如果达到了最大线程数直接返回，如果没有达到最大线程数，直接创建线程，并且执行新任务，以后从阻塞队列中获取任务执行。
 
-```
+```java
 private boolean addWorker(Runnable newTask, boolean isCore) {
     while(true){
         int count = runningCount.get();
@@ -177,7 +177,7 @@ private Runnable getTask() {
 
 首先定义线程池的公共接口：
 
-```
+```plaintext
 public interface RejectPolicy {
     void reject(Runnable task, LimynlThreadPool limynlThreadPool);
 }
@@ -185,7 +185,7 @@ public interface RejectPolicy {
 
 实现自定义拒绝策略：
 
-```
+```java
 public class DiscardRejectPolicy implements RejectPolicy {
     @Override
     public void reject(Runnable task, LimynlThreadPool limynlThreadPool) {
@@ -196,7 +196,7 @@ public class DiscardRejectPolicy implements RejectPolicy {
 
 到此我们基于 Runnable 实现不带返回值的任务的线程池，下面通过测试用例验证。
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         Executor threadPool = new LimynlThreadPool("test", 5, 8, new ArrayBlockingQueue<>(5), new DiscardRejectPolicy());
@@ -215,7 +215,7 @@ public class Main {
 
 执行结果为：
 
-```
+```bash
 thread name : test1
 thread name : test6
 thread name : test7
@@ -245,7 +245,7 @@ running: 1601343697819: 11
 
 从上一节知道，我们使用 Runnable 实现了无返回值的任务线程池执行能力。但是有时我们需要获取任务的执行结果。因此当主线程将任务提交到线程池中后，需要等待任务执行完毕后才能获取到任务的结果。因此我们应该清楚，当任务未执行或者还在执行过程中，当前线程如果需要获取该任务的执行结果，需要阻塞，直到任务执行完成。 对于无返回值任务的执行，我们使用的 Runnable，对于有返回值任务，我们使用 Callable 实现，因此对于线程执行接口，我们需要进行改造，以至于能够返回任务的执行结果。
 
-```
+```java
 public interface FutureExecutor extends Executor {
     // 将任务的执行结果包装到 Future 中
     <T> Future<T> submit(Callable<T> task);
@@ -262,7 +262,7 @@ public interface Future<T> {
 
 接下来我们需要一种新任务，这种任务既能够执行，又能够返回执行结果，因此我们可以同时实现 Runnabl、Future 接口，为了表示任务所处的阶段，我们需要定义任务的状态，因此新任务的定义如下：
 
-```
+```java
 public class FutureTask<T> implements Runnable, Future {
     /**
      * 任务执行状态：0 未开始 1 正常完成 2 异常完成
@@ -302,7 +302,7 @@ public class FutureTask<T> implements Runnable, Future {
 - 原子更新当前任务状态
 - 判断调用者是否为空，如果不为空，则唤醒
 
-```
+```java
 @Override
 public void run() {
     // 任务不是新建状态，说明执行过了
@@ -346,7 +346,7 @@ private void finish() {
 - 如果任务执行过程发生异常，直接抛出异常，此时异常将会抛到子线程外
 - 如果任务处于执行过程中，需要判断调用者线程是否需要阻塞
 
-```
+```java
 @Override
 public T get() {
     int s = state.get();
@@ -381,7 +381,7 @@ public T get() {
 
 为了实现之前代码的复用，我们直接继承 LimynlThreadPool 并且实现 FutureExecutor：
 
-```
+```java
 public class LimynlThreadPoolFuture extends LimynlThreadPool implements FutureExecutor {
     public LimynlThreadPoolFutureExecutor(String name, 
                                           int coreSize, 
@@ -404,7 +404,7 @@ public class LimynlThreadPoolFuture extends LimynlThreadPool implements FutureEx
 
 接下来我们验证我们的代码：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         FutureExecutor executor = new LimynlThreadPoolFutureExecutor("test", 2, 4,
@@ -425,7 +425,7 @@ public class Main {
 
 运行结果：
 
-```
+```bash
 thread name : core_test1
 thread name : core_test2
 thread name : test3

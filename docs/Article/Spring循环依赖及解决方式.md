@@ -4,7 +4,7 @@
 
 Spring 有一个经典的问题，就是如何解决循环依赖，话不多说，直接开始，
 
-```
+```plaintext
 @Component
 public Class A { 
   @Autowired private B b;
@@ -35,7 +35,7 @@ public Class B {
 
 伪代码如下：
 
-```
+```java
 public Object getBean(String name) {
  //省略根据name获取A的过程
  A a = new A();
@@ -70,7 +70,7 @@ public Object getBean(String name) {
 
 ### 一级缓存：单例池 singletonObjects
 
-```
+```java
 private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
 ```
 
@@ -78,7 +78,7 @@ private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256
 
 ### 二级缓存：earlySingletonObjects
 
-```
+```java
 private final Map<String, Object> earlySingletonObjects = new HashMap<>(16);
 ```
 
@@ -114,7 +114,7 @@ private final Map<String, Object> earlySingletonObjects = new HashMap<>(16);
 
 ### 三级缓存：singletonFactories
 
-```
+```java
 private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
 ```
 
@@ -130,7 +130,7 @@ private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(1
 
 ##### 1、 doGetBean
 
-```
+```python
 protected <T> T doGetBean(final String name, @Nullable final Class<T> requiredType,@Nullable final Object[] args, boolean typeCheckOnly) throws BeansException {
     Object bean;
     //首先先尝试获取bean，如果加载过就不会在重复加载了
@@ -176,7 +176,7 @@ protected <T> T doGetBean(final String name, @Nullable final Class<T> requiredTy
 
 ##### 2、 第 1 步中 getSingleton(beanName)
 
-```
+```java
 public Object getSingleton(String beanName) {
    return getSingleton(beanName, true);
 }
@@ -207,7 +207,7 @@ protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 
 ##### 3、 第 1 步中 单例 bean 的加载逻辑
 
-```
+```java
 sharedInstance = getSingleton(beanName, () -> {
   try {
      return createBean(beanName, mbd, args);
@@ -242,7 +242,7 @@ public Object getSingleton(String beanName, ObjectFactory<?> singletonFactory) {
 
 ##### 4、核心方法，加载 bean
 
-```
+```java
 //createBean(beanName, mbd, args); 方法 创建bean的核心逻辑
 // 最终调用的是 AbstractAutowiredCapableBeanFactory.createBean 这个方法
 protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args)

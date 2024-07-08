@@ -135,7 +135,7 @@ public static final String FACTORIES_RESOURCE_LOCATION = "META-INF/spring.factor
 
 \\2. 编写邮件发送模版类，这里我添加了一个是否启用的开关：
 
-```
+```java
 @ConditionalOnProperty (name = "dragon.boot.email.enable", havingValue = "true")
 @Slf4j
 @Configuration
@@ -288,7 +288,7 @@ public class MailSenderTemplate {
 
 \\3. 编写 SPI 配置文件，在 resources 下新建文件夹 META-INF，创建配置文件 spring.factories，内容如下：
 
-```
+```plaintext
 //替换成自己的路径
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
     com.dragon.boot.mail.service.MailSenderTemplate 

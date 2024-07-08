@@ -125,8 +125,9 @@ mysql支持一主一从和一主多从。但是每个slave必须只能是一个m
 
 ![img](assets/733013-20180528194339716-360937433.png)
 
-1. **配置master和slave的配置文件。** ```
+1. **配置master和slave的配置文件。** 
 
+```plaintext
 \[mysqld\]          # master
 datadir=/data
 socket=/data/mysql.sock
@@ -138,20 +139,21 @@ datadir=/data
 socket=/data/mysql.sock
 relay-log=slave-bin
 server-id=111
-
 ```
+
 1.  重启master和slave上的MySQL实例。
-```
 
+```plaintext
 service mysqld restart
-
 ```
-1. **在master上创建复制专用的用户。** ```
 
+1. **在master上创建复制专用的用户。** 
+
+```plaintext
 create user 'repl'@'192.168.100.%' identified by '\[email protected\]!';
 grant REPLICATION SLAVE on *.* to 'repl'@'192.168.100.%';
-
 ```
+
 1. **将slave恢复到master上指定的坐标。** 这是备份恢复的内容，此处用一个小节来简述操作过程。详细内容见[MySQL备份和恢复(一)、(二)、(三)](https://www.cnblogs.com/f-ck-need-u/p/9013458.html)。
 4.2 将slave恢复到master指定的坐标
 ------------------------
@@ -160,8 +162,8 @@ grant REPLICATION SLAVE on *.* to 'repl'@'192.168.100.%';
 *   (2).待复制的master上已有数据。这时需要将这些已有数据也应用到slave上，并获取master上binlog当前的坐标。只有slave和master的数据能匹配上，slave重放relay log时才不会出错。
 第一种情况此处不赘述。第二种情况有几种方法，例如使用mysqldump、冷备份、xtrabackup等工具，这其中又需要考虑是MyISAM表还是InnoDB表。
 在实验开始之前，首先在master上新增一些测试数据，以innodb和myisam的数值辅助表为例。
-```
 
+```sql
 DROP DATABASE IF EXISTS backuptest;
 CREATE DATABASE backuptest;
 USE backuptest;
@@ -220,11 +222,11 @@ DELIMITER ;
 
 CALL proc_num1 (1000000) ;
 CALL proc_num2 (1000000) ;
-
 ```
+
 所谓数值辅助表是只有一列的表，且这个字段的值全是数值，从1开始增长。例如上面的是从1到100W的数值辅助表。
-```
 
+```sql
 mysql> select * from backuptest.num_isam limit 10;
 +----+
 | n  |
@@ -240,16 +242,18 @@ mysql> select * from backuptest.num_isam limit 10;
 |  9 |
 | 10 |
 +----+
-
 ```
+
 ### 4.2.1 获取master binlog的坐标 **如果master是全新的数据库实例，或者在此之前没有开启过binlog，那么它的坐标位置是position=4** 。之所以是4而非0，是因为binlog的前4个记录单元是每个binlog文件的头部信息。
-如果master已有数据，或者说master以前就开启了binlog并写过数据库，那么需要手动获取position。 **为了安全以及没有后续写操作，必须先锁表。** ```
+如果master已有数据，或者说master以前就开启了binlog并写过数据库，那么需要手动获取position。 **为了安全以及没有后续写操作，必须先锁表。** 
+
+```python
 mysql> flush tables with read lock;
 ```
 
 注意，这次的 **锁表会导致写阻塞以及innodb的commit操作。** 然后查看binlog的坐标。
 
-```
+```plaintext
 mysql> show master status;   # 为了排版，简化了输出结果
 +-------------------+----------+--------------+--------+--------+
 | File              | Position | Binlog_Do_DB | ...... | ...... |
@@ -268,7 +272,9 @@ mysql> show master status;   # 为了排版，简化了输出结果
 
 2. 如果要复制的是某个或某几个库，直接拷贝相关目录即可。但注意，这种冷备份的方式只适合MyISAM表和开启了`innodb_file_per_table=ON`的InnoDB表。如果没有开启该变量，innodb表使用公共表空间，无法直接冷备份。
 1. 如果要冷备份innodb表，最安全的方法是先关闭master上的mysql，而不是通过表锁。
-   所以， **如果没有涉及到innodb表，那么在锁表之后，可以直接冷拷贝。最后释放锁。** ```
+   所以， **如果没有涉及到innodb表，那么在锁表之后，可以直接冷拷贝。最后释放锁。** 
+
+```python
    mysql> flush tables with read lock;
    mysql> show master status;   # 为了排版，简化了输出结果
    +-------------------+----------+--------------+--------+--------+
@@ -278,25 +284,22 @@ mysql> show master status;   # 为了排版，简化了输出结果
    +-------------------+----------+--------------+--------+--------+
    shell> rsync -avz /data 192.168.100.150:/
    mysql> unlock tables;
-
 ```
 
 此处实验，假设要备份的是整个实例，因为 **涉及到了innodb表，所以建议关闭MySQL** 。因为是冷备份，所以slave上也应该关闭MySQL。
-```
 
+```plaintext
 # master和slave上都执行
 
 shell> mysqladmin -uroot -p shutdown
-
 ```
 
 然后将整个datadir拷贝到slave上(当然，有些文件是不用拷贝的，比如master上的binlog、mysql库等)。
-```
 
+```plaintext
 # 将master的datadir(/data)拷贝到slave的datadir(/data)
 
 shell> rsync -avz /data 192.168.100.150:/
-
 ```
 
 需要注意，在冷备份的时候，需要将备份到目标主机上的DATADIR/auto.conf删除，这个文件中记录的是mysql server的UUID，而master和slave的UUID必须不能一致。
@@ -304,26 +307,24 @@ shell> rsync -avz /data 192.168.100.150:/
 然后重启master和slave。因为重启了master，所以binlog已经滚动了，不过这次不用再查看binlog坐标，因为重启造成的binlog日志移动不会影响slave。
 
 * **方式二：使用mysqldump进行备份恢复。** 这种方式简单的多，而且对于innodb表很适用，但是slave上恢复时速度慢，因为恢复时数据全是通过insert插入的。因为mysqldump可以进行定时点恢复甚至记住binlog的坐标，所以无需再手动获取binlog的坐标。
-```
 
+```plaintext
 shell> mysqldump -uroot -p --all-databases --master-data=2 >dump.db
-
 ```
 
 注意，`--master-data`选项将再dump.db中加入`change master to`相关的语句，值为2时，`change master to`语句是注释掉的，值为1或者没有提供值时，这些语句是直接激活的。同时，`--master-data`会锁定所有表(如果同时使用了`--single-transaction`，则不是锁所有表，详细内容请参见[mysqldump](https://www.cnblogs.com/f-ck-need-u/p/9013458.html))。
 
-因此，可以直接从dump.db中获取到binlog的坐标。 **记住这个坐标。** ```
+因此，可以直接从dump.db中获取到binlog的坐标。 **记住这个坐标。** 
 
+```plaintext
 \[\[email protected\] ~\]# grep -i -m 1 'change master to' dump.db
 -- CHANGE MASTER TO MASTER_LOG_FILE='master-bin.000002', MASTER_LOG_POS=154;
-
 ```
 
 然后将dump.db拷贝到slave上，使用mysql执行dump.db脚本即可。也可以直接在master上远程连接到slave上执行。例如：
-```
 
+```plaintext
 shell> mysql -uroot -p -h 192.168.100.150 -e 'source dump.db'
-
 ```
 
 * **方式三：使用xtrabackup进行备份恢复。** 这是三种方式中最佳的方式，安全性高、速度快。因为xtrabackup备份的时候会记录master的binlog的坐标，因此也无需手动获取binlog坐标。
@@ -333,15 +334,14 @@ xtrabackup详细的备份方法见：[xtrabackup](https://www.cnblogs.com/f-ck-n
 注意：master和slave上都安装percona-xtrabackup。
 
 以全备份为例：
-```
 
+```plaintext
 innobackupex -u root -p /backup
-
 ```
 
 备份完成后，在/backup下生成一个以时间为名称的目录。其内文件如下：
-```
 
+```plaintext
 \[\[email protected\] ~\]# ll /backup/2018-05-29_04-12-15
 total 77872
 -rw-r----- 1 root root      489 May 29 04:12 backup-my.cnf
@@ -355,26 +355,24 @@ drwxr-x--- 2 root root    12288 May 29 04:12 sys
 -rw-r----- 1 root root      115 May 29 04:12 xtrabackup_checkpoints
 -rw-r----- 1 root root      461 May 29 04:12 xtrabackup_info
 -rw-r----- 1 root root     2560 May 29 04:12 xtrabackup_logfile
-
 ```
 
-其中xtrabackup\_binlog\_info中记录了binlog的坐标。 **记住这个坐标。** ```
+其中xtrabackup\_binlog\_info中记录了binlog的坐标。 **记住这个坐标。** 
 
+```plaintext
 \[\[email protected\] ~\]# cat /backup/2018-05-29_04-12-15/xtrabackup_binlog_info
 master-bin.000002       154
-
 ```
 
 然后将备份的数据执行"准备"阶段。这个阶段不要求连接mysql，因此不用给连接选项。
-```
 
+```plaintext
 innobackupex --apply-log /backup/2018-05-29_04-12-15
-
 ```
 
 最后，将/backup目录拷贝到slave上进行恢复。恢复的阶段就是向MySQL的datadir拷贝。但注意，xtrabackup恢复阶段要求datadir必须为空目录。否则报错：
-```
 
+```bash
 \[\[email protected\] ~\]# innobackupex --copy-back /backup/2018-05-29_04-12-15/
 180529 23:54:27 innobackupex: Starting the copy-back operation
 IMPORTANT: Please check that the copy-back run completes successfully.
@@ -382,37 +380,32 @@ At the end of a successful copy-back run innobackupex
 prints "completed OK!".
 innobackupex version 2.4.11 based on MySQL server 5.7.19 Linux (x86_64) (revision id: b4e0db5)
 Original data directory /data is not empty!
-
 ```
 
 所以，停止slave的mysql并清空datadir。
-```
 
+```plaintext
 service mysqld stop
 rm -rf /data/\*
-
 ```
 
 恢复时使用的模式是"--copy-back"，选项后指定要恢复的源备份目录。恢复时因为不需要连接数据库，所以不用指定连接选项。
-```
 
-1
+```1
 2
 \[\[email protected\] ~\]# innobackupex --copy-back /backup/2018-05-29_04-12-15/
 180529 23:55:53 completed OK!
-
 ```
 
 恢复完成后，MySQL的datadir的文件的所有者和属组是innobackupex的调用者，所以需要改回mysql.mysql。
-```
 
+```plaintext
 shell> chown -R mysql.mysql /data
-
 ```
 
 启动slave，并查看恢复是否成功。
-```
 
+```sql
 shell> service mysqld start
 shell> mysql -uroot -p -e 'select * from backuptest.num_isam limit 10;'
 +----+
@@ -429,7 +422,6 @@ shell> mysql -uroot -p -e 'select * from backuptest.num_isam limit 10;'
 |  9 |
 | 10 |
 +----+
-
 ```
 
 4.3 slave开启复制
@@ -438,8 +430,8 @@ shell> mysql -uroot -p -e 'select * from backuptest.num_isam limit 10;'
 经过前面的一番折腾，总算是把该准备的数据都准备到slave上，也获取到master上binlog的坐标(154)。现在还欠东风：连接master。
 
 连接master时，需要使用`change master to`提供连接到master的连接选项，包括user、port、password、binlog、position等。
-```
 
+```plaintext
 mysql> change master to
 master_host='192.168.100.20',
 master_port=3306,
@@ -447,12 +439,11 @@ master_user='repl',
 master_password='\[email protected\]!',
 master_log_file='master-bin.000002',
 master_log_pos=154;
-
 ```
 
 完整的`change master to`语法如下：
-```
 
+```plaintext
 CHANGE MASTER TO option \[, option\] ...
 option:
 | MASTER_HOST = 'host_name'
@@ -473,12 +464,11 @@ option:
 | MASTER_SSL_KEY = 'key_file_name'
 | MASTER_SSL_CIPHER = 'cipher_list'
 | MASTER_SSL_VERIFY_SERVER_CERT = {0|1}
-
 ```
 
 然后，启动IO线程和SQL线程。可以一次性启动两个，也可以分开启动。
-```
 
+```plaintext
 # 一次性启动、关闭
 
 start slave;
@@ -488,7 +478,6 @@ stop slave;
 
 start slave io_thread;
 start slave sql_thread;
-
 ```
 
 至此，复制就已经可以开始工作了。当master写入数据，slave就会从master处进行复制。
@@ -505,8 +494,8 @@ start slave sql_thread;
 master.info文件记录的是 **IO线程相关的信息** ，也就是连接master以及读取master binlog的信息。通过这个文件，下次连接master时就不需要再提供连接选项。
 
 以下是master.info的内容，每一行的意义见[官方手册](https://dev.mysql.com/doc/refman/5.7/en/slave-logs-status.html)
-```
 
+```plaintext
 \[\[email protected\] ~\]# cat /data/master.info
 25                        # 本文件的行数
 master-bin.000002         # IO线程正从哪个master binlog读取日志
@@ -522,14 +511,13 @@ repl                      # master_user
 0
 86400
 0
-
 ```
 
 ### 4.4.2 relay-log.info
 
 relay-log.info文件中记录的是 **SQL线程相关的信息** 。以下是relay-log.info文件的内容，每一行的意义见[官方手册](https://dev.mysql.com/doc/refman/5.7/en/slave-logs-status.html)
-```
 
+```plaintext
 \[\[email protected\] ~\]# cat /data/relay-log.info
 7                   # 本文件的行数
 ./slave-bin.000001  # 当前SQL线程正在读取的relay-log文件
@@ -539,14 +527,13 @@ master-bin.000002   # SQL线程最近执行的操作对应的是哪个master bin
 0                   # slave上必须落后于master多长时间
 0                   # 正在运行的SQL线程数
 1                   # 一种用于内部信息交流的ID，目前值总是1
-
 ```
 
 ### 4.4.3 show slave status
 
 在slave上执行`show slave status`可以查看slave的状态信息。信息非常多，每个字段的详细意义可参见[官方手册](https://dev.mysql.com/doc/refman/5.7/en/show-slave-status.html)
-```
 
+```plaintext
 mysql> show slave status\\G ****  ****  ****  ****  ****  ****  ***1. row**  ****  ****  ****  ****  ****  **** *
 Slave_IO_State:        # slave上IO线程的状态，来源于show processlist
 Master_Host: 192.168.100.20
@@ -607,14 +594,13 @@ Replicate_Rewrite_DB:
 Channel_Name:
 Master_TLS_Version:
 1 row in set (0.01 sec)
-
 ```
 
 因为太长，后面再列出`show slave status`时，将裁剪一些意义不大的行。
 
 再次回到上面`show slave status`的信息。除了那些描述IO线程、SQL线程状态的行，还有几个log\_file和pos相关的行，如下所列。
-```
 
+```plaintext
 ```
   Master_Log_File: master-bin.000002
 ```
@@ -625,8 +611,7 @@ Relay_Log_Pos: 4
 Relay_Master_Log_File: master-bin.000002
 Exec_Master_Log_Pos: 154
 
-```
-
+```plaintext
 理解这几行的意义至关重要，前面因为排版限制，描述看上去有些重复。所以这里完整地描述它们：
 
 *   `Master_Log_File`：IO线程正在读取的master binlog；
@@ -660,8 +645,7 @@ mysql> show processlist;   # slave上的信息，为了排版，简化了输出
 |  9 | system user | Connect | Slave has read all relay log; waiting for more updates |
 +----+-------------+---------+--------------------------------------------------------+
 
-```
-
+```plaintext
 可以看到：
 
 *   `Id=8`的线程负责连接master并读取binlog，它是IO 线程，它的状态指示"等待master发送更多的事件"；
@@ -681,8 +665,7 @@ mysql> show processlist;        # master上的信息，为了排版，经过了�
 |                                                                                            |      |                       |             | waiting for more updates             |
 | +----+------+-----------------------+-------------+--------------------------------------+ |      |                       |             |                                      |
 
-```
-
+```plaintext
 master上有一个`Id=16`的binlog dump线程，该线程的用户是repl。它的状态指示"已经将所有的binlog发送给slave了"。
 
 现在，在master上执行一个长事件，以便查看slave上的状态信息。
@@ -693,8 +676,7 @@ master上有一个`Id=16`的binlog dump线程，该线程的用户是repl。它�
 call proc_num1(100000000);
 call proc_num2(100000000);
 
-```
-
+```plaintext
 然后去slave上查看信息，如下。因为太长，已经裁剪了一部分没什么用的行。
 ```
 
@@ -715,8 +697,7 @@ Slave_SQL_Running: Yes
 Exec_Master_Log_Pos: 336989219
 Slave_SQL_Running_State: Reading event from the relay log
 
-```
-
+```plaintext
 从中获取到的信息有：
 
 1.  IO线程的状态
@@ -746,8 +727,7 @@ Slave_SQL_Running_State: Reading event from the relay log
 \[mysqld\]
 skip-slave-start
 
-```
-
+```plaintext
 4.6 一些变量
 
 默认情况下，slave连接到master后会在slave的datadir下生成master.info和relay-log.info文件，但是这是可以通过设置变量来改变的。
@@ -818,8 +798,7 @@ mysql> show variables like "read_only";
 | read_only     | OFF   |
 +---------------+-------+
 
-```
-
+```plaintext
 1.  在slave上没有开启`log-slave-updates`和binlog选项时，重放relay log不会记录binlog。 **所以如果slave2要作为某些slave的master，那么在slave2上必须要开启log-slave-updates和binlog选项。为了安全和数据一致性，在slave2上还应该启用read-only选项。** 环境如下：
 
 ![img](assets/733013-20180608100823680-1104661841.png)
@@ -862,8 +841,7 @@ log-error=/data/err.log
 pid-file=/data/mysqld.pid
 read-only=ON
 
-```
-
+```plaintext
 因为slave2目前是全新的实例，所以先将slave1的基准数据备份到slave2。由于slave1自身就是slave，临时关闭一个slave对业务影响很小，所以直接采用冷备份slave的方式。
 ```
 
@@ -895,20 +873,19 @@ shell> service mysqld start
 3.  因为slave1是刚开启的binlog，所以slave2连接slave1时的binlog position应该指定为4。即使slave1不是刚开启的binlog，它在重启后也会滚动binlog。
 
 所以，在slave2上继续操作：
-```
 
+```plaintext
 shell> ls /data
 auto.cnf    ib_buffer_pool  ib_logfile1  performance_schema  slave-bin.000005
 backuptest  ibdata1         master.info  relay-log.info      slave-bin.index
 err.log     ib_logfile0     mysql        slave-bin.000004    sys
 shell> rm -f /data/{master.info,relay-log.info,auto.conf,slave-bin\*}
 shell> service mysqld start
-
 ```
 
 最后连上slave2，启动复制线程。
-```
 
+```plaintext
 shell> mysql -uroot -p
 mysql> change master to
 master_host='192.168.100.150',
@@ -919,7 +896,6 @@ master_log_file='master-slave-bin.000001',
 master_log_pos=4;
 mysql> start slave;
 mysql> show slave status\\G
-
 ```
 
 6.MySQL复制中一些常用操作
@@ -929,8 +905,8 @@ mysql> show slave status\\G
 -------------
 
 默认情况下，slave会复制master上所有库。可以指定以下变量显式指定要复制的库、表和要忽略的库、表，也可以将其写入配置文件。
-```
 
+```plaintext
 ```
         Replicate_Do_DB: 要复制的数据库
     Replicate_Ignore_DB: 不复制的数据库
@@ -941,8 +917,7 @@ Replicate_Wild_Do_Table: 通配符方式指定要复制的表
 
 Replicate_Wild_Ignore_Table: 通配符方式指定不复制的表
 
-```
-
+```plaintext
 如果要指定列表，则多次使用这些变量进行设置。
 
 需要注意的是， **尽管显式指定了要复制和忽略的库或者表，但是master还是会将所有的binlog传给slave并写入到slave的relay log中，真正负责筛选的slave上的SQL线程** 。
@@ -974,8 +949,7 @@ mysql> show slave hosts;
 |      1111 |      | 3306 |        11 | 9b119463-24d2-11e7-884e-000c29867ec2 |
 +-----------+------+------+-----------+--------------------------------------+
 
-```
-
+```plaintext
 可以看到，该show中会显示server-id、slave的主机地址和端口号、它们的master\_id以及这些slave独一无二的uuid号。
 
 其中show结果中的host显示结果是由slave上的变量report\_host控制的，端口是由report\_port控制的。
@@ -986,8 +960,7 @@ mysql> show slave hosts;
 \[mysqld\]
 report_host=192.168.100.19
 
-```
-
+```plaintext
 在slave1(前文的实验环境，slave1是slave2的master)上查看，host已经显示为新配置的项。
 ```
 
@@ -999,8 +972,7 @@ mysql> show slave hosts;
 |      1111 |                | 3306 |        11 | 9b119463-24d2-11e7-884e-000c29867ec2 |
 +-----------+----------------+------+-----------+--------------------------------------+
 
-```
-
+```plaintext
 6.4 多线程复制
 ---------
 
@@ -1020,8 +992,7 @@ mysql> show variables like "%parallel%";
 | slave_parallel_workers | 0     |
 +------------------------+-------+
 
-```
-
+```plaintext
 显然，多线程只有在slave上开启才有效，因为只有slave上才有SQL线程。另外，设置了该全局变量，需要 **重启SQL线程** 才生效，否则内存中还是只有一个SQL线程。
 
 例如，初始时slave上的processlist如下：
@@ -1036,8 +1007,7 @@ mysql> stop slave sql_thread;
 msyql> start slave sql_thread;
 mysql> show full processlist;
 
-```
-
+```python
 ![img](assets/733013-20180606081705265-1189641192.png)
 
 可见多出了两个线程，其状态信息是"Waiting for an event from Coordinator"。
@@ -1066,8 +1036,7 @@ mysql> show full processlist;
 Waiting for preceding transaction to commit   # MySQL 5.7.8之后显示该状态
 Waiting for its turn to commit       # MySQL 5.7.8之前显示该状态
 
-```
-
+```plaintext
 尽管不会出现gap，但`show slave status`的`Exec_master_log_pos`仍可能显示在事务A的坐标之后。
 
 由于开启`slave_preserve_commit_order`涉及到不少操作，它还要求开启slave的binlog`--log-bin`(因此需要重启mysqld)，且开启重放relay log也记录binlog的行为`--log-slave-updates`，此外，还必须设置多线程的并行策略`--slave-parallel-type=LOGICAL_CLOCK`。
@@ -1095,12 +1064,11 @@ shell>service mysqld start
 ### 6.4.2 多线程复制切换回单线程复制
 
 多线程的带来的问题不止gaps一种，所以没有深入了解多线程的情况下，千万不能在生产环境中启用它。如果想将多线程切换回单线程，可以执行如下操作：
-```
 
+```plaintext
 START SLAVE UNTIL SQL_AFTER_MTS_GAPS;
 SET @@GLOBAL.slave_parallel_workers = 0;
 START SLAVE SQL_THREAD;
-
 ```
 
 6.5 slave升级为master的大致操作
@@ -1111,30 +1079,26 @@ START SLAVE SQL_THREAD;
 假如现在有主服务器M，从服务器S1、S2，S1作为将来的新的master。
 
 1.  在将S1提升为master之前，需要保证S1已经将relay log中的事件已经replay完成。即下面两个状态查看语句中SQL线程的状态显示为："Slave has read all relay log; waiting for the slave I/O thread to update it"。
-```
 
+```plaintext
 show slave status;
 show processlist;
-
 ```
 
 1.  停止S1上的IO线程和SQL线程，然后将S1的binlog清空(要求已启用binlog)。
-```
 
-1
+```1
 2
 mysql> stop slave;
 mysql> reset master;
-
 ```
 
 1.  在S2上停止IO线程和SQL线程，通过`change master to`修改master的指向为S1，然后再启动io线程和SQL线程。
-```
 
+```plaintext
 mysql> stop slave;
 mysql> change master to master_host=S1,...
 mysql> start slave;
-
 ```
 
 1.  将应用程序原本指向M的请求修改为指向S1，如修改MySQL代理的目标地址。一般会通过MySQL Router、Amoeba、cobar等数据库中间件来实现。
@@ -1157,13 +1121,12 @@ mysql> start slave;
 可以使用`sql_log_bin`变量对此进行设置，默认该变量的值为1，表示所有语句都写进binlog，从而被slave复制走。如果设置为0，则之后的语句不会写入binlog，从而实现"不复制某些语句到slave"上的功能。
 
 例如：屏蔽创建repl用户的语句。
-```
 
+```plaintext
 mysql> set sql_log_bin=0;
 mysql> create user \[email protected\]'%' identified by '\[email protected\]!';
 mysql> grant replication slave on *.* to \[email protected\]'%';
 mysql> set sql_log_bin=1;
-
 ```
 
 在使用该变量时，默认是会话范围内的变量，一定不能设置它的全局变量值，否则所有语句都将不写binlog。

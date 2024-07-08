@@ -41,7 +41,7 @@ Pronto 团队为每种类型的机器和每个支持的 Elasticsearch 版本运�
 
 - **如果查询有一个过滤字段并且它的值是可枚举的，那么把数据分成多个索引。** 例如，你有大量的全球产品信息被采集到 Elasticsearch 中，大多数查询都有一个过滤条件“地区”，并且很少有机会运行跨地区查询。如下查询体可以被优化：
 
-```
+```plaintext
 {
     "query": {
         "bool": {
@@ -126,7 +126,7 @@ Pronto 团队为每种类型的机器和每个支持的 Elasticsearch 版本运�
 
 我们可以使用下面的请求来检查一个节点查询缓存是否生效。
 
-```
+```plaintext
 GET index_name/_stats?filter_path=indices.**.query_cache
 {
   "indices": {
@@ -172,7 +172,7 @@ GET index_name/_stats?filter_path=indices.**.query_cache
 
 我们可以使用下面的请求来检查分片查询缓存是否有效。
 
-```
+```plaintext
 GET index_name/_stats?filter_path=indices.**.request_cache
 {
   "indices": {

@@ -10,7 +10,7 @@
 
 首先我们造一个 500W 数据量的表，别结构如下：
 
-```
+```sql
 mysql> show create table sbtest1\G; ****  ****  ****  ****  ****  ****  ***1. row**  ****  ****  ****  ****  ****  **** *
        Table: sbtest1
 Create Table: CREATE TABLE `sbtest1` (
@@ -24,7 +24,7 @@ Create Table: CREATE TABLE `sbtest1` (
 
 直接来 count(\*) 一下，看看执行时间吧。
 
-```
+```sql
 mysql> select count(*) from sbtest1;
 +----------+
 | count(*) |
@@ -38,7 +38,7 @@ mysql> select count(*) from sbtest1;
 
 现在看看执行计划：
 
-```
+```sql
 mysql> explain select count(*) from sbtest1;
 +----+-------------+---------+------------+-------+---------------+---------+---------+------+---------+----------+-------------+
 | id | select_type | table   | partitions | type  | possible_keys | key     | key_len | ref  | rows    | filtered | Extra       |
@@ -54,7 +54,7 @@ mysql> explain select count(*) from sbtest1;
 
 稍等片刻，我来优化…… …… …… ……
 
-```
+```sql
 mysql> select count(*) from sbtest1;
 +----------+
 | count(*) |
@@ -88,7 +88,7 @@ mysql> select count(*) from sbtest1;
 
 通过这些就不难说明了，上述演示的过程，第一次是通过主键来计算统计数据量，而第二次其实我做的也是创建了一个二级索引，通过二级索引来计算统计，速度快了很多，我们可以看看其对应的执行过程。
 
-```
+```sql
 mysql> explain select count(*) from sbtest1;
 +----+-------------+---------+------------+-------+---------------+------+---------+------+---------+----------+-------------+
 | id | select_type | table   | partitions | type  | possible_keys | key  | key_len | ref  | rows    | filtered | Extra       |
@@ -106,14 +106,14 @@ mysql> explain select count(*) from sbtest1;
 
 查询 MySQL 缓存区，确保缓冲区中不存在测试表的缓存：
 
-```
+```sql
 mysql> select * from sys.innodb_buffer_stats_by_table where object_schema = 'sbtest';
 Empty set (0.05 sec)
 ```
 
 执行 `select count(*)`：
 
-```
+```sql
 mysql> select count(*) from sbtest1;
 +----------+
 | count(*) |
@@ -125,7 +125,7 @@ mysql> select count(*) from sbtest1;
 
 再次查看 MySQL 缓存区，查询测试表的缓存：
 
-```
+```sql
 mysql> select * from sys.innodb_buffer_stats_by_table where object_schema = 'sbtest';
 +---------------+-------------+------------+------------+-------+--------------+-----------+-------------+
 | object_schema | object_name | allocated  | data       | pages | pages_hashed | pages_old | rows_cached |
@@ -139,7 +139,7 @@ mysql> select * from sys.innodb_buffer_stats_by_table where object_schema = 'sbt
 
 查看执行计划：
 
-```
+```sql
 mysql> explain select count(*) from sbtest1;
 +----+-------------+---------+------------+-------+---------------+---------+---------+------+---------+----------+-------------+
 | id | select_type | table   | partitions | type  | possible_keys | key     | key_len | ref  | rows    | filtered | Extra       |
@@ -155,7 +155,7 @@ mysql> explain select count(*) from sbtest1;
 
 创建一个二级索引：
 
-```
+```plaintext
 mysql> create index k_1 on sbtest1(k);
 Query OK, 0 rows affected (53.61 sec)
 Records: 0  Duplicates: 0  Warnings: 0
@@ -163,7 +163,7 @@ Records: 0  Duplicates: 0  Warnings: 0
 
 为了验证本次过程，我们重启一下 MySQL，目的是清空 MySQL 的缓存。
 
-```
+```plaintext
 ......  
 MySQL 重启完成  
 ......  
@@ -171,14 +171,14 @@ MySQL 重启完成
 
 查询 MySQL 缓存区，确保缓冲区中不存在测试表的缓存：
 
-```
+```sql
 mysql> select * from sys.innodb_buffer_stats_by_table where object_schema = 'sbtest';
 Empty set (0.05 sec)
 ```
 
 执行 `select count(*)`：
 
-```
+```sql
 mysql> select count(*) from sbtest1;
 +----------+
 | count(*) |
@@ -190,7 +190,7 @@ mysql> select count(*) from sbtest1;
 
 再次查看 MySQL 缓存区，查询测试表的缓存：
 
-```
+```sql
 mysql> select * from sys.innodb_buffer_stats_by_table where object_schema = 'sbtest';
 +---------------+-------------+-----------+-----------+-------+--------------+-----------+-------------+
 | object_schema | object_name | allocated | data      | pages | pages_hashed | pages_old | rows_cached |
@@ -204,7 +204,7 @@ mysql> select * from sys.innodb_buffer_stats_by_table where object_schema = 'sbt
 
 查看执行计划：
 
-```
+```sql
 mysql> explain select count(*) from sbtest1;
 +----+-------------+---------+------------+-------+---------------+------+---------+------+---------+----------+-------------+
 | id | select_type | table   | partitions | type  | possible_keys | key  | key_len | ref  | rows    | filtered | Extra       |
@@ -220,7 +220,7 @@ mysql> explain select count(*) from sbtest1;
 
 首先我们查看一下 MySQL 的 innodb_page_size 的大小：
 
-```
+```plaintext
 mysql> show variables like 'Innodb_page_size';
 +------------------+-------+
 | Variable_name    | Value |
@@ -234,7 +234,7 @@ mysql> show variables like 'Innodb_page_size';
 
 统计一下聚簇索引和二级索引占用的空间大小：
 
-```
+```sql
 mysql> select 
     ->   sum(stat_value) pages,
     ->   index_name index_name,

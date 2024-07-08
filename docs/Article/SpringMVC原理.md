@@ -12,9 +12,10 @@
 
 #### 1.1 Tomcat 中的应用部署描述文件 web.xml
 
-```
+```plaintext
 以 Tomcat 作为 Web 容器为例进行分析。在 Tomcat 中，web.xml 是应用的部署描述文件。
 ```
+
 <!-- [1] Spring 配置 -->
 <listener>
     <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
@@ -39,7 +40,8 @@
     <servlet-name>spring</servlet-name>
     <url-pattern>*.do</url-pattern>
 </servlet-mapping>
-```
+
+```java
 \[1\] 处，配置了 org.springframework.web.context.ContextLoaderListener 对象。这是一个 javax.servlet.ServletContextListener 对象，会初始化一个 Root Spring WebApplicationContext 容器。
 \[2\] 处，配置了 org.springframework.web.servlet.DispatcherServlet 对象。这是一个 javax.servlet.http.HttpServlet 对象，它除了拦截我们制定的 \*.do 请求外，也会初始化一个属于它的 Spring WebApplicationContext 容器。并且，这个容器是以 \[1\] 处的 Root 容器作为父容器。
 在 Servlet 容器启动时，例如 Tomcat、Jetty 启动，则会被 ContextLoaderListener 监听到，从而调用 ContextLoaderListener #contextInitialized(ServletContextEvent event) 方法，初始化 Root WebApplicationContext 容器。
@@ -47,7 +49,7 @@
 
 #### 1.2 IOC 容器启动的基本过程
 
-```
+```javascript
 先看下 ContextLoaderListener 的类图：
 ![在这里插入图片描述](assets/4b2e3250-322c-11ea-9a23-3953d44b4f10.jpg)
 org.springframework.web.context.ContextLoaderListener，实现 ServletContextListener 接口，继承 ContextLoader 类，实现 Servlet 容器启动和关闭时，分别初始化和销毁 WebApplicationContext 容器。(注意，这个 ContextLoaderListener 类，是在 spring-web 项目中。)
@@ -61,7 +63,7 @@ public void contextInitialized(ServletContextEvent event) {
     initWebApplicationContext(event.getServletContext());
 }
 
-```
+```plaintext
 跟进到 ContextLoader#initWebApplicationContext() 方法，代码如下：
 ```
 
@@ -134,7 +136,7 @@ public WebApplicationContext initWebApplicationContext(ServletContext servletCon
     }
 }
 
-```
+```plaintext
 ```
 
 - \<1> 处，若已经存在 ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE 对应的 WebApplicationContext 对象，则抛出 IllegalStateException 异常。例如，在 web.xml 中存在多个 ContextLoader。
@@ -148,15 +150,15 @@ public WebApplicationContext initWebApplicationContext(ServletContext servletCon
 - \<4.1> 处，如果未刷新（激活）。默认情况下，是符合这个条件的，所以会往下执行。
 
 - \<4.2> 处，无父容器，则进行加载和设置。默认情况下，ContextLoader#loadParentContext(ServletContext servletContext) 方法，返回 null。代码如下：
-
 ```
-  // ContextLoader.java
+
+// ContextLoader.java
   @Nullable
   protected ApplicationContext loadParentContext(ServletContext servletContext) {
       return null;
   }
-```
 
+```plaintext
   这是一个让子类实现的方法。当然，子类 ContextLoaderListener 并没有重写该方法。所以，实际上，\<4.2> 处的逻辑，可以暂时忽略。
 
 - \<4.3> 处，调用 `#configureAndRefreshWebApplicationContext(ConfigurableWebApplicationContext wac, ServletContext sc)` 方法，配置 ConfigurableWebApplicationContext 对象，并进行刷新。
@@ -172,9 +174,9 @@ public WebApplicationContext initWebApplicationContext(ServletContext servletCon
 - \<9> 处，当发生异常，记录异常到 WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE 中，不再重新初始化。即对应到 \<1> 处的逻辑。
 
   继续跟进到创建 Root WebApplication 的方法，`ContextLoader#createWebApplicationContext()` 方法，代码如下：
-
 ```
-  // ContextLoader.java
+
+// ContextLoader.java
   protected WebApplicationContext createWebApplicationContext(ServletContext sc) {
       // <1> 获得 context 的类
       Class<?> contextClass = determineContextClass(sc);
@@ -186,12 +188,12 @@ public WebApplicationContext initWebApplicationContext(ServletContext servletCon
       // <3> 创建 context 的类的对象
       return (ConfigurableWebApplicationContext) BeanUtils.instantiateClass(contextClass);
   }
-```
 
+```plaintext
   \<1> 处，调用 ContextLoader#determineContextClass(ServletContext servletContext) 方法，获得 context 的类。代码如下：
-
 ```
-  // ContextLoader.java
+
+// ContextLoader.java
   /**
    * Config param for the root WebApplicationContext implementation class to use: {@value}.
    * @see #determineContextClass(ServletContext)
@@ -219,8 +221,8 @@ public WebApplicationContext initWebApplicationContext(ServletContext servletCon
           }
       }
   }
-```
 
+```plaintext
   分成两种情况。前者，从 ServletContext 配置的 context 类；后者，从 ContextLoader.properties 配置的 context 类。
 
   默认情况下，我们不会主动在 ServletContext 配置的 context 类，所以基本是使用 ContextLoader.properties 配置的 context 类，即 XmlWebApplicationContext 类。
@@ -230,9 +232,9 @@ public WebApplicationContext initWebApplicationContext(ServletContext servletCon
   \<3> 处，调用 `BeanUtils#instantiateClass(Class<T> clazz)` 方法，创建 context 的类的对象。
 
   继续跟进到刷新 Root WebApplicationContext 容器的方法，`ContextLoader#configureAndRefreshWebApplicationContext()` 方法，代码如下：
-
 ```
-  // ContextLoader.java
+
+// ContextLoader.java
   /**
    * Config param for the root WebApplicationContext id,
    * to be used as serialization id for the underlying BeanFactory: {@value}.
@@ -278,8 +280,8 @@ public WebApplicationContext initWebApplicationContext(ServletContext servletCon
       // <5> 刷新 context，执行初始化
       wac.refresh();
   }
-```
 
+```plaintext
   此处，注释上即写了 wac，右写了 context，实际上，是等价的东西。下面的文字，我们统一用 wac。
 
   \<1> 处，如果 wac 使用了默认编号，则重新设置 id 属性。默认情况下，我们不会对 wac 设置编号，所以会执行进去。而实际上，id 的生成规则，也分成使用 contextId 在 标签中设置，和自动生成两种情况。默认情况下，会走第二种情况。
@@ -287,22 +289,22 @@ public WebApplicationContext initWebApplicationContext(ServletContext servletCon
   \<2> 处，设置 wac 的 ServletContext 属性。
 
   【关键】\<3> 处，设置 context 的配置文件地址。例如我们在 「1. 概述」 中所看到的。
-
 ```
-  <context-param>
+
+<context-param>
       <param-name>contextConfigLocation</param-name>
       <param-value>classpath:config/applicationContext.xml</param-value>
   </context-param>
-```
 
+```javascript
   \<4> 处，调用 #customizeContext(ServletContext sc, ConfigurableWebApplicationContext wac) 方法，执行自定义初始化 wac。 【关键】\<5> 处， 刷新 wac，执行初始化。此处，就会进行一些的 Spring 容器的初始化。
 
 ### 二、DispatcherServlet 的启动和初始化
-
 ```
+
 回过头来看一眼 web.xml 的配置。代码如下：
-```
 
+```plaintext
 <servlet>
     <servlet-name>spring</servlet-name>
     <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
@@ -318,11 +320,12 @@ public WebApplicationContext initWebApplicationContext(ServletContext servletCon
     <url-pattern>*.do</url-pattern>
 </servlet-mapping>
 ```
+
 即， Servlet WebApplicationContext 容器的初始化，是在 DispatcherServlet 初始化的过程中执行。
 DispatcherServlet 的类图如下：
 ![在这里插入图片描述](assets/584a3d50-3234-11ea-b8e0-e5f2366b7ae1.jpg)
-```
 
+```javascript
 - HttpServletBean，负责将 ServletConfig 设置到当前 Servlet 对象中。
 
 - FrameworkServlet，负责初始化 Spring Servlet——WebApplicationContext 容器。
@@ -332,11 +335,11 @@ DispatcherServlet 的类图如下：
   每一层的 Servlet 实现类，执行对应负责的逻辑，下面我们逐个类来进行解析。
 
 #### 2.1 HttpServletBean
-
 ```
+
 HttpServletBean#init() 方法负责将 ServletConfig 设置到当前 Servlet 对象中。代码如下：
-```
 
+```java
 // HttpServletBean.java
 @Override
 public final void init() throws ServletException {
@@ -365,12 +368,12 @@ public final void init() throws ServletException {
     // <3> 子类来实现，实现自定义的初始化逻辑。目前，有具体的代码实现。
     initServletBean();
 }
-
 ```
+
 <1> 处，解析 Servlet 配置的 标签，封装到 PropertyValues pvs 中。其中，ServletConfigPropertyValues 是 HttpServletBean 的私有静态类，继承 MutablePropertyValues 类，ServletConfig 的 PropertyValues 封装实现类。代码如下：
 代码简单，实现两方面的逻辑：第一，遍历 ServletConfig 的初始化参数集合，添加到 ServletConfigPropertyValues 中；第二，判断要求的属性是否齐全。如果不齐全，则抛出 ServletException 异常。
-```
 
+```java
 // HttpServletBean.java
 private static class ServletConfigPropertyValues extends MutablePropertyValues {
     /**
@@ -407,13 +410,13 @@ private static class ServletConfigPropertyValues extends MutablePropertyValues {
         }
     }
 }
-
 ```
+
 <2.1> 处，将当前的这个 Servlet 对象，转化成一个 BeanWrapper 对象。从而能够以 Spring 的方式来将 pvs 注入到该 BeanWrapper 对象中。简单来说，BeanWrapper 是 Spring 提供的一个用来操作 Java Bean 属性的工具，使用它可以直接修改一个对象的属性。
 <2.2> 处，注册自定义属性编辑器，一旦碰到 Resource 类型的属性，将会使用 ResourceEditor 进行解析。
 <2.3> 处，空实现，留给子类覆盖。代码如下：
-```
 
+```java
 // HttpServletBean.java
 /**
 
@@ -426,12 +429,12 @@ private static class ServletConfigPropertyValues extends MutablePropertyValues {
  */
 protected void initBeanWrapper(BeanWrapper bw) throws BeansException {
 }
-
 ```
+
 然而实际上，子类暂时木有任何实现。
 <2.4> 处，以 Spring 的方式来将 pvs 注入到该 BeanWrapper 对象中，即设置到当前 Servlet 对象中。可能比较费解，我们还是举个例子。假设如下：
-```
 
+```plaintext
 // web.xml
 <servlet>
     <servlet-name>spring</servlet-name>
@@ -446,11 +449,11 @@ protected void initBeanWrapper(BeanWrapper bw) throws BeansException {
     <servlet-name>spring</servlet-name>
     <url-pattern>*.do</url-pattern>
 </servlet-mapping>
-
 ```
+
 此处有配置了 contextConfigLocation 属性，那么通过 <2.4> 处的逻辑，会反射设置到 FrameworkServlet.contextConfigLocation 属性。代码如下：
-```
 
+```java
 // FrameworkServlet.java
 /** Explicit context config location. */
 @Nullable
@@ -458,26 +461,27 @@ private String contextConfigLocation;
 public void setContextConfigLocation(@Nullable String contextConfigLocation) {
     this.contextConfigLocation = contextConfigLocation;
 }
-
 ```
+
 看懂了这波骚操作了么？
 <3> 处，调用 #initServletBean() 方法，子类来实现，实现自定义的初始化逻辑。目前，FrameworkServlet 实现类该方法。代码如下：
-```
 
+```java
 // HttpServletBean.java
 protected void initServletBean() throws ServletException {
 }
-
-```
 ```
 
+
+
+```plaintext
 #### 2.2 FrameworkServlet
-
 ```
+
 org.springframework.web.servlet.FrameworkServlet，实现 ApplicationContextAware 接口，继承 HttpServletBean 抽象类，负责初始化 Spring Servlet WebApplicationContext 容器。同时，FrameworkServlet 自身也是一个抽象类。
 跟进到 FrameworkServlet#initServletBean() 方法，进一步初始化当前 Servlet 对象。实际上，重心在初始化 Servlet WebApplicationContext 容器。代码如下：
-```
 
+```java
 // FrameworkServlet.java
 @Override
 protected final void initServletBean() throws ServletException {
@@ -510,12 +514,12 @@ protected final void initServletBean() throws ServletException {
         logger.info("Completed initialization in " + (System.currentTimeMillis() - startTime) + " ms");
     }
 }
-
 ```
+
 <1> 处，调用 #initWebApplicationContext() 方法，初始化 Servlet WebApplicationContext 对象。
 <2> 处，调用 #initFrameworkServlet() 方法，空实现。子类有需要，可以实现该方法，实现自定义逻辑。代码如下：
-```
 
+```java
 // FrameworkServlet.java
 /**
 
@@ -526,12 +530,12 @@ protected final void initServletBean() throws ServletException {
  */
 protected void initFrameworkServlet() throws ServletException {
 }
-
 ```
+
 然而实际上，并没有子类，对该方法重新实现。
 继续跟进到 FrameworkServlet#initWebApplicationContext() 方法，初始化 Servlet WebApplicationContext 对象。代码如下： 这个方法的逻辑并不复杂，但是涉及调用的方法的逻辑比较多。同时，也是本文最最最核心的方法了。
-```
 
+```java
 // FrameworkServlet.java
 protected WebApplicationContext initWebApplicationContext() {
     // <1> 获得 Root WebApplicationContext 对象
@@ -588,13 +592,13 @@ protected WebApplicationContext initWebApplicationContext() {
     }
     return wac;
 }
-
 ```
+
 <1> 处，调用 WebApplicationContextUtils#getWebApplicationContext((ServletContext sc) 方法，获得 Root WebApplicationContext 对象。
 <2> 处，获得 WebApplicationContext wac 变量。下面，会分成三种情况：第一种情况，如果构造方法已经传入 webApplicationContext 属性，则直接使用、第二种情况，从 ServletContext 获取对应的 WebApplicationContext 对象、第三种，创建一个 WebApplicationContext 对象。
 <3> 处，如果未触发刷新事件，则调用 FrameworkServlet#onRefresh(ApplicationContext context) 主动触发刷新事件。另外，refreshEventReceived 属性，定义如下：
-```
 
+```java
 / FrameworkServlet.java
 /**
 
@@ -603,12 +607,12 @@ protected WebApplicationContext initWebApplicationContext() {
 - 标记是否接收到 ContextRefreshedEvent 事件。即 {@link #onApplicationEvent(ContextRefreshedEvent)}
  */
 private boolean refreshEventReceived = false;
-
 ```
+
 <4> 处，如果 publishContext 为 true 时，则将 context 设置到 ServletContext 中。（`key = FrameworkServlet.class.getName() + ".CONTEXT."`、`value = wac`）
 继续跟进到 FrameworkServlet#onRefresh() 方法，当 Servlet WebApplicationContext 刷新完成后，会触发 Spring MVC 组件的初始化。代码如下：
-```
 
+```java
 // FrameworkServlet.java
 /**
 
@@ -621,11 +625,11 @@ private boolean refreshEventReceived = false;
 protected void onRefresh(ApplicationContext context) {
     // For subclasses: do nothing by default.
 }
-
 ```
+
 这是一个空方法，具体的实现，在子类 DispatcherServlet 中。代码如下：
-```
 
+```java
 // DispatcherServlet.java
 /**
 
@@ -660,16 +664,17 @@ protected void initStrategies(ApplicationContext context) {
     // 初始化 FlashMapManager
     initFlashMapManager(context);
 }
-
-```
 ```
 
+
+
+```plaintext
 #### 2.3 DispatcherServlet
-
 ```
+
 DispatcherServlet#initStrategies(ApplicationContext context) 方法，初始化 Spring MVC 的各种组件。代码如下：
-```
 
+```java
 // DispatcherServlet.java
 /** MultipartResolver used by this servlet. */
 @Nullable
@@ -731,19 +736,19 @@ protected void initStrategies(ApplicationContext context) {
     // 初始化 FlashMapManager
     initFlashMapManager(context);
 }
-
 ```
+
 一共有 9 个组件。下面，我们对这 9 个组件，做一个简单的介绍。
-```
 
+```plaintext
 ##### **2.3.1 MultipartResolver**
-
 ```
+
 org.springframework.web.multipart.MultipartResolver，内容类型（Content-Type）为 multipart/\* 的请求的解析器接口。
 例如，文件上传请求，MultipartResolver 会将 HttpServletRequest 封装成 MultipartHttpServletRequest，这样从 MultipartHttpServletRequest 中获得上传的文件。
 MultipartResolver 接口，代码如下：
-```
 
+```java
 // MultipartResolver.java
 public interface MultipartResolver {
     /**
@@ -760,16 +765,17 @@ public interface MultipartResolver {
      */
     void cleanupMultipart(MultipartHttpServletRequest request);
 }
-
-```
 ```
 
+
+
+```plaintext
 ##### **2.3.2 LocaleResolver**
-
 ```
+
 org.springframework.web.servlet.LocaleResolver，本地化（国际化）解析器接口。代码如下：
-```
 
+```java
 // LocaleResolver.java
 public interface LocaleResolver {
     /**
@@ -781,16 +787,17 @@ public interface LocaleResolver {
      */
     void setLocale(HttpServletRequest request, @Nullable HttpServletResponse response, @Nullable Locale locale);
 }
-
-```
 ```
 
+
+
+```plaintext
 ##### **2.3.3 ThemeResolver**
-
 ```
+
 org.springframework.web.servlet.ThemeResolver，主题解析器接口。代码如下：
-```
 
+```java
 // ThemeResolver.java
 public interface ThemeResolver {
     /**
@@ -802,17 +809,17 @@ public interface ThemeResolver {
      */
     void setThemeName(HttpServletRequest request, @Nullable HttpServletResponse response, @Nullable String themeName);
 }
-
 ```
+
 当然，因为现在的前端，基本和后端做了分离，所以这个功能已经越来越少用了。
-```
 
+```plaintext
 ##### **2.3.4 HandlerMapping**
-
 ```
+
 org.springframework.web.servlet.HandlerMapping，处理器匹配接口，根据请求（handler）获得其的处理器（handler）和拦截器们（HandlerInterceptor 数组）。代码如下：
-```
 
+```java
 // HandlerMapping.java
 public interface HandlerMapping {
     String PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE = HandlerMapping.class.getName() + ".pathWithinHandlerMapping";
@@ -827,11 +834,11 @@ public interface HandlerMapping {
     @Nullable
     HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception;
 }
-
 ```
+
 返回的对象类型是 HandlerExecutionChain，它包含处理器（handler）和拦截器们（HandlerInterceptor 数组）。简单代码如下：
-```
 
+```java
 // HandlerExecutionChain.java
 /**
 
@@ -843,17 +850,17 @@ private final Object handler;
  */
 @Nullable
 private HandlerInterceptor[] interceptors;
-
 ```
+
 注意，处理器的类型可能和我们想的不太一样，是个 Object 类型。
-```
 
+```plaintext
 ##### **2.3.5 HandlerAdapter**
-
 ```
+
 org.springframework.web.servlet.HandlerAdapter，处理器适配器接口。代码如下：
-```
 
+```java
 // HandlerAdapter.java
 public interface HandlerAdapter {
     /**
@@ -872,18 +879,18 @@ public interface HandlerAdapter {
      */
     long getLastModified(HttpServletRequest request, Object handler);
 }
-
 ```
+
 因为，处理器 handler 的类型是 Object 类型，需要有一个调用者来实现 handler 是怎么被使用，怎么被执行。而 HandlerAdapter 的用途就在于此。可能如果接口名改成 HandlerInvoker，笔者觉得会更好理解。
 三个接口，代码比较好理解，胖友瞅一眼，就不细讲了。
-```
 
+```plaintext
 ##### **2.3.6 HandlerExceptionResolver**
-
 ```
+
 org.springframework.web.servlet.HandlerExceptionResolver，处理器异常解析器接口，将处理器（handler）执行时发生的异常，解析（转换）成对应的 ModelAndView 结果。代码如下：
-```
 
+```java
 // HandlerExceptionResolver.java
 public interface HandlerExceptionResolver {
     /**
@@ -893,16 +900,17 @@ public interface HandlerExceptionResolver {
     ModelAndView resolveException(
             HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex);
 }
-
-```
 ```
 
+
+
+```plaintext
 ##### **2.3.7 RequestToViewNameTranslator**
-
 ```
+
 org.springframework.web.servlet.RequestToViewNameTranslator，请求到视图名的转换器接口。代码如下：
-```
 
+```java
 // RequestToViewNameTranslator.java
 public interface RequestToViewNameTranslator {
     /**
@@ -911,17 +919,17 @@ public interface RequestToViewNameTranslator {
     @Nullable
     String getViewName(HttpServletRequest request) throws Exception;
 }
-
 ```
+
 粗略这么一看，有点不太好理解。捉摸了一下，还是放在后面一起讲解源码的时候，在详细讲解。
-```
 
+```plaintext
 ##### **2.3.8 ViewResolver**
-
 ```
+
 org.springframework.web.servlet.ViewResolver，实体解析器接口，根据视图名和国际化，获得最终的视图 View 对象。代码如下：
-```
 
+```java
 // ViewResolver.java
 public interface ViewResolver {
     /**
@@ -930,17 +938,17 @@ public interface ViewResolver {
     @Nullable
     View resolveViewName(String viewName, Locale locale) throws Exception;
 }
-
 ```
+
 ViewResolver 的实现类比较多，例如说，InternalResourceViewResolver 负责解析 JSP 视图，FreeMarkerViewResolver 负责解析 Freemarker 视图。当然，详细的，我们后续文章解析。
-```
 
+```plaintext
 ##### **2.3.9 FlashMapManager**
-
 ```
+
 org.springframework.web.servlet.FlashMapManager，FlashMap 管理器接口，负责重定向时，保存参数到临时存储中。代码如下：
-```
 
+```java
 // FlashMapManager.java
 public interface FlashMapManager {
     /**
@@ -953,30 +961,30 @@ public interface FlashMapManager {
      */
     void saveOutputFlashMap(FlashMap flashMap, HttpServletRequest request, HttpServletResponse response);
 }
-
 ```
+
 默认情况下，这个临时存储会是 Session。也就是说：
-```
 
+```plaintext
 - 重定向前，保存参数到 Seesion 中。
 - 重定向后，从 Session 中获得参数，并移除。
 - 实际场景下，使用的非常少，特别是前后端分离之后。
 
 ### 三、MVC 是怎么处理 HTTP 分发请求的
-
 ```
+
 一个用户的请求，是如何被 DispatcherServlet 处理的。如下图所示：
 ![在这里插入图片描述](assets/2480b4f0-323d-11ea-924d-0fd6db928ace.jpg)
 摘自《Spring MVC 原理探秘——一个请求的旅行过程》
 整体流程实际不复杂，但是涉及的全部代码会非常多，所以下面重点在于解析整体的流程。
-```
 
+```plaintext
 #### 3.1 不同 HttpMethod 的请求处理
-
 ```
+
 从整体流程图，我们看到请求首先是被 DispatcherServlet 所处理，但是实际上，FrameworkServlet 才是真正的入门。FrameworkServlet 会实现：
-```
 
+```plaintext
 # doGet(HttpServletRequest request, HttpServletResponse response)
 # doPost(HttpServletRequest request, HttpServletResponse response)
 # doPut(HttpServletRequest request, HttpServletResponse response)
@@ -984,12 +992,12 @@ public interface FlashMapManager {
 # doOptions(HttpServletRequest request, HttpServletResponse response)
 # doTrace(HttpServletRequest request, HttpServletResponse response)
 # service(HttpServletRequest request, HttpServletResponse response)
-
 ```
+
 等方法。而这些实现，最终会调用 `#processRequest(HttpServletRequest request, HttpServletResponse response)` 方法，处理请求。
 `FrameworkServlet#service(HttpServletRequest request, HttpServletResponse response)` 方法，代码如下：
-```
 
+```java
 // FrameworkServlet.java
 @Override
 protected void service(HttpServletRequest request, HttpServletResponse response)
@@ -1004,13 +1012,13 @@ protected void service(HttpServletRequest request, HttpServletResponse response)
         super.service(request, response);
     }
 }
-
 ```
+
 <1> 处，获得请求方法。
 <2.1> 处，若请求方法是 HttpMethod.PATCH，调用 #processRequest(HttpServletRequest request, HttpServletResponse response) 方法，处理请求。因为 HttpServlet 默认没提供 #doPatch(HttpServletRequest request, HttpServletResponse response) 方法，所以只能通过父类的 #service(...) 方法，从而实现。另外，关于 processRequest 的详细解析，见 「2.2 processRequest」。
 <2.2> 处，其它类型的请求方法，还是调用父类的 HttpServlet#service(HttpServletRequest request, HttpServletResponse response) 方法，进行处理。代码如下：
-```
 
+```java
 // HttpServlet.java
 protected void service(HttpServletRequest req, HttpServletResponse resp)
     throws ServletException, IOException {
@@ -1059,17 +1067,17 @@ protected void service(HttpServletRequest req, HttpServletResponse resp)
         resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, errMsg);
     }
 }
-
 ```
+
 可能会有胖友有疑惑，为什么不在 `#service(HttpServletRequest request, HttpServletResponse response)` 方法，直接调用 `#processRequest(HttpServletRequest request, HttpServletResponse response)` 方法就好列？因为针对不同的请求方法，处理略微有所不同。
-```
 
+```plaintext
 #### 3.2 针对 doGet & doPost & doPut & doDelete 请求方式的处理
-
 ```
+
 这四个方法，都是直接调用 `#processRequest(HttpServletRequest request, HttpServletResponse response)` 方法，处理请求。代码如下：
-```
 
+```java
 // FrameworkServlet.java
 @Override
 protected final void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -1091,15 +1099,17 @@ protected final void doDelete(HttpServletRequest request, HttpServletResponse re
         throws ServletException, IOException {
     processRequest(request, response);
 }
-
-```
 ```
 
+
+
+```plaintext
 #### 3.3 针对 doOptions 请求的处理
-
-```
 ```
 
+
+
+```java
 // FrameworkServlet.java
 /** Should we dispatch an HTTP OPTIONS request to {@link #doService}?. */
 private boolean dispatchOptionsRequest = false;
@@ -1135,16 +1145,17 @@ protected void doOptions(HttpServletRequest request, HttpServletResponse respons
         }
     });
 }
-
 ```
+
 OPTIONS 请求方法，实际场景下用的少。
-```
 
+```plaintext
 #### 3.4 针对 doTrace 请求的处理
-
-```
 ```
 
+
+
+```java
 // FrameworkServlet.java
 /** Should we dispatch an HTTP TRACE request to {@link #doService}?. */
 private boolean dispatchTraceRequest = false;
@@ -1170,17 +1181,17 @@ protected void doTrace(HttpServletRequest request, HttpServletResponse response)
     // 调用父方法
     super.doTrace(request, response);
 }
-
 ```
+
 TRACE 请求方法，实际场景下用的少。
-```
 
+```plaintext
 #### 3.5 处理请求
-
 ```
+
 `#processRequest(HttpServletRequest request, HttpServletResponse response)` 方法，处理请求。代码如下：
-```
 
+```java
 // FrameworkServlet.java
 protected final void processRequest(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException {
@@ -1215,16 +1226,17 @@ protected final void processRequest(HttpServletRequest request, HttpServletRespo
         publishRequestHandledEvent(request, response, startTime, failureCause);
     }
 }
-
-```
 ```
 
+
+
+```javascript
 #### 3.6 DispatcherServlet 处理请求
-
 ```
+
 `#doService(HttpServletRequest request, HttpServletResponse response)` 方法，DispatcherServlet 的处理请求的入口方法，代码如下：
-```
 
+```java
 // DispatcherServlet.java
 @Override
 protected void doService(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -1270,16 +1282,17 @@ protected void doService(HttpServletRequest request, HttpServletResponse respons
         }
     }
 }
-
-```
 ```
 
+
+
+```plaintext
 #### 3.7 请求的分发
-
 ```
+
 跟进到 DispatcherServlet#doDispatch() 方法，执行请求的分发。代码如下：
-```
 
+```java
 // DispatcherServlet.java
 protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
     HttpServletRequest processedRequest = request;
@@ -1359,12 +1372,12 @@ protected void doDispatch(HttpServletRequest request, HttpServletResponse respon
         }
     }
 }
-
 ```
+
 <2> 处，调用 `#checkMultipart(HttpServletRequest request)` 方法，检查是否是上传请求。如果是，则封装成 MultipartHttpServletRequest 对象。
 <3> 处，调用 `#getHandler(HttpServletRequest request)` 方法，返回请求对应的是 HandlerExecutionChain 对象，它包含处理器（handler）和拦截器们（HandlerInterceptor 数组）。代码如下：
-```
 
+```java
 // DispatcherServlet.java
 /** List of HandlerMappings used by this servlet. */
 @Nullable
@@ -1384,12 +1397,12 @@ protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Ex
     }
     return null;
 }
-
 ```
+
 <3.1> 处，如果获取不到，则调用 `#noHandlerFound(HttpServletRequest request, HttpServletResponse response)` 根据配置抛出异常或返回 404 错误。
 <4> 处，调用 `#getHandlerAdapter(Object handler)` 方法，获得当前 handler 对应的 HandlerAdapter 对象。代码如下：
-```
 
+```java
 // DispatcherServlet.java
 /** List of HandlerAdapters used by this servlet. */
 @Nullable
@@ -1409,13 +1422,13 @@ protected HandlerAdapter getHandlerAdapter(Object handler) throws ServletExcepti
     throw new ServletException("No adapter for handler [" + handler +
             "]: The DispatcherServlet configuration needs to include a HandlerAdapter that supports this handler");
 }
-
 ```
+
 【前置拦截器】<5> 处，调用 `HandlerExecutionChain#applyPreHandle(HttpServletRequest request, HttpServletResponse response)` 方法，拦截器的前置处理，即调用 `HandlerInterceptor#preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)` 方法。
 【Controller】<6> 处，调用 `HandlerAdapter#handle(HttpServletRequest request, HttpServletResponse response, Object handler)` 方法，真正的调用 handler 方法，并返回视图。这里，一般就会调用我们定义的 Controller 的方法。
 <8> 处，调用 `#applyDefaultViewName(HttpServletRequest request, ModelAndView mv)` 方法，当无视图的情况下，设置默认视图。代码如下：
-```
 
+```java
 // DispatcherServlet.java
 /** RequestToViewNameTranslator used by this servlet. */
 @Nullable
@@ -1435,28 +1448,29 @@ protected String getDefaultViewName(HttpServletRequest request) throws Exception
     // 从请求中，获得视图
     return (this.viewNameTranslator != null ? this.viewNameTranslator.getViewName(request) : null);
 }
-
 ```
+
 【后置拦截器】<9> 处，调用 `HandlerExecutionChain#applyPostHandle(HttpServletRequest request, HttpServletResponse response, ModelAndView mv)`` 方法，拦截器的后置处理，即调用 HandlerInterceptor#postHandle(HttpServletRequest request, HttpServletResponse response, Object handler)` 方法。
 <10> 处，记录异常。注意，此处仅仅记录，不会抛出异常，而是统一交给 <11> 处理。
 <11> 处，调用 `#processDispatchResult(HttpServletRequest request, HttpServletResponse response, HandlerExecutionChain mappedHandler, ModelAndView mv, Exception exception)` 方法，处理正常和异常的请求调用结果。注意，正常的、异常的，都会进行处理。
 【已完成拦截器】<12> 处，调用 `#triggerAfterCompletion(HttpServletRequest request, HttpServletResponse response, HandlerExecutionChain mappedHandler, Exception ex)` 方法，拦截器的已完成处理，即调用 `HandlerInterceptor#triggerAfterCompletion(HttpServletRequest request, HttpServletResponse response, Exception ex)` 方法。
 <13> 处，如果是上传请求，则调用 `#cleanupMultipart(HttpServletRequest request)` 方法，清理资源。
-```
 
+```plaintext
 ### 四、MVC 视图的呈现
 
 #### 4.1 处理请求响应的结果数据
-
-```
 ```
 
+
+
+```plaintext
 DispatcherServlet#processDispatchResult(HttpServletRequest request, HttpServletResponse response, HandlerExecutionChain mappedHandler, ModelAndView mv, Exception exception)
-
 ```
+
 方法，处理正常和异常的请求调用结果。代码如下：
-```
 
+```java
 // DispatcherServlet.java
 private void processDispatchResult(HttpServletRequest request, HttpServletResponse response,
         @Nullable HandlerExecutionChain mappedHandler, @Nullable ModelAndView mv,
@@ -1500,14 +1514,14 @@ private void processDispatchResult(HttpServletRequest request, HttpServletRespon
         mappedHandler.triggerAfterCompletion(request, response, null);
     }
 }
-
 ```
+
 <1> 处，errorView 属性，标记是否是生成的 ModelAndView 对象。
 <2> 处，如果是否异常的结果。
 <2.1> 处，情况一，从 ModelAndViewDefiningException 中获得 ModelAndView 对象。
 <2.2> 处，情况二，调用 `#processHandlerException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)` 方法，处理异常，生成 ModelAndView 对象。代码如下：
-```
 
+```java
 // DispatcherServlet.java
 @Nullable
 protected ModelAndView processHandlerException(HttpServletRequest request, HttpServletResponse response,
@@ -1558,21 +1572,21 @@ protected ModelAndView processHandlerException(HttpServletRequest request, HttpS
     // 情况二，未生成 ModelAndView 对象，则抛出异常
     throw ex;
 }
-
 ```
+
 处，遍历 HandlerExceptionResolver 数组，调用 HandlerExceptionResolver#resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) 方法，解析异常，生成 ModelAndView 对象。 **处，情况一，生成了 ModelAndView 对象，进行返回。当然，这里的后续代码还有 10 多行，比较简单，胖友自己瞅瞅就 OK 啦。** **
 处，情况二，未生成 ModelAndView 对象，则抛出异常。
 <3.1> 处，调用 `#render(ModelAndView mv, HttpServletRequest request, HttpServletResponse response)` 方法，渲染页面。
 <3.2> 处，当是 <2> 处的情况二时，则调用 `WebUtils#clearErrorRequestAttributes(HttpServletRequest request)` 方法，清理请求中的错误消息属性。为什么会有这一步呢？答案在 `#processHandlerException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)` 方法中，会调用 `WebUtils#exposeErrorRequestAttributes(HttpServletRequest request, Throwable ex, String servletName)` 方法，设置请求中的错误消息属性。
 <4> 处，TODO 【拦截器】<5> 处，调用 `#triggerAfterCompletion(HttpServletRequest request, HttpServletResponse response, HandlerExecutionChain mappedHandler, Exception ex)` 方法，拦截器的已完成处理，即调用 `HandlerInterceptor#triggerAfterCompletion(HttpServletRequest request, HttpServletResponse response, Exception ex)` 方法。
-```
 
+```plaintext
 #### 4.2 渲染页面
-
 ```
+
 跟进到 `DispatcherServlet#render(ModelAndView mv, HttpServletRequest request, HttpServletResponse response)` 方法，渲染 ModelAndView。代码如下：
-```
 
+```java
 // DispatcherServlet.java
 protected void render(ModelAndView mv, HttpServletRequest request, HttpServletResponse response) throws Exception {
     // Determine locale for request and apply it to the response.
@@ -1620,13 +1634,13 @@ protected void render(ModelAndView mv, HttpServletRequest request, HttpServletRe
         throw ex;
     }
 }
-
 ```
+
 <1> 处，调用 `LocaleResolver#resolveLocale(HttpServletRequest request)` 方法，从 request 中获得 Locale 对象，并设置到 response 中。
 <2> 处，获得 View 对象。分成两种情况，代码比较简单，胖友自己瞅瞅。
 <2.1> 处，调用 `#resolveViewName(String viewName, Map<String, Object> model, Locale locale, HttpServletRequest request)` 方法，使用 viewName 获得 View 对象。代码如下：
-```
 
+```java
 // DispatcherServlet.java
 @Nullable
 protected View resolveViewName(String viewName, @Nullable Map<String, Object> model,
@@ -1645,15 +1659,15 @@ protected View resolveViewName(String viewName, @Nullable Map<String, Object> mo
     // 返回空
     return null;
 }
-
 ```
+
 <3> 处，设置响应的状态码。
 <4> 处，调用 `View#render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response)` 方法，渲染视图。
-```
 
+```plaintext
 ### 总结
-
 ```
+
 Spring MVC 的初始化及请求分发处理请求的流程总结：
 ```
 

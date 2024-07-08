@@ -407,7 +407,9 @@ public class MyTest {
 - **整个堆内存大小** `-Xms`（初始堆大小）、`-Xmx`（最大堆大小），为了防止垃圾收集器在最小、最大之间收缩堆而产生额外的时间，我们通常把最大、最小设置为相同的值。
 - **新生代空间大小** NewRadio：年轻代和年老代将根据默认的比例（1:2）分配堆内存，建议设置为 2 到 4，可以通过调整二者之间的比率 NewRadio 来调整二者之间的大小。也可以针对回收代，比如年轻代，通过 `-XX:newSize -XX:MaxNewSize` 来设置其绝对大小。同样，为了防止年轻代的堆收缩，我们通常会把 `-XX:newSize -XX:MaxNewSize` 设置一样大小。
 - **方法区（元空间）** JDK 1.8：`-XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=256m`，根据实际情况调整， 可以使用命令 `jstat -gcutil pid` 查看当前使用率，M 对应的列，根据使用率来定制一个具体的值，建议两个值设置成同样大小。JDK 1.7：`-XX:MaxPermSize=256m -XX:MaxPermSize=256m` 永久带。
-- **GC 日志** ```log
+- **GC 日志** 
+
+```log
   -Xloggc:CATALINA_BASE/logs/gc.log
   -XX:+PrintGCDetails
   -XX:+PrintGCDateStamps
@@ -599,20 +601,23 @@ HTTP 协议的长连接和短连接，实质上是 TCP 协议的长连接和短�
 ### 2. JDBC 编程有哪些步骤？
 
 - 1. 装载相应的数据库的 JDBC 驱动并进行初始化：
+```
 
-```java
+java
 Class.forName("com.mysql.jdbc.Driver"); 
-```
 
+```plaintext
 - 2. 建立 JDBC 和数据库之间的 Connection 连接：
-
-```java
-Connection c = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/test?characterEncoding=UTF-8", "root", "123456");
 ```
 
-- 3. 创建 Statement 或者 PreparedStatement 接口，执行 SQL 语句：
+java
+Connection c = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/test?characterEncoding=UTF-8", "root", "123456");
 
-```java
+```plaintext
+- 3. 创建 Statement 或者 PreparedStatement 接口，执行 SQL 语句：
+```
+
+java
     //查询用户信息
     public List<User> findUserList(){
         String sql = "select * from t_user order by user_id";
@@ -644,8 +649,8 @@ Connection c = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/test?cha
         }
          return userList;
     }
-```
 
+```java
 - 4. 处理和显示结果。
 - 5. 释放资源。
 
@@ -658,23 +663,26 @@ MyBatis 为我们提供了两种支持动态 SQL 的语法：`##{}` 以及 `${}`
 ### 4. MyBatis 中比如 UserMapper.java 是接口，为什么没有实现类还能调用？
 
 UserMapper.xml 中：
+```
 
-```xml
+xml
 <mapper namespace="com.tian.UserMapper">
-```
 
+```plaintext
 反射生成 namespace 的对象：
+```
 
-```java
+java
 boundType = Resources.classForName(namespace);
-```
 
+```plaintext
 JDK 动态代理：
-
-```java
- Proxy.newProxyInstance(mapperInterface.getClassLoader(), new Class[]{mapperInterface}, mapperProxy);
 ```
 
+java
+ Proxy.newProxyInstance(mapperInterface.getClassLoader(), new Class[]{mapperInterface}, mapperProxy);
+
+```plaintext
 总结：XML 中的 `namespace="com.user.UserMapper"` 接口 com.user.UserMapper 本身反射 JDK 动态代理实现接口。
 
 ### 5. MyBatis 中见过什么设计模式？
@@ -684,11 +692,12 @@ JDK 动态代理：
 ## 五、MySQL 篇
 
 ### 1. 简单说说在 MySQL 中执行依据查询 SQL 是如何执行的？
-
-```sql
-select name from t_user where id=1
 ```
 
+sql
+select name from t_user where id=1
+
+```java
 1. **取得链接** ，使用使用到 MySQL 中的连接器。
 2. **查询缓存** ，key 为 SQL 语句，value 为查询结果，如果查到就直接返回。不建议使用次缓存，在 MySQL 8.0 版本已经将查询缓存删除，也就是说 MySQL 8.0 版本后不存在此功能。
 3. **分析器** ，分为词法分析和语法分析。此阶段只是做一些 SQL 解析，语法校验。所以一般语法错误在此阶段。
@@ -1113,8 +1122,9 @@ Codis 是一个代理中间件，当客户端向 Codis 发送指令时，Codis �
 
 @SpringBootApplication 注解，就是 Spring Boot 的核心注解。
 @SpringBootApplication 源码：
+```
 
-```java
+java
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -1133,8 +1143,8 @@ public @interface SpringBootApplication {
     @AliasFor(annotation = ComponentScan.class,attribute = "basePackageClasses")
     Class<?>[] scanBasePackageClasses() default {};
 }
-```
 
+```java
 这个注解主要由三个注解组合：
 
 1. @Configuration 注解，指定类是 Bean 定义的配置类。来自 spring-context 项目，用于 Java Config，不是 Spring Boot 新带来的。
@@ -1460,8 +1470,9 @@ Leader 服务器会和每一个 Follower/Observer 服务器都建立 TCP 连接�
 调用 start 方法表示启动一个线程。
 
 **面试扩散** 下面代码将输出什么内容？不清楚的建议自己去试试。
+```
 
-```java
+java
 public class ThreadDemo {
     public static void main(String[] args) {
         Thread thread=new Thread(new Runnable() {
@@ -1474,15 +1485,16 @@ public class ThreadDemo {
         thread.start();
     }
 }
-```
 
+```java
 ### 11. 说一下 Java 创建线程池有哪些方式？
 
 通过 java.util.concurrent.Executors 来创建以下常见线程池：
 ![在这里插入图片描述](assets/ef2c3460-61e8-11ea-a96d-0d011f52751a.jpg)
 也可以通过 java.util.concurrent.ThreadPoolExecutor 来创建自定义线程池，其中核心的几个参数：
+```
 
-```java
+java
 int corePoolSize, //核心线程数量
 int maximumPoolSize, //最大线程数
 long keepAliveTime, //超时时间,超出核心线程数量以外的线程空余存活时间

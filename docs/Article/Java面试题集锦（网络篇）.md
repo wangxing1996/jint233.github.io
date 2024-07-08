@@ -33,7 +33,7 @@ HTTP 响应码是 Web 服务器告诉客户端当前服务器的运行状况的�
 
 script、img、iframe、link、video、audio 等带有 src 属性的标签可以跨域请求和执行资源，JSONP 利用这一点“漏洞”实现跨域。
 
-```
+```java
 <script>
     var scriptTag = document.createElement('script');
     scriptTag.type = "text/javascript";
@@ -44,7 +44,7 @@ script、img、iframe、link、video、audio 等带有 src 属性的标签可以
 
 再看下 jQuery 的写法。
 
-```
+```javascript
 $.ajax({
     // 请求域名
     url:'http://10.10.0.101:8899/login',
@@ -63,7 +63,7 @@ function callback(response) {
 
 JSONP 实现跨域很简单但是只支持 GET 请求方式。而且在服务器端接受到 JSONP 请求后需要设置请求头，添加 Access-Control-Allow-Origin 属性，属性值为 `*`，表示允许所有域名访问，这样浏览器才会正常解析，否则会报 406 错误。
 
-```
+```plaintext
 response.setHeader("Access-Control-Allow-Origin", "*");
 ```
 
@@ -75,8 +75,7 @@ CORS（Cross-Origin Resource Sharing）即跨域资源共享，需要浏览器�
 
 对于简单的请求，浏览器会在请求头中添加 Origin 属性，标明本次请求来自哪个源（协议 + 域名 + 端口）。
 
-```
-GET
+```GET
 // 标明本次请求来自哪个源（协议+域名+端口）
 Origin: http://127.0.0.1:8080
 // IP
@@ -88,7 +87,7 @@ Content-Type: text/plain
 
 如果 Origin 标明的域名在服务器许可范围内，那么服务器就会给出响应：
 
-```
+```plaintext
   // 该值上文提到过，表示允许浏览器指定的域名访问，要么为浏览器传入的 origin，要么为 * 表示所有域名都可以访问
   Access-Control-Allow-Origin: http://127.0.0.1:8080
   // 表示服务器是否同意浏览器发送 cookie
@@ -100,7 +99,7 @@ Content-Type: text/plain
 
 `Access-Control-Allow-Credentials: true` 表示服务器同意浏览器发送 cookie，另外浏览器也需要设置支持发送 cookie，否则就算服务器支持浏览器也不会发送。
 
-```
+```java
 var xhr = new XMLHttpRequest(); 
 // 设置发送的请求是否带 cookie
 xhr.withCredentials = true;
@@ -114,7 +113,7 @@ xhr.setRequestHeader('Content-Type', 'text/plain');
 
 预检请求的头信息：
 
-```
+```plaintext
  // 预检请求的请求方式是 OPTIONS
  OPTIONS
   // 标明本次请求来自哪个源（协议+域名+端口）
@@ -131,7 +130,7 @@ xhr.setRequestHeader('Content-Type', 'text/plain');
 
 如果服务器回应预检请求的响应头中没有任何 CORS 相关的头信息的话表示不支持跨域，如果允许跨域就会做出响应，响应头信息如下：
 
-```
+```plaintext
 HTTP/1.1 200 OK
 // 该值上文提到过，表示允许浏览器指定的域名访问，要么为浏览器传入的 origin，要么为 * 表示所有域名都可以访问
 Access-Control-Allow-Origin:http://127.0.0.1:8080
@@ -158,7 +157,7 @@ Content-Type: text/plain
 
 Nginx 的配置信息：
 
-```
+```plaintext
 server {
     # 代理服务器的端口
     listen      88;
@@ -180,7 +179,7 @@ server {
 
 前端代码：
 
-```
+```java
 var xhr = new XMLHttpRequest();
 // 设置浏览器允许发送 cookie
 xhr.withCredentials = true;
@@ -239,7 +238,7 @@ TCP 和 UDP 都是传输层的网络协议，主要用途在于不同服务器�
 
 UDP 服务端代码：
 
-```
+```java
 // UDPServerTest.java
 public class UDPServerTest {
     public static void main(String[] args) throws Exception {
@@ -275,7 +274,7 @@ public class UDPServerTest {
 
 UDP 客户端代码：
 
-```
+```java
 // UDPClientTest.java
 public class UDPClientTest {
     public static void main(String[] args) throws Exception {
@@ -316,7 +315,7 @@ UDP 客户端执行结果：
 
 TCP 服务端代码：
 
-```
+```java
 // TCPServerTest.java
 public class TCPServerTest {
     public static void main(String[] args) throws Exception {
@@ -346,7 +345,7 @@ public class TCPServerTest {
 
 TCP 客户端代码：
 
-```
+```java
 // TCPClientTest.java
 public class TCPClientTest {
     public static void main(String[] args) throws Exception {
@@ -550,7 +549,7 @@ TCP 发送端和接收端都有一个固定大小的缓冲空间，为了防止�
 
 公共地址：
 
-```
+```plaintext
 1.0.0.1～126.255.255.254
 128.0.0.1～191.255.255.254
 192.0.0.1～223.255.255.254
@@ -560,7 +559,7 @@ TCP 发送端和接收端都有一个固定大小的缓冲空间，为了防止�
 
 私有地址：
 
-```
+```plaintext
 10.0.0.0～10.255.255.255
 172.16.0.0～172.31.255.255
 192.168.0.0～192.168.255.255

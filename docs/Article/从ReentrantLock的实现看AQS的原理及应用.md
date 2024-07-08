@@ -657,7 +657,9 @@ private void cancelAcquire(Node node) {
 
 > 执行cancelAcquire的时候，当前节点的前置节点可能已经从队列中出去了（已经执行过Try代码块中的shouldParkAfterFailedAcquire方法了），如果此时修改Prev指针，有可能会导致Prev指向另一个已经移除队列的Node，因此这块变化Prev指针不安全。 shouldParkAfterFailedAcquire方法中，会执行下面的代码，其实就是在处理Prev指针。shouldParkAfterFailedAcquire是获取锁失败的情况下才会执行，进入该方法后，说明共享资源已被获取，当前节点之前的节点都不会出现变化，因此这个时候变更Prev指针比较安全。
 >
-> ```java
+> 
+
+```java
 > do {
 >
 >  node.prev = pred = pred.prev;
@@ -669,17 +671,19 @@ private void cancelAcquire(Node node) {
 ### 2.3.3 如何解锁
 
 我们已经剖析了加锁过程中的基本流程，接下来再对解锁的基本流程进行分析。由于ReentrantLock在解锁的时候，并不区分公平锁和非公平锁，所以我们直接看解锁的源码：
+```
 
-```java
+java
 // java.util.concurrent.locks.ReentrantLock
 public void unlock() {
  sync.release(1);
 }
+
+```plaintext
+可以看到，本质释放锁的地方，是通过框架来完成的。
 ```
 
-可以看到，本质释放锁的地方，是通过框架来完成的。
-
-```java
+java
 // java.util.concurrent.locks.AbstractQueuedSynchronizer
 public final boolean release(int arg) {
  if (tryRelease(arg)) {
@@ -690,11 +694,12 @@ public final boolean release(int arg) {
  }
  return false;
 }
+
+```plaintext
+在ReentrantLock里面的公平锁和非公平锁的父类Sync定义了可重入锁的释放锁机制。
 ```
 
-在ReentrantLock里面的公平锁和非公平锁的父类Sync定义了可重入锁的释放锁机制。
-
-```java
+java
 // java.util.concurrent.locks.ReentrantLock.Sync
 // 方法返回当前锁是不是没有被线程持有
 protected final boolean tryRelease(int releases) {
@@ -712,11 +717,12 @@ protected final boolean tryRelease(int releases) {
  setState(c);
  return free;
 }
+
+```plaintext
+我们来解释下述源码：
 ```
 
-我们来解释下述源码：
-
-```java
+java
 // java.util.concurrent.locks.AbstractQueuedSynchronizer
 public final boolean release(int arg) {
  // 上边自定义的tryRelease如果返回true，说明该锁没有被任何线程持有
@@ -730,8 +736,8 @@ public final boolean release(int arg) {
  }
  return false;
 }
-```
 
+```plaintext
 这里的判断条件为什么是h != null && h.waitStatus != 0？
 
 > h == null Head还没初始化。初始情况下，head == null，第一个节点入队，Head会被初始化一个虚拟节点。所以说，这里如果还没来得及入队，就会出现head == null 的情况。
@@ -741,8 +747,9 @@ public final boolean release(int arg) {
 > h != null && waitStatus \< 0 表明后继节点可能被阻塞了，需要唤醒。
 
 再看一下unparkSuccessor方法：
+```
 
-```java
+java
 // java.util.concurrent.locks.AbstractQueuedSynchronizer
 private void unparkSuccessor(Node node) {
  // 获取头结点waitStatus
@@ -763,13 +770,14 @@ private void unparkSuccessor(Node node) {
  if (s != null)
   LockSupport.unpark(s.thread);
 }
-```
 
+```plaintext
 为什么要从后往前找第一个非Cancelled的节点呢？原因如下。
 
 之前的addWaiter方法：
+```
 
-```java
+java
 // java.util.concurrent.locks.AbstractQueuedSynchronizer
 private Node addWaiter(Node mode) {
  Node node = new Node(Thread.currentThread(), mode);
@@ -785,8 +793,8 @@ private Node addWaiter(Node mode) {
  enq(node);
  return node;
 }
-```
 
+```plaintext
 我们从这里可以看到，节点入队并不是原子操作，也就是说，node.prev = pred; compareAndSetTail(pred, node) 这两个地方可以看作Tail入队的原子操作，但是此时pred.next = node;还没执行，如果这个时候执行了unparkSuccessor方法，就没办法从前往后找了，所以需要从后往前找。还有一点原因，在产生CANCELLED状态节点的时候，先断开的是Next指针，Prev指针并未断开，因此也是必须要从后往前遍历才能够遍历完全部的Node。
 
 综上所述，如果是从前往后找，由于极端情况下入队的非原子操作和CANCELLED节点产生过程中断开Next指针的操作，可能会导致无法遍历所有的节点。所以，唤醒对应的线程后，对应的线程就会继续往下执行。继续执行acquireQueued方法以后，中断如何处理？
@@ -794,18 +802,20 @@ private Node addWaiter(Node mode) {
 ### 2.3.4 中断恢复后的执行流程
 
 唤醒后，会执行return Thread.interrupted();，这个函数返回的是当前执行线程的中断状态，并清除。
+```
 
-```java
+java
 // java.util.concurrent.locks.AbstractQueuedSynchronizer
 private final boolean parkAndCheckInterrupt() {
  LockSupport.park(this);
  return Thread.interrupted();
 }
+
+```plaintext
+再回到acquireQueued代码，当parkAndCheckInterrupt返回True或者False的时候，interrupted的值不同，但都会执行下次循环。如果这个时候获取锁成功，就会把当前interrupted返回。
 ```
 
-再回到acquireQueued代码，当parkAndCheckInterrupt返回True或者False的时候，interrupted的值不同，但都会执行下次循环。如果这个时候获取锁成功，就会把当前interrupted返回。
-
-```java
+java
 // java.util.concurrent.locks.AbstractQueuedSynchronizer
 final boolean acquireQueued(final Node node, int arg) {
  boolean failed = true;
@@ -827,17 +837,18 @@ final boolean acquireQueued(final Node node, int arg) {
    cancelAcquire(node);
  }
 }
+
+```plaintext
+如果acquireQueued为True，就会执行selfInterrupt方法。
 ```
 
-如果acquireQueued为True，就会执行selfInterrupt方法。
-
-```java
+java
 // java.util.concurrent.locks.AbstractQueuedSynchronizer
 static void selfInterrupt() {
  Thread.currentThread().interrupt();
 }
-```
 
+```bash
 该方法其实是为了中断线程。但为什么获取了锁以后还要中断线程呢？这部分属于Java提供的协作式中断知识内容，感兴趣同学可以查阅一下。这里简单介绍一下：
 
 1. 当中断线程被唤醒时，并不知道被唤醒的原因，可能是当前线程在等待中被中断，也可能是释放了锁以后被唤醒。因此我们通过Thread.interrupted()方法检查中断标记（该方法返回了当前线程的中断状态，并将当前线程的中断标识设置为False），并记录下来，如果发现该线程被中断过，就再中断一次。
@@ -876,8 +887,9 @@ static void selfInterrupt() {
 ReentrantLock的可重入性是AQS很好的应用之一，在了解完上述知识点以后，我们很容易得知ReentrantLock实现可重入的方法。在ReentrantLock里面，不管是公平锁还是非公平锁，都有一段逻辑。
 
 公平锁：
+```
 
-```java
+java
 // java.util.concurrent.locks.ReentrantLock.FairSync#tryAcquire
 if (c == 0) {
  if (!hasQueuedPredecessors() && compareAndSetState(0, acquires)) {
@@ -892,11 +904,12 @@ else if (current == getExclusiveOwnerThread()) {
  setState(nextc);
  return true;
 }
+
+```plaintext
+非公平锁：
 ```
 
-非公平锁：
-
-```java
+java
 // java.util.concurrent.locks.ReentrantLock.Sync#nonfairTryAcquire
 if (c == 0) {
  if (compareAndSetState(0, acquires)){
@@ -911,15 +924,16 @@ else if (current == getExclusiveOwnerThread()) {
  setState(nextc);
  return true;
 }
+
+```plaintext
+从上面这两段都可以看到，有一个同步状态State来控制整体可重入的情况。State是Volatile修饰的，用于保证一定的可见性和有序性。
 ```
 
-从上面这两段都可以看到，有一个同步状态State来控制整体可重入的情况。State是Volatile修饰的，用于保证一定的可见性和有序性。
-
-```java
+java
 // java.util.concurrent.locks.AbstractQueuedSynchronizer
 private volatile int state;
-```
 
+```plaintext
 接下来看State这个字段主要的过程：
 
 1. State初始化的时候为0，表示没有任何线程持有锁。
@@ -957,8 +971,9 @@ Worker利用AQS同步状态实现对独占线程变量的设置（tryAcquire和t
 ### 3.3 自定义同步工具
 
 了解AQS基本原理以后，按照上面所说的AQS知识点，自己实现一个同步工具。
+```
 
-```java
+java
 public class LeeLock  {
     private static class Sync extends AbstractQueuedSynchronizer {
         @Override
@@ -983,11 +998,12 @@ public class LeeLock  {
         sync.release(1);
     }
 }
+
+```plaintext
+通过我们自己定义的Lock完成一定的同步功能。
 ```
 
-通过我们自己定义的Lock完成一定的同步功能。
-
-```java
+java
 public class LeeMain {
     static int count = 0;
     static LeeLock leeLock = new LeeLock();

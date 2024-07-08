@@ -40,7 +40,7 @@
 
 #### Java (Laziness)
 
-```
+```java
         Jedis cache = new Jedis();
         String inCache = cache.get("100");
         if (null == inCache) {
@@ -68,7 +68,7 @@
 
 #### Java (Impatience)
 
-```
+```java
         User user = new User();
         JdbcTemplate jdbcTemplate = new JdbcTemplate();
         int affectedRows = jdbcTemplate.update("UPDATE User SET Phone = ? WHERE ID = 100 LIMIT 1",
@@ -90,7 +90,7 @@
 
 #### Java (Combo : Laziness && Impatience)
 
-```
+```plaintext
 cache.setex(String.valueOf(user.getId()), 300, user.toString()); // TTL, 可以异步
 ```
 

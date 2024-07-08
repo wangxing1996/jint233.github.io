@@ -50,7 +50,7 @@ MySQL支持用户自定义在commit时如何将log buffer中的日志刷log file
 
 选择刷日志的时间会严重影响数据修改时的性能，特别是刷到磁盘的过程。下例就测试了 innodb_flush_log_at_trx_commit 分别为0、1、2时的差距。
 
-```
+```sql
 #创建测试表
 drop table if exists test_flush_log;
 create table test_flush_log(id int,name char(50))engine=innodb;
@@ -73,7 +73,7 @@ delimiter ;
 
 当前环境下， innodb_flush_log_at_trx_commit 的值为1，即每次提交都刷日志到磁盘。测试此时插入10W条记录的时间。
 
-```
+```plaintext
 mysql> call proc(100000);
 Query OK, 0 rows affected (15.48 sec)
 ```
@@ -82,7 +82,7 @@ Query OK, 0 rows affected (15.48 sec)
 
 再测试值为2的时候，即每次提交都刷新到os buffer，但每秒才刷入磁盘中。
 
-```
+```bash
 mysql> set @@global.innodb_flush_log_at_trx_commit=2;    
 mysql> truncate test_flush_log;
 mysql> call proc(100000);
@@ -93,7 +93,7 @@ Query OK, 0 rows affected (3.41 sec)
 
 最后测试值为0的时候，即每秒才刷到os buffer和磁盘。
 
-```
+```bash
 mysql> set @@global.innodb_flush_log_at_trx_commit=0;
 mysql> truncate test_flush_log;
 mysql> call proc(100000);
@@ -108,7 +108,7 @@ Query OK, 0 rows affected (2.10 sec)
 
 尽管设置为0和2可以大幅度提升插入性能，但是在故障的时候可能会丢失1秒钟数据，这1秒钟很可能有大量的数据，从上面的测试结果看，100W条记录也只消耗了20多秒，1秒钟大约有4W-5W条数据，尽管上述插入的数据简单，但却说明了数据丢失的大量性。 **更好的插入数据的做法是将值设置为** 1 **，然后修改存储过程，将每次循环都提交修改为只提交一次** ，**这样既能保证数据的一致性，也能提升性能，修改如下：
 
-```
+```sql
 drop procedure if exists proc;
 delimiter $$
 create procedure proc(i int)
@@ -127,7 +127,7 @@ delimiter ;
 
 测试值为1时的情况。
 
-```
+```bash
 mysql> set @@global.innodb_flush_log_at_trx_commit=1;
 mysql> truncate test_flush_log;
 mysql> call proc(1000000);
@@ -163,7 +163,7 @@ innodb存储引擎中，redo log以块为单位进行存储的，每个块占512
 
 log group表示的是redo log group，一个组内由多个大小完全相同的redo log file组成。组内redo log file的数量由变量 innodb_log_files_group 决定，默认值为2，即两个redo log file。这个组是一个逻辑的概念，并没有真正的文件来表示这是一个组，但是可以通过变量 innodb_log_group_home_dir 来定义组的目录，redo log file都放在这个目录下，默认是在datadir下。
 
-```
+```plaintext
 mysql> show global variables like "innodb_log%";
 +-----------------------------+----------+
 | Variable_name               | Value    |
@@ -256,7 +256,7 @@ LSN不仅存在于redo log中，还存在于数据页中，在每个数据页的
 
 redo log的lsn信息可以通过 show engine innodb status 来查看。MySQL 5.5版本的show结果中只有3条记录，没有pages flushed up to。
 
-```
+```plaintext
 mysql> show engine innodb stauts
 ---
 LOG
@@ -295,13 +295,13 @@ innodb从执行修改语句开始：
 
 假设此时开启了一个事务，并立刻执行了一个update操作，执行完成后，buffer中的数据页和redo log都记录好了更新后的LSN值，假设为110。这时候如果执行 show engine innodb status 查看各LSN的值，即图中①处的位置状态，结果会是：
 
-```
+```plaintext
 log sequence number(110) > log flushed up to(100) = pages flushed up to = last checkpoint at
 ```
 
 之后又执行了一个delete语句，LSN增长到150。等到12:00:01时，触发redo log刷盘的规则(其中有一个规则是 innodb_flush_log_at_timeout 控制的默认日志刷盘频率为1秒)，这时redo log file on disk中的LSN会更新到和redo log in buffer的LSN一样，所以都等于150，这时 show engine innodb status ，即图中②的位置，结果将会是：
 
-```
+```plaintext
 log sequence number(150) = log flushed up to > pages flushed up to(100) = last checkpoint at
 ```
 
@@ -309,7 +309,7 @@ log sequence number(150) = log flushed up to > pages flushed up to(100) = last c
 
 假设随后检查点出现，即图中④的位置，正如前面所说，检查点会触发数据页和日志页刷盘，但需要一定的时间来完成，所以在数据页刷盘还未完成时，检查点的LSN还是上一次检查点的LSN，但此时磁盘上数据页和日志页的LSN已经增长了，即：
 
-```
+```plaintext
 log sequence number > log flushed up to 和 pages flushed up to > last checkpoint at
 ```
 
@@ -323,7 +323,7 @@ log sequence number > log flushed up to 和 pages flushed up to > last checkpoin
 
 随后执行了提交动作，即位置⑧。默认情况下，提交动作会触发日志刷盘，但不会触发数据刷盘，所以 show engine innodb status 的结果是：
 
-```
+```plaintext
 log sequence number = log flushed up to > pages flushed up to = last checkpoint at
 ```
 
@@ -371,7 +371,7 @@ innodb存储引擎对undo的管理采用段的方式。 **rollback segment** 称
 
 undo log默认存放在共享表空间中。
 
-```
+```plaintext
 [[email protected] data]# ll /mydata/data/ib*
 -rw-rw---- 1 mysql mysql 79691776 Mar 31 01:42 /mydata/data/ibdata1
 -rw-rw---- 1 mysql mysql 50331648 Mar 31 01:42 /mydata/data/ib_logfile0
@@ -384,7 +384,7 @@ undo log默认存放在共享表空间中。
 
 默认rollback segment全部写在一个文件中，但可以通过设置变量 innodb_undo_tablespaces 平均分配到多少个文件中。该变量默认值为0，即全部写入一个表空间文件。该变量为静态变量，只能在数据库示例停止状态下修改，如写入配置文件或启动时带上对应参数。但是innodb存储引擎在启动过程中提示，不建议修改为非0的值，如下：
 
-```
+```plaintext
 2017-03-31 13:16:00 7f665bfab720 InnoDB: Expected to open 3 undo tablespaces but was able
 2017-03-31 13:16:00 7f665bfab720 InnoDB: to find only 0 undo tablespaces.
 2017-03-31 13:16:00 7f665bfab720 InnoDB: Set the innodb_undo_tablespaces parameter to the
@@ -395,7 +395,7 @@ undo log默认存放在共享表空间中。
 
 undo相关的变量在MySQL5.6中已经变得很少。如下：它们的意义在上文中已经解释了。
 
-```
+```plaintext
  mysql> show variables like "%undo%";
 +-------------------------+-------+
 | Variable_name           | Value |

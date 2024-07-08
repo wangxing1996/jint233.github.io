@@ -12,7 +12,7 @@ NIO（Non-blocking I/O，在Java领域，也称为New I/O），是一种同步�
 
 让我们先回忆一下传统的服务器端同步阻塞I/O处理（也就是BIO，Blocking I/O）的经典编程模型：
 
-```text
+```java
 {
  ExecutorService executor = Excutors.newFixedThreadPollExecutor(100);//线程池
  ServerSocket serverSocket = new ServerSocket();
@@ -100,7 +100,7 @@ NIO的主要事件有几个：读就绪、写就绪、有新连接到来。
 
 所以我们的程序大概的模样是：
 
-```text
+```java
    interface ChannelHandler{
       void channelReadable(Channel channel);
       void channelWritable(Channel channel);
@@ -167,7 +167,7 @@ Java的Selector对于Linux系统来说，有一个致命限制：同一个channe
 
 伪代码如下：
 
-```text
+```java
 class RedisClient Implements ChannelHandler{
  private BlockingQueue CmdQueue;
  private EventLoop eventLoop;
@@ -268,7 +268,7 @@ class RedisClient Implements ChannelHandler{
 
 代码示例如下：
 
-```text
+```java
 interface ChannelHandler{
       void channelReadComplate(Channel channel，byte[] data);
       void channelWritable(Channel channel);

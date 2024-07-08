@@ -40,7 +40,7 @@
 
 为什么InnoDB需要实现自己的一套互斥锁，不直接用上述的系统互斥锁呢？这个主要有以下几个原因，首先，系统互斥锁是基于pthread mutex的，Heikki Tuuri（同步模块的作者，也是Innobase的创始人）认为在当时的年代pthread mutex上下文切换造成的cpu开销太大，使用spin lock的方式在多处理器的机器上更加有效，尤其是在锁竞争不是很严重的时候，Heikki Tuuri还总结出，在spin lock大概自旋20微秒的时候在多处理的机器下效率最高。其次，不使用pthread spin lock的原因是，当时在1995年左右的时候，spin lock的类似实现，效率很低，而且当时的spin lock不支持自定义自旋时间，要知道自旋锁在单处理器的机器上没什么卵用。最后，也是为了更加完善的监控需求。总的来说，有历史原因，有监控需求也有自定义自旋时间的需求，然后就有了这一套InnoDB自旋互斥锁。 InnoDB自旋互斥锁的实现主要在文件sync0sync.cc和sync0sync.ic中，头文件sync0sync.h定义了核心数据结构ib_mutex_t。使用方法很简单，`mutex_create`创建锁，`mutex_free`释放锁，`mutex_enter`尝试获得锁，如果已经被占用了，则等待。`mutex_exit`释放锁，同时唤醒所有等待的线程，拿到锁的线程开始执行，其余线程继续等待。`mutex_enter_nowait`这个函数类似pthread的trylock，只要已检测到锁不用，就直接返回错误，不进行自旋等待。总体来说，InnoDB自旋互斥锁的用法和语义跟系统互斥锁一模一样，但是底层实现却大相径庭。 在ib_mutex_t这个核心数据结构中，最重要的是前面两个变量：event和lock_word。lock_word为0表示锁空闲，1表示锁被占用，InnoDB自旋互斥锁使用`__sync_lock_test_and_set`这个函数对lock_word进行原子操作，加锁的时候，尝试把其设置为1，函数返回值不指示是否成功，指示的是尝试设置之前的值，因此如果返回值是0，表示加锁成功，返回是1表示失败。如果加锁失败，则会自旋一段时间，然后等待在条件变量event（`os_event_wait`）上，当锁占用者释放锁的时候，会使用`os_event_set`来唤醒所有的等待者。简单的来说，byte类型的lock_word基于平台提供的原子操作来实现互斥访问，而event是InnoDB条件变量类型，用来实现锁释放后唤醒等待线程的操作。 接下来，详细介绍一下，`mutex_enter`和`mutex_exit`的逻辑，InnoDB自旋互斥锁的精华都在这两个函数中。 mutex_enter的伪代码如下：
 
-```
+```python
 if (__sync_lock_test_and_set(mutex->lock_word, 1) == 0) {
     get mutex successfully;
     return;
@@ -89,7 +89,7 @@ goto loop1;
 
 mutex_exit的伪代码就简单多了，如下：
 
-```
+```plaintext
 __sync_lock_test_and_set(mutex->lock_word, 0);
 /* A problem: we assume that mutex_reset_lock word                                                                     
         is a memory barrier, that is when we read the waiters                                                                  
@@ -138,7 +138,7 @@ rw_lock_t中，核心的成员有以下几个：lock_word, event, waiters, wait_
 
 在MySQL 5.7中，读写锁除了可以加读锁(Share lock)请求和加写锁(exclusive lock)请求外，还可以加share exclusive锁请求，锁兼容性如下：
 
-```
+```plaintext
  LOCK COMPATIBILITY MATRIX
     S SX  X
  S  +  +  -
@@ -152,7 +152,7 @@ rw_lock_t中，核心的成员有以下几个：lock_word, event, waiters, wait_
 
 InnoDB同步机制中，还有很多使用的辅助结构，他们的作用主要是为了监控方便和死锁的预防和检测。这里主要介绍sync array, sync thread level array和srv_error_monitor_thread。 sync array主要的数据结构是sync_array_t，可以把他理解为一个数据，数组中的元素为sync_cell_t。当一个锁（InnoDB自旋互斥锁或者InnoDB读写锁，下同）需要发生`os_event_wait`等待时，就需要在sync array中申请一个sync_cell_t来保存当前的信息，这些信息包括等待锁的指针（便于死锁检测），在哪一个文件以及哪一行发生了等待（也就是mutex_enter, rw_lock_s_lock或者rw_lock_x_lock被调用的地方，只在debug模式下有效），发生等待的线程（便于死锁检测）以及等待开始的时间（便于统计等待的时间）。当锁释放的时候，就把相关联的sync_cell_t重置为空，方便复用。sync_cell_t在sync_array_t中的个数，是在初始化同步模块时候就指定的，其个数一般为OS_THREAD_MAX_N，而OS_THREAD_MAX_N是在InnoDB初始化的时候被计算，其包括了系统后台开启的所有线程，以及max_connection指定的个数，还预留了一些。由于一个线程在某一个时刻最多只能发生一个锁等待，所以不用担心sync_cell_t不够用。从上面也可以看出，在每个锁进行等待和释放的时候，都需要对sync array操作，因此在高并发的情况下，单一的sync array可能成为瓶颈，在MySQL 5.6中，引入了多sync array, 个数可以通过innodb_sync_array_size进行控制，这个值默认为1，在高并发的情况下，建议调高。 InnoDB作为一个成熟的存储引擎，包含了完善的死锁预防机制和死锁检测机制。在每次需要锁等待时，即调用`os_event_wait`之前，需要启动死锁检测机制来保证不会出现死锁，从而造成无限等待。在每次加锁成功（lock_word递减后，函数返回之前）时，都会启动死锁预防机制，降低死锁出现的概率。当然，由于死锁预防机制和死锁检测机制需要扫描比较多的数据，算法上也有递归操作，所以只在debug模式下开启。 死锁检测机制主要依赖sync array中保存的信息以及死锁检测算法来实现。死锁检测机制通过sync_cell_t保存的等待锁指针和发生等待的线程以及教科书上的有向图环路检测算法来实现，具体实现在`sync_array_deadlock_step`和`sync_array_detect_deadlock`中实现，仔细研究后发现个小问题，由于`sync_array_find_thread`函数仅仅在当前的sync array中遍历，当有多个sync array时（innodb_sync_array_size > 1）,如果死锁发生在不同的sync array上，现有的死锁检测算法将无法发现这个死锁。 死锁预防机制是由sync thread level array和全局锁优先级共同保证的。InnoDB为了降低死锁发生的概率，上层的每种类型的锁都有一个优先级。例如回滚段锁的优先级就比文件系统page页的优先级高，虽然两者底层都是InnoDB互斥锁或者InnoDB读写锁。有了这个优先级，InnoDB规定，每个锁创建是必须制定一个优先级，同一个线程的加锁顺序必须从优先级高到低，即如果一个线程目前已经加了一个低优先级的锁A，在释放锁A之前，不能再请求优先级比锁A高(或者相同)的锁。形成死锁需要四个必要条件，其中一个就是不同的加锁顺序，InnoDB通过锁优先级来降低死锁发生的概率，但是不能完全消除。原因是可以把锁设置为SYNC_NO_ORDER_CHECK这个优先级，这是最高的优先级，表示不进行死锁预防检查，如果上层的程序员把自己创建的锁都设置为这个优先级，那么InnoDB提供的这套机制将完全失效，所以要养成给锁设定优先级的好习惯。sync thread level array是一个数组，每个线程单独一个，在同步模块初始化时分配了OS_THREAD_MAX_N个，所以不用担心不够用。这个数组中记录了某个线程当前锁拥有的所有锁，当新加了一个锁B时，需要扫描一遍这个数组，从而确定目前线程所持有的锁的优先级都比锁B高。 最后，我们来讲讲srv_error_monitor_thread这个线程。这是一个后台线程，在InnoDB启动的时候启动，每隔1秒钟执行一下指定的操作。跟同步模块相关的操作有两点，去除无限等待的锁和报告长时间等待的异常锁。 去除无线等待的锁，如上文所属，就是sync_arr_wake_threads_if_sema_free这个函数。这个函数通过遍历sync array，如果发现锁已经可用(`sync_arr_cell_can_wake_up`)，但是依然有等待者，则直接调用`os_event_set`把他们唤醒。这个函数是为了解决由于cpu乱序执行或者编译器指令重排导致锁无限等待的问题，但是可以通过内存屏障技术来避免，所以可以去掉。 报告长时间等待的异常锁，通过sync_cell_t里面记录的锁开始等待时间，我们可以很方便的统计锁等待发生的时间。在目前的实现中，当锁等待超过240秒的时候，就会在错误日志中看到信息。如果同一个锁被检测到等到超过600秒且连续10次被检测到，则InnoDB会通过assert来自杀。。。相信当做运维DBA的同学一定看到过如下的报错：
 
-```
+```javascript
 InnoDB: Warning: a long semaphore wait:
 --Thread 139774244570880 has waited at log0read.h line 765 for 241.00 seconds the semaphore:
 Mutex at 0x30c75ca0 created file log0read.h line 522, lock var 1 

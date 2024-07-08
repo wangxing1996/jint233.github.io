@@ -12,7 +12,7 @@
 
 `docker` CLI 与 `dockerd` 的交互是通过 rest API 来完成的，当我们执行 `docker version` 的时候过滤 API 可以看到如下输出：
 
-```
+```bash
 # docker version  |grep API
  API version:       1.40
  API version:      1.40 (minimum version 1.12)
@@ -36,7 +36,7 @@ Docker 官方在每个版本正式发布之后，都会将 API 文档发布出�
 
 首先 clone Docker 的源代码仓库, 进入项目仓库内执行 `make swagger-docs` 即可在启动一个容器同时将端口暴露至本地的 `9000` 端口， 你可以直接通过 [http://127.0.0.1:9000](http://127.0.0.1:9000/) 访问本地的 API 文档。
 
-```
+```bash
 (MoeLove) ➜  git clone https://github.com/docker/engine.git docker
 (MoeLove) ➜  cd docker
 (MoeLove) ➜  docker git:(master) git checkout -b v19.03.0-rc2 v19.03.0-rc2
@@ -54,7 +54,7 @@ API docs preview will be running at http://localhost:9000
 
 `/var/run/docker.sock` 这是默认情况下 `dockerd` 所监听的地址，当然你也可以给 `dockerd` 传递 `--host` 参数用于监听 HTTP 端口或者其他路径的 unix socket .
 
-```
+```bash
 / # curl -X POST --unix-socket /var/run/docker.sock  localhost/v1.40/build 
 {"message":"Cannot locate specified Dockerfile: Dockerfile"}
 ```
@@ -97,7 +97,7 @@ CLI 的代码仓库在 <https://github.com/docker/cli> 本次 Chat 的代码以 
 
 通过以下步骤使用此版本的代码：
 
-```
+```bash
 (MoeLove) ➜  git clone https://github.com/docker/cli.git
 (MoeLove) ➜  cd cli
 (MoeLove) ➜  cli git:(master) git checkout -b v19.03 v19.03.0-rc2-4-ga63faebc
@@ -185,7 +185,7 @@ func BuildKitEnabled(si ServerInfo) (bool, error) {
 
 例如，某个目录下有三个文件 `foo` `bar` 和 `Dockerfile`，通过管道将 `Dockerfile` 的内容通过 `stdin` 传递给 `docker build`
 
-```
+```bash
 (MoeLove) ➜  x ls
 bar  Dockerfile  foo
 (MoeLove) ➜  x cat Dockerfile | DOCKER_BUILDKIT=0 docker build -f - .
@@ -201,7 +201,7 @@ Successfully built cc803c675dd2
 
 可以看到通过 `stdin` 传递 `Dockerfile` 的方式能成功的构建镜像。接下来我们尝试通过 `stdin` 将 `build context` 传递进去。
 
-```
+```bash
 (MoeLove) ➜  x tar -cvf x.tar foo bar Dockerfile 
 foo                                                     
 bar                         
@@ -221,14 +221,16 @@ Successfully built ce88644a7395
 
 但如果 `Dockerfile` 的名称与构建的上下文都指定为 `-` 即 `docker build -f - -` 时，会发生什么呢？
 
-```
+```bash
 (MoeLove) ➜  x DOCKER_BUILDKIT=0 docker build -f - -             
 invalid argument: can't use stdin for both build context and dockerfile
 ```
 
 就会报错了。所以， **不能同时使用 stdin 读取 Dockerfile 和 build context** 。
 
-- **build context 支持四种行为。** ```go
+- **build context 支持四种行为。** 
+
+```go
   switch {
   case options.contextFromStdin():
   // 省略
@@ -241,14 +243,15 @@ invalid argument: can't use stdin for both build context and dockerfile
   default:
   return errors.Errorf("unable to prepare context: path %q not found", specifiedContext)
   }
-
 ```
+
 从 `stdin` 传入，上文已经演示过了，传递给 `stdin` 的是 `tar` 归档文件；
 当然也可以是指定一个具体的 `PATH`，我们通常使用的 `docker build .` 便是这种用法；
 或者可以指定一个 `git` 仓库的地址，CLI 会调用 `git` 命令将仓库 `clone` 至一个临时目录，进行使用；
 最后一种是，给定一个 `URL` 地址，该地址可以是 **一个具体的 Dockerfile 文件地址** 或者是 **一个 tar 归档文件的下载地址** 。
 这几种基本就是字面上的区别，至于 CLI 的行为差异，主要是最后一种，当 `URL` 地址是一个具体的 `Dockerfile` 文件地址，在这种情况下 `build context` 相当于只有 `Dockerfile` 自身，所以并不能使用 `COPY` 之类的指定，至于 `ADD` 也只能使用可访问的外部地址。
 * **可使用 .dockerignore 忽略不需要的文件** 我在之前的 Chat \[高效构建 Docker 镜像的最佳实践\] 中有分享过相关的内容。这里我们看看它的实现逻辑。
+
 ```go
 // cli/command/image/build/dockerignore.go#L13
 func ReadDockerignore(contextDir string) ([]string, error) {
@@ -620,7 +623,9 @@ if err != nil {
 }
 ```
 
-**newImageBuildOptions 函数就是构造构建参数的，将通过 API 提交过来的参数转换为构建动作实际需要的参数形式。** `go buildOptions.AuthConfigs = getAuthConfigs(r.Header)` **getAuthConfigs 函数用于从请求头拿到认证信息** ```go
+**newImageBuildOptions 函数就是构造构建参数的，将通过 API 提交过来的参数转换为构建动作实际需要的参数形式。** `go buildOptions.AuthConfigs = getAuthConfigs(r.Header)` **getAuthConfigs 函数用于从请求头拿到认证信息** 
+
+```go
 imgID, err := br.backend.Build(ctx, backend.BuildConfig{
 Source:         body,
 Options:        buildOptions,
@@ -629,10 +634,11 @@ ProgressWriter: buildProgressWriter(out, wantAux, createProgressReader),
 if err != nil {
 return errf(err)
 }
-
 ```
 
-这里就需要注意了: 真正的构建过程要开始了。 **使用 backend 的 Build 函数来完成真正的构建过程** ```go
+这里就需要注意了: 真正的构建过程要开始了。 **使用 backend 的 Build 函数来完成真正的构建过程** 
+
+```go
 // api/server/backend/build/backend.go#L52
 func (b *Backend) Build(ctx context.Context, config backend.BuildConfig) (string, error) {
     options := config.Options

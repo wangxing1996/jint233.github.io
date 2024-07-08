@@ -22,7 +22,7 @@ CMS 在回收的过程中，STW 的阶段主要是 Init Mark 和 Final Remark �
 
 CMSCollector::checkpointRootsInitialWork()
 
-```text
+```cpp
 void CMSCollector::checkpointRootsInitialWork() {
   assert(SafepointSynchronize::is_at_safepoint(), "world should be stopped");
   assert(_collectorState == InitialMarking, "just checking");
@@ -101,7 +101,7 @@ void CMSCollector::checkpointRootsInitialWork() {
 
 CMSParInitialMarkTask::work
 
-```text
+```cpp
 void CMSParInitialMarkTask::work(uint worker_id) {
   elapsedTimer _timer;
   ResourceMark rm;
@@ -143,7 +143,7 @@ void CMSParInitialMarkTask::work(uint worker_id) {
 
 CMSCollector::checkpointRootsFinalWork()
 
-```text
+```cpp
 void CMSCollector::checkpointRootsFinalWork() {
   GCTraceTime(Trace, gc, phases) tm("checkpointRootsFinalWork", _gc_timer_cm);
   assert(haveFreelistLocks(), "must have free list locks");
@@ -234,7 +234,7 @@ Final Remark 是最终的第二次标记，这种情况只有在 Background GC �
 
 - **【方向】** 观察详细 GC 日志，找到出问题时 Final Remark 日志，分析下 Reference 处理和元数据处理 real 耗时是否正常，详细信息需要通过 -XX:+PrintReferenceGC 参数开启。 **基本在日志里面就能定位到大概是哪个方向出了问题，耗时超过 10% 的就需要关注** 。
 
-```text
+```plaintext
 2019-02-27T19:55:37.920+0800: 516952.915: [GC (CMS Final Remark) 516952.915: [ParNew516952.939: [SoftReference, 0 refs, 0.0003857 secs]516952.939: [WeakReference, 1362 refs, 0.0002415 secs]516952.940: [FinalReference, 146 refs, 0.0001233 secs]516952.940: [PhantomReference, 0 refs, 57 refs, 0.0002369 secs]516952.940: [JNI Weak Reference, 0.0000662 secs]
 [class unloading, 0.1770490 secs]516953.329: [scrub symbol table, 0.0442567 secs]516953.373: [scrub string table, 0.0036072 secs][1 CMS-remark: 1638504K(2048000K)] 1667558K(4352000K), 0.5269311 secs] [Times: user=1.20 sys=0.03, real=0.53 secs]
 ```
@@ -245,7 +245,7 @@ Final Remark 是最终的第二次标记，这种情况只有在 Background GC �
 
 CMSCollector::refProcessingWork()
 
-```text
+```cpp
 if (should_unload_classes()) {
     {
       GCTraceTime(Debug, gc, phases) t("Class Unloading", _gc_timer_cm);
@@ -346,10 +346,12 @@ gperftools 是 Google 开发的一款非常实用的工具集，它的原理是�
 
 ![img](assets/v2-cacb2478ec2ca17cbf30a38582f14568_1440w.jpg) **4.9 场景九：JNI 引发的 GC 问题**  **4.9.1 现象** 在 GC 日志中，出现 GC Cause 为 GCLocker Initiated GC。
 
-```text
+```plaintext
 2020-09-23T16:49:09.727+0800: 504426.742: [GC (GCLocker Initiated GC) 504426.742: [ParNew (promotion failed): 209716K->6042K(1887488K), 0.0843330 secs] 1449487K->1347626K(3984640K), 0.0848963 secs] [Times: user=0.19 sys=0.00, real=0.09 secs]
 2020-09-23T16:49:09.812+0800: 504426.827: [Full GC (GCLocker Initiated GC) 504426.827: [CMS: 1341583K->419699K(2097152K), 1.8482275 secs] 1347626K->419699K(3984640K), [Metaspace: 297780K->297780K(1329152K)], 1.8490564 secs] [Times: user=1.62 sys=0.20, real=1.85 secs]
-``` **4.9.2 原因**
+```
+
+**4.9.2 原因**
 
 JNI（Java Native Interface）意为 Java 本地调用，它允许 Java 代码和其他语言写的 Native 代码进行交互。
 
@@ -361,7 +363,8 @@ JNI 如果需要获取 JVM 中的 String 或者数组，有两种方式：
 由于 Native 代码直接使用了 JVM 堆区的指针，如果这时发生 GC，就会导致数据错误。因此，在发生此类 JNI 调用时，禁止 GC 的发生，同时阻止其他线程进入 JNI 临界区，直到最后一个线程退出临界区时触发一次 GC。
 
 GC Locker 实验：
-```text
+
+```java
 public class GCLockerTest {
   static final int ITERS = 100;
   static final int ARR_SIZE =  10000;
@@ -392,7 +395,7 @@ public class GCLockerTest {
 
 ______________________________________________________________________
 
-```text
+```cpp
 #include <jni.h>
 #include "GCLockerTest.h"
 static jbyte* sink;

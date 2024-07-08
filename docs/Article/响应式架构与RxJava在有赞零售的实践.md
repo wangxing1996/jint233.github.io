@@ -47,7 +47,7 @@ Rxjava是用来编写异步和基于消息的程序的类库。RxJava在Android�
 
 最终我们按照图3的流程处理升级逻辑，其中的并发场景，比如保存完零售商品后，并发处理库存、和销售渠道，使用rxjava封装的方法帮助我们进行并发操作。如下所示代码结构清晰，对外屏蔽了复杂的并发处理逻辑。
 
-```
+```plaintext
 Observable.zip(
     callAsync(()->处理库存相关操作),
     callAsync(()->更新商品库门店销售渠道),
@@ -58,7 +58,7 @@ Observable.zip(
 
 最终我们的整体的代码
 
-```
+```plaintext
 UpgradeItem.listItems(manager, shop)
     .flatMap(item-> fromCallable(()->更新为零售商品类型))
     .flatMap(item-> fromCallable(()->并发处理商品操作), true)
@@ -84,7 +84,7 @@ UpgradeItem.listItems(manager, shop)
 
 1.根据入参获取商品加载器
 
-```
+```plaintext
 //只有包含的merger才会加载
 List<SkuAttrMerger> validMergers = 
     Observable.fromIterable(skuAttrMergers).filter(loader -> request.getAttributes().contains(loader.supportAttribute().getValue())).toList().blockingGet();
@@ -103,7 +103,7 @@ Observable.fromIterable(商品信息加载器列表)
 
 3.组装搜索结果（如果某个sku组装失败则直接忽略）
 
-```
+```plaintext
 //调用merge将数据合并到目标对象
 商品搜索返回结果列表 = Observable.fromIterable(商品id列表)
     .map(商品id->初始化商品搜索结果返回对象)

@@ -36,7 +36,7 @@
 
 为了保证下面的叙述可以顺利进行，我们要先建一张表：
 
-```
+```sql
 CREATE TABLE `student` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(50) DEFAULT NULL COMMENT '姓名',

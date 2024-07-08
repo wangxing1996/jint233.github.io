@@ -10,7 +10,7 @@
 
 如下所示：
 
-```
+```java
 @Configuration
 @ComponentScan
 public class AppConfig {
@@ -38,7 +38,7 @@ public class Main {
 
 运行结果：
 
-```
+```plaintext
 [email protected]
 [email protected]
 ```
@@ -53,7 +53,7 @@ public class Main {
 
 如果是原型 bean的循环依赖，Spring无法解决：
 
-```
+```java
 @Service
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
 public class BookService {
@@ -72,7 +72,7 @@ public class AuthorService {
 
 如果是构造参数注入的循环依赖，Spring无法解决：
 
-```
+```java
 @Service
 public class AuthorService {
     BookService bookService;
@@ -95,7 +95,7 @@ public class BookService {
 
 可以，Spring提供了这个功能，我们需要这么写：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext();
@@ -110,7 +110,7 @@ public class Main {
 
 需要注意的是，我们不能这么写：
 
-```
+```java
         AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(AppConfig.class);
         applicationContext.setAllowCircularReferences(false);
 ```
@@ -147,7 +147,7 @@ public class Main {
 
 下面让我们来实现这个功能： 首先，自定义一个注解，字段上打上这个注解的，说明需要被Autowired：
 
-```
+```plaintext
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CodeBearAutowired {
 }
@@ -155,7 +155,7 @@ public @interface CodeBearAutowired {
 
 再创建两个循环依赖的类：
 
-```
+```java
 public class OrderService {
     @CodeBearAutowired
     public UserService userService;
@@ -168,7 +168,7 @@ public class UserService {
 
 然后就是核心，创建对象，填充属性，并解决Spring循环依赖的问题：
 
-```
+```java
 public class Cycle {
     // 单例池，里面放的是完整的bean，已完成填充属性
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
@@ -233,7 +233,7 @@ public class Cycle {
 
 预加载调用：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         Cycle cycle = new Cycle();
@@ -248,14 +248,14 @@ public class Main {
 
 运行结果：
 
-```
+```plaintext
 [email protected]
 [email protected]
 ```
 
 懒加载调用：
 
-```
+```java
 public class Main {
     public static void main(String[] args) {
         Cycle cycle = new Cycle();
@@ -269,7 +269,7 @@ public class Main {
 
 运行结果：
 
-```
+```plaintext
 [email protected]
 [email protected]
 ```
@@ -293,7 +293,7 @@ _这里说的创建代理对象仅仅是“加工”的其中一种可能。_
 
 聪明的你，一定在想，这还不简单吗： 我们创建完对象后，判断这个对象是否需要代理，如果需要代理，创建代理对象，然后把代理对象放到earlySingletonObjects不就OJ8K了？ 就像这样：
 
-```
+```plaintext
     private Object createBean(String beanName) {
         Object singletonObject;
         try {
@@ -325,7 +325,7 @@ _这里说的创建代理对象仅仅是“加工”的其中一种可能。_
 
 下面直接放出代码：
 
-```
+```java
 public class Cycle {
     // 单例池，里面放的是完整的bean，已完成填充属性
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
@@ -397,7 +397,7 @@ public class Cycle {
 
 调用方法：
 
-```
+```java
  public static void main(String[] args) {
         Cycle cycle = new Cycle();
         cycle.init();
@@ -408,7 +408,7 @@ public class Cycle {
 
 运行结果：
 
-```
+```plaintext
 [email protected]
 [email protected]
 ```

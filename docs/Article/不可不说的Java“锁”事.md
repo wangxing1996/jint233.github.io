@@ -69,7 +69,7 @@ CAS算法涉及到三个操作数：
 
 接下来，我们查看AtomicInteger的自增函数incrementAndGet()的源码时，发现自增函数底层调用的是unsafe.getAndAddInt()。但是由于JDK本身只有Unsafe.class，只通过class文件中的参数名，并不能很好的了解方法的作用，所以我们通过OpenJDK 8 来查看Unsafe的源码：
 
-```Java
+```java
 // ------------------------- JDK 8 -------------------------
 // AtomicInteger 自增方法
 public final int incrementAndGet() {
@@ -264,7 +264,7 @@ Monitor是线程私有的数据结构，每一个线程都有一个可用monitor
 
 可重入锁又名递归锁，是指在同一个线程在外层方法获取锁的时候，再进入该线程的内层方法会自动获取锁（前提锁对象得是同一个对象或者class），不会因为之前已经获取过还没释放而阻塞。Java中ReentrantLock和synchronized都是可重入锁，可重入锁的一个优点是可一定程度避免死锁。下面用示例代码来进行分析：
 
-```Java
+```java
 public class Widget {
     public synchronized void doSomething() {
         System.out.println("方法1执行...");
@@ -326,7 +326,7 @@ public class Widget {
 
 了解了概念之后我们再来看代码，先看写锁的加锁源码：
 
-```Java
+```java
 protected final boolean tryAcquire(int acquires) {
  Thread current = Thread.currentThread();
  int c = getState(); // 取到当前锁的个数
@@ -360,7 +360,7 @@ tryAcquire()除了重入条件（当前线程为获取了写锁的线程）之�
 
 接着是读锁的代码：
 
-```Java
+```java
 protected final int tryAcquireShared(int unused) {
     Thread current = Thread.currentThread();
     int c = getState();

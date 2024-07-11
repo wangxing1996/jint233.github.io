@@ -7,7 +7,7 @@
 
 ## 预览效果
 
-+ [github Pages](https://jint233.github.io/)
++ [Git Pages](https://jint233.github.io/)
 
 ## 项目启动&部署方式
 
@@ -19,8 +19,8 @@ mkdocs serve
 
 ### Docker部署
 
-* 使用 dockerfile 生成镜像
-* 使用 docker-compose脚 本启动服
++ 使用 dockerfile 生成镜像
++ 使用 docker-compose脚 本启动服
   
 #### Github Pages
 
@@ -31,4 +31,5 @@ mkdocs serve
 项目基于 [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/getting-started/) 构建，相关配置可在官网查阅
 
 ### 👇👇👇👇👇👇
+
 如果有帮到您的话，请帮忙点个 Star~ Thanks♪(･ω･)ﾉ

@@ -88,7 +88,7 @@ Vert.x 中有一个黄金法则，就是不要阻塞 _Event Loop_ 。
 
 例如下面的代码示例，当有 HTTP 请求过来的时候，调用这个 handler 来返回响应信息：
 
-```Java
+```java
 server.requestHandler(request -> {
   // This handler will be called every time an HTTP request is received at the server
   request.response().end("hello world!");
@@ -107,7 +107,7 @@ server.requestHandler(request -> {
 
 Vert.x 保证自己的 API 是非阻塞的,并且不会阻塞 _Event Loop_，但是但是无法控制你自己的代码是否是阻塞的,所以会对这部分进行监控，并通过日志警告你。我们来造一个阻塞操作看看：
 
-```Java
+```java
 public class BlockWarningDemo extends AbstractVerticle {
   @Override
   public void start() throws Exception {
@@ -169,7 +169,7 @@ Verticle 最大的特色就是它的线程隔离性。在启动的时候， Ver
 
 上文中的 _BlockWarningDemo_ 就是一个标准 Verticle 。如果要转化为工作 Verticle ，在部署的时候进行以下配置：
 
-```Java
+```java
 DeploymentOptions options = new DeploymentOptions().setWorker(true);
 BlockWarningDemo blockWarningDemo = new BlockWarningDemo();
 vertx.deployVerticle(blockWarningDemo, options);
@@ -185,7 +185,7 @@ vertx.deployVerticle(blockWarningDemo, options);
 
 链式操作和异步处理，是始终贯穿 Vert.x API 中的两个通用模式。我们在编写程序的时候更期望使用流畅的 API ，一路处理下来即可。例如使用 Builder 可以更方便的获取新的对象：
 
-```Java
+```java
 package com.roytrack.fluent;
 import lombok.Builder;
 import lombok.ToString;
@@ -203,7 +203,7 @@ public class LombokDemo {
 
 亦或者是 Java 8 中引入的流处理 API ，更方便的进行流处理：
 
-```Java
+```java
 package com.roytrack.fluent;
 import java.util.ArrayList;
 import java.util.List;
@@ -221,7 +221,7 @@ public class Java8Demo {
 
 Vert.x 也大量的使用了类似的 API 设计，下面这个例子展示了它灵活的 Json 构造和处理：
 
-```Java
+```java
 package com.roytrack.fluent;
 import io.vertx.core.json.JsonObject;
 public class VertxDemo {
@@ -234,7 +234,7 @@ public class VertxDemo {
 
 对于异步处理，大部分是通过设置 handler ，让 Vert.x 自己根据响应去调用，举例一个 request 的返回如下：
 
-```Java
+```java
 vertx.createHttpServer().requestHandler(req -> {
       req.response()
           .putHeader("content-type", "text/plain")
@@ -248,7 +248,7 @@ vertx.createHttpServer().requestHandler(req -> {
 
 下面我们来写一个最小的 HTTP 服务：
 
-```Java
+```java
 package com.roytrack.http;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
@@ -279,7 +279,7 @@ public class MinimalHttpServer {
 
 如果想同时构建 HTTP 和 WebSocket 服务，处理起来也很简单，代码如下：
 
-```Java
+```java
 package com.roytrack.http;
 import io.vertx.core.Vertx;
 public class HttpAndWsServer {
@@ -343,7 +343,7 @@ brew install vert.x
 
 编写一个 js 脚本 my-verticle.js 如下：
 
-```JavaScript
+```javaScript
 var server = vertx.createHttpServer();
 server.requestHandler(function (request) {
  request.response().end("Hello world");
@@ -369,7 +369,7 @@ vertx run my-verticle.js
 
 com.roytrack.dashboard.Agent 核心代码如下：
 
-```Java
+```java
   @Override
   public void start() {
     OperatingSystemMXBean systemMBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
@@ -389,7 +389,7 @@ com.roytrack.dashboard.Agent 核心代码如下：
 
 com.roytrack.dashboard.Server 核心代码如下：
 
-```Java
+```java
   @Override
   public void start() {
     Router router = Router.router(vertx);

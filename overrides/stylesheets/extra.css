@@ -576,7 +576,7 @@ a:hover .text-button span {
   color: initial !important;
 }
 
-.figcaption {
+figcaption {
   text-align: center;
   font-style: normal;
   color: #888;

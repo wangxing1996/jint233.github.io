@@ -575,3 +575,10 @@ a:hover .text-button span {
   background-color: var(--md-primary-fg-color) !important;
   color: initial !important;
 }
+
+.figcaption {
+  text-align: center;
+  font-style: normal;
+  color: #888;
+  font-weight: 500;
+}

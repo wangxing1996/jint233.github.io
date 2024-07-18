@@ -573,8 +573,26 @@ a:hover .text-button span {
 }
 
 figcaption {
-  text-align: center;
+  margin-top: 0.5em;
   font-style: normal !important;
-  color: #888;
-  font-weight: 500;
+  color: #666;
+  text-align: center;
+}
+
+.md-grid {
+  max-width: 80vw;
+}
+
+.md-sidebar.md-sidebar--primary {
+  width: 18vw !important;
+}
+
+[dir=ltr] .md-sidebar__inner {
+  padding-right: 1vw !important;
+}
+
+.md-typeset img {
+  max-width: 90%;
+  display: flex !important;
+  margin: auto;
 }

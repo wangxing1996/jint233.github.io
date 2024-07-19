@@ -14,7 +14,7 @@
         color: white !important;
     }
 
-    .md-search__input:not(:focus-visible)+.md-search__icon:not(.md-search__options) {
+    .md-search__input:not(:focus-visible) + .md-search__icon:not(.md-search__options) {
         color: white !important;
     }
 
@@ -65,13 +65,13 @@
         color: white !important;
     }
 
-    @media screen and (min-width:60em) {
+    @media screen and (min-width: 60em) {
         .md-sidebar--secondary {
             display: none
         }
     }
 
-    @media screen and (min-width:76.25em) {
+    @media screen and (min-width: 76.25em) {
         .md-sidebar--primary {
             display: none
         }
@@ -86,7 +86,7 @@
                     <h1 class="color:white">书山有路勤为径，学海无涯苦作舟</h1>
                     <p>循正而行，自与吉会</p>
                     <a href="{{ page.next_page.url | url }}" title="{{ page.next_page.title | e }}"
-                        class="md-button md-button--primary">
+                       class="md-button md-button--primary">
                         Go
                     </a>
                 </div>

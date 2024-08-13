@@ -1,6 +1,3 @@
-/* Color Settings */
-/* https://github.com/squidfunk/mkdocs-material/blob/6b5035f5580f97532d664e3d1babf5f320e88ee9/src/assets/stylesheets/main/_colors.scss */
-/* https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/#custom-colors */
 :root>* {
   --md-primary-fg-color: #ffffff;
   --md-primary-bg-color: #1d1d20;
@@ -127,7 +124,7 @@
 }
 
 /* Markdown Header */
-/* https://github.com/squidfunk/mkdocs-material/blob/dcab57dd1cced4b77875c1aa1b53467c62709d31/src/assets/stylesheets/main/_typeset.scss */
+/* https://github.com/squidfunk/mkdocs-material/blob/dcab57dd1cced4b77875c1aa1b53467c62709d31/src/../assets/stylesheets/main/_typeset.scss */
 .md-typeset h1 {
   font-weight: 600;
   font-size: 1.8em;
@@ -143,6 +140,7 @@
 }
 
 .md-typeset h5 {
+  font-size: 1em;
   text-transform: none;
 }
 
@@ -594,4 +592,15 @@ figcaption {
   max-width: 700px;
   display: flex !important;
   margin: auto;
+}
+
+.md-footer__direction {
+  display: none;
+}
+.md-footer__link {
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+}
+.md-social {
+  padding: 0 !important;
 }

@@ -1,3 +1,6 @@
+/* Color Settings */
+/* https://github.com/squidfunk/mkdocs-material/blob/6b5035f5580f97532d664e3d1babf5f320e88ee9/src/../assets/stylesheets/main/_colors.scss */
+/* https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/#custom-colors */
 :root>* {
   --md-primary-fg-color: #ffffff;
   --md-primary-bg-color: #1d1d20;
@@ -582,10 +585,11 @@ figcaption {
 }
 
 .md-typeset img {
-  width: 100%;
-  height: 100%;
   object-fit: cover;
   object-position: top;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .md-typeset figure img {

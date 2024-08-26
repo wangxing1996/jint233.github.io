@@ -1,6 +1,6 @@
 # MySQL 亿级别数据迁移实战代码分享
 
-### x业务背景
+### x 业务背景
 
 某一项技术的出现是为了解决问题的，我们之所以要学习某个技术，是因为这个技术解决了我们工作中遇到的痛点。上亿条数据在 MySQL 中有索引的条件下，实际上只是查询是没有太大问题的，在没有特别大的并发的情况下，只是插入特别慢。
 
@@ -160,7 +160,7 @@ public class BatchConfig extends DefaultBatchConfigurer
 这个类继承于 DefaultBatchConfigurer 然后我们对 JobRepository 进行重写：
 
 ```java
-//将spring batch 的记录存取在主数据源中
+// 将 spring batch 的记录存取在主数据源中
 @Override
 protected JobRepository createJobRepository() throws Exception {
     JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
@@ -176,7 +176,7 @@ protected JobRepository createJobRepository() throws Exception {
 ```java
 /**
 
-- 数据读取 根据id 查询保证性能 分页读取
+- 数据读取 根据 id 查询保证性能 分页读取
   */
   @Bean
   @StepScope
@@ -332,7 +332,7 @@ public class PayRecordTask {
     @Qualifier("primaryTemplate")
     private JdbcTemplate primaryJdbcTemplate;
     /**
-     *迁移任务
+     * 迁移任务
      * @throws Exception
      */
     @Scheduled(cron = "0 0 2 * * ?")
@@ -354,7 +354,7 @@ public class PayRecordTask {
      */
     @Scheduled(cron = "0 0 1 * * ?")
     public void initBillMigrateConfig() {
-       //TODO 根据实际需要的业务逻辑动态计算出，每次要迁移的数据是哪些  ，最好根据时间算出MaxId, 然后每天执行固定的步长 ，比如每天迁移100万
+       //TODO 根据实际需要的业务逻辑动态计算出，每次要迁移的数据是哪些  ，最好根据时间算出 MaxId, 然后每天执行固定的步长 ，比如每天迁移 100 万
     }
 }
 ```
@@ -385,21 +385,21 @@ public ResponseEntity<String> startJob() {
     properties.put("minId", "20");
     properties.put("maxId", "50");
     executePayRecordId = jobOperator.start("migratePayRecordJob", PropertiesConverter.propertiesToString(properties));
-    return ResponseEntity.ok("操作成功");
+    return ResponseEntity.ok ("操作成功");
 }
 @PostMapping(value = "stopJob")
 @SneakyThrows
 public ResponseEntity<String> stopJob() {
-    Assert.notNull(executePayRecordId,"执行id不能为空！");
+    Assert.notNull (executePayRecordId,"执行 id 不能为空！");
     jobOperator.stop(executePayRecordId);
-    return ResponseEntity.ok("操作成功");
+    return ResponseEntity.ok ("操作成功");
 }
 @PostMapping(value = "restartJob")
 @SneakyThrows
 public ResponseEntity<String> restartJob(){
-    Assert.notNull(executePayRecordId,"执行id不能为空！");
+    Assert.notNull (executePayRecordId,"执行 id 不能为空！");
     jobOperator.restart(executePayRecordId);
-    return ResponseEntity.ok("操作成功");
+    return ResponseEntity.ok ("操作成功");
 }
 ```
 
@@ -425,14 +425,14 @@ JobExecution abandon(long var1) throws NoSuchJobExecutionException, JobExecution
 
 #### 其他业务场景的扩展
 
-在实际中项目处理中，我们面对的系统情况可能并不是一个单表这样简单的业务情况，比如多表合一、一表分表为多表，在迁移过程中数据变更的情形。那么这些场景该如何处理呢？ **1. 多表合一的场景** 在多表合一的场景下，实际上如何两张表有关联，那么附表上一定要建立索引。我们还是会让查询逻辑在主表上，千万不要使用 Join 联查，亿级别的数据如何联查，那么基础系统就要崩溃了。此时我们需要将需要拼装的业务逻辑放在 Processor 里面，比如在我们的案例场景下，需要将 User 的信息冗余到新的一个表中那么只需要将 UserService 注入到 PayRecordExtProcessor 中，然后再通过 `userService.getId(payRecord.getUserId ())` 这种方式去 load 用户信息，用户的 Id 肯定有索引，这样查询性能不会有太多的损耗。这也是现在大厂为啥要求在业务系统开发的过程中尽快不要使用 Join 联查的原因。
+在实际中项目处理中，我们面对的系统情况可能并不是一个单表这样简单的业务情况，比如多表合一、一表分表为多表，在迁移过程中数据变更的情形。那么这些场景该如何处理呢？ **1. 多表合一的场景** 在多表合一的场景下，实际上如何两张表有关联，那么附表上一定要建立索引。我们还是会让查询逻辑在主表上，千万不要使用 Join 联查，亿级别的数据如何联查，那么基础系统就要崩溃了。此时我们需要将需要拼装的业务逻辑放在 Processor 里面，比如在我们的案例场景下，需要将 User 的信息冗余到新的一个表中那么只需要将 UserService 注入到 PayRecordExtProcessor 中，然后再通过 `userService.getId (payRecord.getUserId ())` 这种方式去 load 用户信息，用户的 Id 肯定有索引，这样查询性能不会有太多的损耗。这也是现在大厂为啥要求在业务系统开发的过程中尽快不要使用 Join 联查的原因。
 
 ```java
 @Component
 public class PayRecordExtProcessor implements ItemProcessor<PayRecord,PayRecordExt> {
     @Override
     public PayRecordExt process(PayRecord payRecord) throws Exception {
-        //此处注入 User service 通过userService .getId(payRecord.getUserId());
+        // 此处注入 User service 通过 userService .getId (payRecord.getUserId ());
         PayRecordExt ext = new PayRecordExt();
         return ext;
     }
@@ -444,7 +444,7 @@ public class PayRecordExtProcessor implements ItemProcessor<PayRecord,PayRecordE
 ```java
 create TABLE  pay_record_1 like  pay_record;
 create TABLE  pay_record_2 like pay_record;
-//根据条件拆分为多表
+// 根据条件拆分为多表
 @Bean
 public ClassifierCompositeItemWriter\<? super PayRecord> classifierItemWriter(@Qualifier("payRecordOneWriter") ItemWriter payRecordOneWriter,@Qualifier("payRecordTwoWriter") ItemWriter payRecordTwoWriter){
 ClassifierCompositeItemWriter<PayRecord> classifierCompositeItemWriter = new ClassifierCompositeItemWriter\<>();
@@ -494,7 +494,7 @@ return this.jobBuilderFactory.get("splitPayRecordJob")
  */
 @Scheduled(cron = "0 0 1 * * ?")
 public void initMigrateConfig() {
-   //TODO 根据实际需要的业务逻辑动态计算出，每次要迁移的数据是哪些  ，最好根据时间算出MaxId, 然后每天执行固定的步长 ，比如每天迁移100万
+   //TODO 根据实际需要的业务逻辑动态计算出，每次要迁移的数据是哪些  ，最好根据时间算出 MaxId, 然后每天执行固定的步长 ，比如每天迁移 100 万
 }
 ```
 
@@ -527,9 +527,9 @@ public LockProvider lockProvider(@Qualifier(value = "primaryDatasource") DataSou
 @ConfigurationProperties(prefix = "migrate.config")
 @Data
 public class MigrateConfig {
-    //每次读取数据条数
+    // 每次读取数据条数
     private Integer pageSize;
-    //每次事务提交记录数
+    // 每次事务提交记录数
     private Integer chunkSize;
     private Integer threadSize;
 }
@@ -539,9 +539,9 @@ public class MigrateConfig {
 
 ```sql
 show processlist
-set global innodb_buffer_pool_size =  缓冲池大小 ;
+set global innodb_buffer_pool_size =  缓冲池大小；
 show variables like 'max_connections';
-set global max_connections= 最大连接数;
+set global max_connections= 最大连接数；
 ```
 
 \\3. 像上面提到的 Spring Batch 在迁移过程中会将任务的执行情况都初始化到数据库中，如果我们不想要这些数据持久化，那么我们可以选择内存数据库，这个会大大提升迁移的速度，更改数据源即可。

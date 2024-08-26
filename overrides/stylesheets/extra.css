@@ -602,9 +602,9 @@ figcaption {
   display: none;
 }
 .md-footer__link {
-  margin-bottom: 0 !important;
-  margin-top: 0 !important;
+  margin-bottom: 0px !important;
+  margin-top: 0px !important;
 }
 .md-social {
-  padding: 0 !important;
+  padding: 0px !important;
 }

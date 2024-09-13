@@ -20,7 +20,7 @@ mkdocs serve
 ### Docker部署
 
 + 使用 dockerfile 生成镜像
-+ 使用 docker-compose脚 本启动服
++ 使用 docker-compose 脚本启动服务
   
 #### Github Pages
 
